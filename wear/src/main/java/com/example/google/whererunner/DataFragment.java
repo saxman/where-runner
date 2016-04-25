@@ -17,10 +17,11 @@ public class DataFragment extends WearableFragment implements RouteDataService.R
 
     private static final String LOG_TAG = DataFragment.class.getSimpleName();
 
-    private RouteDataService mRouteDataService;
-
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
+
+    private double mDistance;
+    private double mDuration;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -29,31 +30,7 @@ public class DataFragment extends WearableFragment implements RouteDataService.R
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
 
-        updateUI();
-
         return view;
-    }
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        setRouteDataService(activity);
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        setRouteDataService(context);
-    }
-
-    private void setRouteDataService(Context context) {
-        try {
-            mRouteDataService = (RouteDataService) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement RouteDataService");
-        }
     }
 
     @Override
@@ -76,13 +53,16 @@ public class DataFragment extends WearableFragment implements RouteDataService.R
     }
 
     @Override
-    public void onRouteDataUpdated() {
+    public void onRouteDataUpdated(RouteDataService routeDataService) {
+        mDistance = routeDataService.getDistance();
+        mDuration = routeDataService.getDuration();
+
         // TODO update ui (duration) more regularly than whenever a GPS sample is received
         updateUI();
     }
 
     public void updateUI() {
-        mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.2f meters", mRouteDataService.getDistance()));
-        mDurationTextView.setText(String.format(Locale.getDefault(), "%1$,.3f secs", mRouteDataService.getDuration() / 1000));
+        mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.2f meters", mDistance));
+        mDurationTextView.setText(String.format(Locale.getDefault(), "%1$,.3f secs", mDuration / 1000));
     }
 }

@@ -15,7 +15,7 @@ buildscript {
 allprojects {
     repositories {
         maven {
-            url '/Users/saxman/devel/m2repository'
+            url '../../m2repository'
         }
         jcenter()
     }

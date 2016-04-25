@@ -10,6 +10,6 @@ public interface RouteDataService {
     ArrayList<Location> getRoute();
 
     interface RouteDataUpdateListener {
-        void onRouteDataUpdated();
+        void onRouteDataUpdated(RouteDataService routeDataService);
     }
 }

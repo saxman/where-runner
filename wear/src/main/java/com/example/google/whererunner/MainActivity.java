@@ -1,17 +1,5 @@
 package com.example.google.whererunner;
 
-import com.example.google.whererunner.framework.RouteDataService;
-import com.example.google.whererunner.framework.WearableFragment;
-import com.example.google.whererunner.services.FusedLocationService;
-import com.example.google.whererunner.services.GpsLocationService;
-import com.example.google.whererunner.services.LocationService;
-import com.example.google.whererunner.services.LocationServiceBinder;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.maps.android.SphericalUtil;
-
 import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
@@ -22,33 +10,35 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
-import android.graphics.Point;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.wearable.activity.WearableActivity;
-import android.support.wearable.view.FragmentGridPagerAdapter;
-import android.support.wearable.view.GridViewPager;
+import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.util.Log;
-import android.widget.TextClock;
+
+import com.example.google.whererunner.framework.RouteDataService;
+import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.FusedLocationService;
+import com.example.google.whererunner.services.LocationService;
+import com.example.google.whererunner.services.LocationServiceBinder;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
 
 public class MainActivity extends WearableActivity implements
-        ActivityCompat.OnRequestPermissionsResultCallback, RouteDataService,
+        ActivityCompat.OnRequestPermissionsResultCallback,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private GridViewPager mViewPager;
-    private FragmentGridPagerAdapter mViewPagerAdapter;
-
-    private TextClock mTextClock;
-
     private GoogleApiClient mGoogleApiClient;
 
+    private MyRouteDataService mRouteDataService = new MyRouteDataService();
     private Location mLastLocation;
     private double mDistance;
     private double mDuration;
@@ -58,12 +48,12 @@ public class MainActivity extends WearableActivity implements
     boolean mServiceBound = false;
     private LocationChangedReceiver mLocationChangedReceiver;
 
+    private Fragment mCurrentViewPagerFragment;
+
     private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
 
-    private static final int FRAGMENT_ROUTE = 0;
-    private static final int FRAGMENT_DATA = 1;
-    private static final int FRAGMENT_HEART = 2;
-    private static final int FRAGMENT_CONTROL = 3;
+    private static final int FRAGMENT_MAIN = 0;
+    private static final int FRAGMENT_SETTINGS = 1;
 
     @Override
     public void onCreate(Bundle savedState) {
@@ -72,11 +62,12 @@ public class MainActivity extends WearableActivity implements
 
         setAmbientEnabled();
 
-        mViewPager = (GridViewPager) findViewById(R.id.pager);
-        mViewPagerAdapter = new MyFragmentGridPagerAdapter(getFragmentManager());
-        mViewPager.setAdapter(mViewPagerAdapter);
+        WearableNavigationDrawer navDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
+        navDrawer.setAdapter(new MyWearableNavigationDrawerAdapter());
 
-        mTextClock = (TextClock) findViewById(R.id.time);
+        mCurrentViewPagerFragment = new MainFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
 
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -93,18 +84,7 @@ public class MainActivity extends WearableActivity implements
 
         mGoogleApiClient.connect();
 
-        Intent intent;
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            intent = new Intent(this, GpsLocationService.class);
-        } else {
-            intent = new Intent(this, FusedLocationService.class);
-        }
-
-        // XXX
-        intent = new Intent(this, FusedLocationService.class);
-
+        Intent intent = new Intent(this, FusedLocationService.class);
         startService(intent);
         bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
     }
@@ -146,13 +126,8 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
-        mTextClock.setFormat12Hour("h:mm");
-        mTextClock.setFormat24Hour("H:mm");
-
-        Point p = mViewPager.getCurrentItem();
-        Fragment fragment = mViewPagerAdapter.findExistingFragment(p.y, p.x);
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onEnterAmbient(ambientDetails);
+        if (mCurrentViewPagerFragment instanceof WearableFragment) {
+            ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
         }
     }
 
@@ -160,13 +135,8 @@ public class MainActivity extends WearableActivity implements
     public void onExitAmbient() {
         super.onExitAmbient();
 
-        mTextClock.setFormat12Hour("h:mm:ss");
-        mTextClock.setFormat24Hour("H:mm:ss");
-
-        Point p = mViewPager.getCurrentItem();
-        Fragment fragment = mViewPagerAdapter.findExistingFragment(p.y, p.x);
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onExitAmbient();
+        if (mCurrentViewPagerFragment instanceof WearableFragment) {
+            ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
         }
     }
 
@@ -174,10 +144,8 @@ public class MainActivity extends WearableActivity implements
     public void onUpdateAmbient() {
         super.onUpdateAmbient();
 
-        Point p = mViewPager.getCurrentItem();
-        Fragment fragment = mViewPagerAdapter.findExistingFragment(p.y, p.x);
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onUpdateAmbient();
+        if (mCurrentViewPagerFragment instanceof WearableFragment) {
+            ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
         }
     }
 
@@ -213,10 +181,11 @@ public class MainActivity extends WearableActivity implements
             if (location != null) {
                 Log.d(LOG_TAG, "Last known location " + location.toString());
 
-                Point p = mViewPager.getCurrentItem();
-                if (p.y == FRAGMENT_ROUTE) {
-                    ((RouteMapFragment) mViewPagerAdapter.findExistingFragment(p.y, p.x)).setInitialLocation(location);
-                }
+                // TODO routemapfragment should try retrieving from activity?
+//                Point p = mViewPager.getCurrentItem();
+//                if (p.y == FRAGMENT_ROUTE) {
+//                    ((RouteMapFragment) mViewPagerAdapter.findExistingFragment(p.y, p.x)).setInitialLocation(location);
+//                }
             } else {
                 Log.w(LOG_TAG, "Unable to retrieve user's last known location");
             }
@@ -258,22 +227,69 @@ public class MainActivity extends WearableActivity implements
                 Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
                 if (mLastLocation != null) {
-                    LatLng lastLl = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-                    LatLng nextLl = new LatLng(location.getLatitude(), location.getLongitude());
-                    mDistance += SphericalUtil.computeDistanceBetween(lastLl, nextLl);
-
+                    mDistance += mLastLocation.distanceTo(location);
+                    // TODO duration should be calculated in real time an not based on when location samples come in
                     mDuration = mLastLocation.getTime() - mPath.get(0).getTime();
                 }
 
                 mPath.add(location);
                 mLastLocation = location;
 
-                Point p = mViewPager.getCurrentItem();
-                Fragment fragment = mViewPagerAdapter.findExistingFragment(p.y, p.x);
-                if (fragment instanceof RouteDataService.RouteDataUpdateListener) {
-                    ((RouteDataService.RouteDataUpdateListener) fragment).onRouteDataUpdated();
+                if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
+                    ((RouteDataService.RouteDataUpdateListener) mCurrentViewPagerFragment).onRouteDataUpdated(mRouteDataService);
                 }
             }
+        }
+    }
+
+    class MyWearableNavigationDrawerAdapter implements WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+        @Override
+        public String getItemText(int pos) {
+            switch (pos) {
+                case FRAGMENT_MAIN:
+                    return getString(R.string.recording);
+                case FRAGMENT_SETTINGS:
+                    return getString(R.string.settings);
+            }
+
+            return null;
+        }
+
+        @Override
+        public Drawable getItemDrawable(int pos) {
+            switch (pos) {
+                case FRAGMENT_MAIN:
+                    return getDrawable(R.drawable.ic_cycling);
+                case FRAGMENT_SETTINGS:
+                    return getDrawable(R.drawable.ic_running);
+            }
+
+            return null;
+        }
+
+        @Override
+        public void onItemSelected(int pos) {
+            Log.d(LOG_TAG, "onItemSelected " + pos);
+
+            Fragment fragment = null;
+
+            switch (pos) {
+                case FRAGMENT_MAIN:
+                    fragment = new MainFragment();
+                    break;
+                case FRAGMENT_SETTINGS:
+                    fragment = new SettingsFragment();
+                    break;
+            }
+
+            mCurrentViewPagerFragment = fragment;
+            FragmentManager fragmentManager = getFragmentManager();
+            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+        }
+
+        @Override
+        public int getCount() {
+            return 2;
         }
     }
 
@@ -283,59 +299,20 @@ public class MainActivity extends WearableActivity implements
         return mLocationService.toggleLocationUpdates();
     }
 
-    private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
-        public MyFragmentGridPagerAdapter(FragmentManager fm) {
-            super(fm);
+    private class MyRouteDataService implements RouteDataService {
+        @Override
+        public double getDistance() {
+            return mDistance;
         }
 
         @Override
-        public Fragment getFragment(int row, int col) {
-            Log.d(LOG_TAG, "Getting fragment at row index " + row);
-
-            Fragment fragment = null;
-
-            switch (row) {
-                case FRAGMENT_ROUTE:
-                    fragment = new RouteMapFragment();
-                    break;
-                case FRAGMENT_DATA:
-                    fragment = new DataFragment();
-                    break;
-                case FRAGMENT_HEART:
-                    fragment = new HeartFragment();
-                    break;
-                case FRAGMENT_CONTROL:
-                    fragment = new ControlFragment();
-                    break;
-            }
-
-            return fragment;
+        public double getDuration() {
+            return mDuration;
         }
 
         @Override
-        public int getRowCount() {
-            return 4;
+        public ArrayList<Location> getRoute() {
+            return mPath;
         }
-
-        @Override
-        public int getColumnCount(int i)
-        {
-            return 1;
-        }
-    }
-
-    @Override
-    public double getDistance() {
-        return mDistance;
-    }
-
-    @Override
-    public double getDuration() {
-        return mDuration;
-    }
-
-    @Override
-    public ArrayList<Location> getRoute() {
-        return mPath;
     }
 }

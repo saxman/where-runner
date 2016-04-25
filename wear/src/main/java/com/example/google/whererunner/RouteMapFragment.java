@@ -1,7 +1,5 @@
 package com.example.google.whererunner;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
@@ -30,14 +28,13 @@ public class RouteMapFragment extends WearableFragment
 
     private static final String LOG_TAG = RouteMapFragment.class.getSimpleName();
 
-    private RouteDataService mRouteDataService;
-
     private GoogleMap mGoogleMap;
     private MapView mMapView;
 
     private Marker mMapMarker;
     private Polyline mPolyline;
 
+    private ArrayList<Location> mPath;
     private LinkedList<LatLng> mRouteCoords = new LinkedList<>();
 
     private int mNextRouteIndex = 0;
@@ -80,28 +77,6 @@ public class RouteMapFragment extends WearableFragment
     }
 
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        setRouteDataService(activity);
-    }
-
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        setRouteDataService(context);
-    }
-
-    private void setRouteDataService(Context context) {
-        try {
-            mRouteDataService = (RouteDataService) context;
-        } catch (ClassCastException e) {
-            throw new ClassCastException(context.toString() + " must implement RouteDataService");
-        }
-    }
-
-    @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
@@ -121,8 +96,7 @@ public class RouteMapFragment extends WearableFragment
     }
 
     @Override
-    public void onExitAmbient()
-    {
+    public void onExitAmbient() {
         super.onExitAmbient();
 
         mMapView.onExitAmbient();
@@ -134,12 +108,12 @@ public class RouteMapFragment extends WearableFragment
     }
 
     @Override
-    public void onRouteDataUpdated() {
-        if (isAmbient()) {
-            return;
-        }
+    public void onRouteDataUpdated(RouteDataService routeDataService) {
+        mPath = routeDataService.getRoute();
 
-        updateUI();
+        if (!isAmbient()) {
+            updateUI();
+        }
     }
 
     private void updateUI() {
@@ -151,15 +125,13 @@ public class RouteMapFragment extends WearableFragment
             return;
         }
 
-        ArrayList<Location> route = mRouteDataService.getRoute();
-
-        // Nothing to display or not new data
-        if (route.size() == 0 || mNextRouteIndex == route.size()) {
+        // Nothing to display or no new data
+        if (mPath.size() == 0 || mNextRouteIndex == mPath.size()) {
             return;
         }
 
-        for (int i = mNextRouteIndex; i < route.size(); i++) {
-            Location loc = route.get(i);
+        for (int i = mNextRouteIndex; i < mPath.size(); i++) {
+            Location loc = mPath.get(i);
             mRouteCoords.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
         }
 
@@ -180,7 +152,7 @@ public class RouteMapFragment extends WearableFragment
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
         }
 
-        mNextRouteIndex = route.size();
+        mNextRouteIndex = mPath.size();
     }
 
     public void setInitialLocation(Location location) {

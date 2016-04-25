@@ -12,7 +12,7 @@ import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
-import com.example.google.whererunner.MainActivity;
+import com.example.google.whererunner.MainFragment;
 import com.example.google.whererunner.R;
 
 public abstract class LocationService extends Service {
@@ -49,7 +49,7 @@ public abstract class LocationService extends Service {
 
         CharSequence text = "Where Runner!?";
 
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainFragment.class), 0);
 
         mNotification = new Notification.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)

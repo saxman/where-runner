@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+
+<android.support.wearable.view.drawer.WearableDrawerLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/dark_grey"
+        tools:context=".MainFragment">
+
+        <android.support.wearable.view.GridViewPager
+            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:id="@+id/pager"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:keepScreenOn="true" />
+
+        <TextClock
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/time"
+            android:layout_gravity="center_horizontal"
+            android:background="@drawable/map_overlay_background"
+            android:textColor="@color/black"
+            android:paddingLeft="5dp"
+            android:paddingRight="5dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:layout_marginTop="@dimen/clock_margin_top"
+            android:format12Hour="h:mm:ss"
+            android:format24Hour="H:mm:ss" />
+
+    </FrameLayout>
+
+
+    <android.support.wearable.view.drawer.WearableActionDrawer
+        android:layout_width="match_parent"
+        android:layout_height="50pt"
+        android:background="@color/blue"/>
+
+</android.support.wearable.view.drawer.WearableDrawerLayout>
