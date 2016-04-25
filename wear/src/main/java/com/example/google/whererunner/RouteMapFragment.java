@@ -34,22 +34,35 @@ public class RouteMapFragment extends WearableFragment
     private Marker mMapMarker;
     private Polyline mPolyline;
 
-    private ArrayList<Location> mPath;
     private LinkedList<LatLng> mRouteCoords = new LinkedList<>();
 
     private int mNextRouteIndex = 0;
 
     private LatLng mInitialLocation = null;
+    private RouteDataService mRouteDataService;
+
+    private static final String PARAM_INIT_LOC = "initial_loc";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_route, container, false);
+
+        if (savedInstanceState != null) {
+            mInitialLocation = savedInstanceState.getParcelable(PARAM_INIT_LOC);
+        }
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
         return view;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+
+        savedInstanceState.putParcelable(PARAM_INIT_LOC, mInitialLocation);
     }
 
     @Override
@@ -91,14 +104,12 @@ public class RouteMapFragment extends WearableFragment
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
-
         mMapView.onEnterAmbient(ambientDetails);
     }
 
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
-
         mMapView.onExitAmbient();
     }
 
@@ -109,7 +120,7 @@ public class RouteMapFragment extends WearableFragment
 
     @Override
     public void onRouteDataUpdated(RouteDataService routeDataService) {
-        mPath = routeDataService.getRoute();
+        mRouteDataService = routeDataService;
 
         if (!isAmbient()) {
             updateUI();
@@ -125,13 +136,21 @@ public class RouteMapFragment extends WearableFragment
             return;
         }
 
+        ArrayList<Location> route = mRouteDataService.getRoute();
+
         // Nothing to display or no new data
-        if (mPath.size() == 0 || mNextRouteIndex == mPath.size()) {
+        if (route.size() == 0 || mNextRouteIndex == route.size()) {
+            Location loc = mRouteDataService.getInitialLocation();
+            if (loc != null) {
+                mInitialLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
+                setMapCenter(mInitialLocation);
+            }
+
             return;
         }
 
-        for (int i = mNextRouteIndex; i < mPath.size(); i++) {
-            Location loc = mPath.get(i);
+        for (int i = mNextRouteIndex; i < route.size(); i++) {
+            Location loc = route.get(i);
             mRouteCoords.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
         }
 
@@ -152,15 +171,7 @@ public class RouteMapFragment extends WearableFragment
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
         }
 
-        mNextRouteIndex = mPath.size();
-    }
-
-    public void setInitialLocation(Location location) {
-        mInitialLocation = new LatLng(location.getLatitude(), location.getLongitude());
-
-        if (mGoogleMap != null) {
-            setMapCenter(mInitialLocation);
-        }
+        mNextRouteIndex = route.size();
     }
 
     private void setMapCenter(LatLng latLng) {

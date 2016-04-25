@@ -5,6 +5,7 @@ import android.location.Location;
 import java.util.ArrayList;
 
 public interface RouteDataService {
+    Location getInitialLocation();
     double getDistance();
     double getDuration();
     ArrayList<Location> getRoute();

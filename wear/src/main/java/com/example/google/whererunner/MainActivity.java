@@ -39,6 +39,7 @@ public class MainActivity extends WearableActivity implements
     private GoogleApiClient mGoogleApiClient;
 
     private MyRouteDataService mRouteDataService = new MyRouteDataService();
+    private Location mInitialLocation;
     private Location mLastLocation;
     private double mDistance;
     private double mDuration;
@@ -181,11 +182,12 @@ public class MainActivity extends WearableActivity implements
             if (location != null) {
                 Log.d(LOG_TAG, "Last known location " + location.toString());
 
-                // TODO routemapfragment should try retrieving from activity?
-//                Point p = mViewPager.getCurrentItem();
-//                if (p.y == FRAGMENT_ROUTE) {
-//                    ((RouteMapFragment) mViewPagerAdapter.findExistingFragment(p.y, p.x)).setInitialLocation(location);
-//                }
+                mInitialLocation = location;
+
+                if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
+                    ((RouteDataService.RouteDataUpdateListener) mCurrentViewPagerFragment).onRouteDataUpdated(mRouteDataService);
+                }
+
             } else {
                 Log.w(LOG_TAG, "Unable to retrieve user's last known location");
             }
@@ -300,6 +302,11 @@ public class MainActivity extends WearableActivity implements
     }
 
     private class MyRouteDataService implements RouteDataService {
+        @Override
+        public Location getInitialLocation() {
+            return mInitialLocation;
+        }
+
         @Override
         public double getDistance() {
             return mDistance;
