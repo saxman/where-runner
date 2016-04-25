@@ -3,12 +3,7 @@ package com.example.google.whererunner;
 import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.BroadcastReceiver;
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.ServiceConnection;
+import android.content.*;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -21,9 +16,7 @@ import android.util.Log;
 
 import com.example.google.whererunner.framework.RouteDataService;
 import com.example.google.whererunner.framework.WearableFragment;
-import com.example.google.whererunner.services.FusedLocationService;
-import com.example.google.whererunner.services.LocationService;
-import com.example.google.whererunner.services.LocationServiceBinder;
+import com.example.google.whererunner.services.*;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -48,6 +41,7 @@ public class MainActivity extends WearableActivity implements
     private LocationService mLocationService;
     boolean mServiceBound = false;
     private LocationChangedReceiver mLocationChangedReceiver;
+    private HeartRateChangedReceiver mHeartRateChangedReceiver;
 
     private Fragment mCurrentViewPagerFragment;
 
@@ -121,6 +115,13 @@ public class MainActivity extends WearableActivity implements
 
         IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
         registerReceiver(mLocationChangedReceiver, intentFilter);
+
+        if (mLocationChangedReceiver == null) {
+            mLocationChangedReceiver = new LocationChangedReceiver();
+        }
+
+        IntentFilter heartRateIntentFilter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        registerReceiver(mLocationChangedReceiver, heartRateIntentFilter);
     }
 
     @Override
@@ -219,6 +220,15 @@ public class MainActivity extends WearableActivity implements
             mServiceBound = false;
         }
     };
+
+    private class HeartRateChangedReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_CHANGED)) {
+                Log.d(LOG_TAG, "Heart Rate Sensor Updated");
+            }
+        }
+    }
 
     private class LocationChangedReceiver extends BroadcastReceiver {
         @Override
