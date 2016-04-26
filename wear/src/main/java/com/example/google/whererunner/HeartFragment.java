@@ -1,36 +1,50 @@
 package com.example.google.whererunner;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.*;
-import android.widget.ImageButton;
+import android.widget.*;
 
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.HeartRateSensorService;
 
 public class HeartFragment extends WearableFragment {
 
     private static final String TAG = "HeartFragment";
 
-    ImageButton heartButton;
+    Button heartButton;
+    //TextView textView;
     boolean heartRateSensorOn = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_heart, container, false);
-        heartButton = (ImageButton)view.findViewById(R.id.heart_button);
+        //textView = (TextView)view.findViewById(R.id.heart_rate_text);
+        heartButton = (Button)view.findViewById(R.id.heart_button);
         heartButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick (View v) {
                 if(heartRateSensorOn){
-                    ((ImageButton) v).setImageResource(R.drawable.ic_heart);
+                    // Turn off
+                    ((Button) v).setBackgroundResource(R.drawable.ic_heart);
+                    ((Button) v).setText("N/A");
+                    Intent intent = new Intent()
+                            .setAction(HeartRateSensorService.ACTION_HEART_RATE_STOP);
+                    getActivity().sendBroadcast(intent);
                 }else{
-                    ((ImageButton) v).setImageResource(R.drawable.ic_heart_red);
+                    // Turn on
+                    ((Button) v).setBackgroundResource(R.drawable.ic_heart_red);
+                    ((Button) v).setText("...");
+                    Intent intent = new Intent()
+                            .setAction(HeartRateSensorService.ACTION_HEART_RATE_START);
+                    getActivity().sendBroadcast(intent);
                 }
                 heartRateSensorOn = !heartRateSensorOn;
                 Log.v(TAG, "Heart Rate Sensor is " + (heartRateSensorOn?"ON.":"OFF."));
-                // TODO: Broadcast message to start/stop heart rate monitor service.
             }
         });
+
         return view;
     }
 
@@ -56,4 +70,9 @@ public class HeartFragment extends WearableFragment {
     public void updateUI() {
         // TODO
     }
+
+    public void setHeartRate(float heartRate){
+        heartButton.setText(""+heartRate);
+    }
+
 }
