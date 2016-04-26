@@ -37,10 +37,45 @@
 
     </FrameLayout>
 
-
     <android.support.wearable.view.drawer.WearableActionDrawer
         android:layout_width="match_parent"
-        android:layout_height="50pt"
-        android:background="@color/blue"/>
+        android:layout_height="60pt"
+        android:paddingTop="5dp"
+        android:background="@color/blue">
+
+        <GridLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingTop="20dp"
+            android:layout_gravity="center_horizontal"
+            android:rowCount="2"
+            android:columnCount="2">
+
+            <android.support.wearable.view.CircularButton
+                android:layout_width="@dimen/action_button_size"
+                android:layout_height="@dimen/action_button_size"
+                android:layout_marginRight="@dimen/action_button_label_spacing"
+                android:id="@+id/record_button"
+                android:src="@drawable/ic_record" />
+
+            <TextView
+                android:text="@string/record"
+                android:layout_gravity="center_vertical" />
+
+            <android.support.wearable.view.CircularButton
+                android:layout_width="@dimen/action_button_size"
+                android:layout_height="@dimen/action_button_size"
+                android:layout_marginTop="@dimen/action_button_spacing"
+                android:layout_marginRight="@dimen/action_button_label_spacing"
+                android:id="@+id/activity_type_button"
+                android:src="@drawable/ic_running"
+                android:padding="10dp" />
+
+            <TextView
+                android:text="@string/activity_type"
+                android:layout_gravity="center_vertical" />
+
+        </GridLayout>
+    </android.support.wearable.view.drawer.WearableActionDrawer>
 
 </android.support.wearable.view.drawer.WearableDrawerLayout>

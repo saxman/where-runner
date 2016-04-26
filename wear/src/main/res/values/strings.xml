@@ -3,4 +3,7 @@
 
     <string name="recording">Recording</string>
     <string name="settings">Settings</string>
+
+    <string name="record">Record</string>
+    <string name="activity_type">Activity Type</string>
 </resources>

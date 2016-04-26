@@ -1,4 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="clock_margin_top">5dp</dimen>
+
+    <dimen name="action_button_size">40dp</dimen>
+    <dimen name="action_button_label_spacing">10dp</dimen>
+    <dimen name="action_button_spacing">5dp</dimen>
 </resources>
