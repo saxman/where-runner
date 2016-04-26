@@ -6,4 +6,6 @@
 
     <string name="record">Record</string>
     <string name="activity_type">Activity Type</string>
+
+    <string name="notification_content_text">Where Runner?!</string>
 </resources>

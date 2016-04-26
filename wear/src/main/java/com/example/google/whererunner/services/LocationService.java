@@ -48,26 +48,25 @@ public abstract class LocationService extends Service {
 
         mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
 
-        CharSequence text = "Where Runner!?";
-
+        CharSequence contentText = getString(R.string.notification_content_text);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
 
         mNotification = new Notification.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setTicker(text)
+                .setTicker(contentText)
                 .setWhen(System.currentTimeMillis())
 //                .setContentTitle(getText(R.string.local_service_label))  // the label of the entry
-                .setContentText(text)
+                .setContentText(contentText)
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true) // close the notification when the user triggers an action
                 .build();
+        
         // TODO add action to stop location recording
     }
 
     @Override
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
-
         super.onDestroy();
     }
 
