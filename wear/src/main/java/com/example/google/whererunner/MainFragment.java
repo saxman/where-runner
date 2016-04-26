@@ -28,8 +28,6 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
     private static final int FRAGMENT_HEART = 2;
     private static final int FRAGMENT_CONTROL = 3;
 
-    private RouteMapFragment mRouteMapFragment;
-
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_main, container, false);
@@ -96,7 +94,7 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
 
             Fragment fragment = null;
 
-            switch (row) {
+            switch (col) {
                 case FRAGMENT_ROUTE:
                     fragment = new RouteMapFragment();
                     break;
@@ -116,13 +114,13 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
 
         @Override
         public int getRowCount() {
-            return 4;
+            return 1;
         }
 
         @Override
         public int getColumnCount(int i)
         {
-            return 1;
+            return 4;
         }
     }
 

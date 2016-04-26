@@ -36,19 +36,19 @@ public class RouteMapFragment extends WearableFragment
 
     private LinkedList<LatLng> mRouteCoords = new LinkedList<>();
 
-    private int mNextRouteIndex = 0;
+    private int mNextRouteLocationIndex = 0;
 
-    private LatLng mInitialLocation = null;
+    private LatLng mLastLocation = null;
     private RouteDataService mRouteDataService;
 
-    private static final String PARAM_INIT_LOC = "initial_loc";
+    private static final String PARAM_LAST_LOCATION = "lastLocation";
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_route, container, false);
 
         if (savedInstanceState != null) {
-            mInitialLocation = savedInstanceState.getParcelable(PARAM_INIT_LOC);
+            mLastLocation = savedInstanceState.getParcelable(PARAM_LAST_LOCATION);
         }
 
         mMapView = (MapView) view.findViewById(R.id.map);
@@ -61,8 +61,7 @@ public class RouteMapFragment extends WearableFragment
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
         super.onSaveInstanceState(savedInstanceState);
-
-        savedInstanceState.putParcelable(PARAM_INIT_LOC, mInitialLocation);
+        savedInstanceState.putParcelable(PARAM_LAST_LOCATION, mLastLocation);
     }
 
     @Override
@@ -91,14 +90,9 @@ public class RouteMapFragment extends WearableFragment
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
+        Log.d(LOG_TAG, "Map ready");
         mGoogleMap = googleMap;
-
-        // If we already have route data, use it. Otherwise, use the last known location, if known.
-        if (mRouteCoords.size() > 0) {
-            updateUI();
-        } else if (mInitialLocation != null) {
-            setMapCenter(mInitialLocation);
-        }
+        updateUI();
     }
 
     @Override
@@ -128,50 +122,66 @@ public class RouteMapFragment extends WearableFragment
     }
 
     private void updateUI() {
-        Log.d(LOG_TAG, "Updating map");
-
-        // Map not ready yet. Check again next UI update.
+        // Map not ready yet. Once it is, updateuI() will be called again
         if (mGoogleMap == null) {
             Log.d(LOG_TAG, "Deferring map UI update. Map not ready");
             return;
         }
 
+        // No route data yet...
+        if (mRouteDataService == null) {
+            Log.d(LOG_TAG, "Deferring map UI update. No route data");
+            return;
+        }
+
         ArrayList<Location> route = mRouteDataService.getRoute();
 
-        // Nothing to display or no new data
-        if (route.size() == 0 || mNextRouteIndex == route.size()) {
+        // Nothing route to display yet
+        if (route.size() == 0) {
+            // If we have last known location, center map there instead of the user's current location
             Location loc = mRouteDataService.getInitialLocation();
             if (loc != null) {
-                mInitialLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
-                setMapCenter(mInitialLocation);
+                mLastLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
+                setMapCenter(mLastLocation);
             }
 
             return;
         }
 
-        for (int i = mNextRouteIndex; i < route.size(); i++) {
+        // No new data
+        if (mNextRouteLocationIndex == route.size()) {
+            Log.d(LOG_TAG, "Deferring map UI update. No new data");
+            return;
+        }
+
+        // Append the coords for the new location samples to the route (store as LatLngs for polyline rendering
+        for (int i = mNextRouteLocationIndex; i < route.size(); i++) {
             Location loc = route.get(i);
             mRouteCoords.add(new LatLng(loc.getLatitude(), loc.getLongitude()));
         }
 
         LatLng lastLatLng = mRouteCoords.get(mRouteCoords.size() - 1);
 
+        // If we haven't displayed the user's current location yet, as a marker, set that up
         if (mMapMarker == null) {
             mMapMarker = mGoogleMap.addMarker(new MarkerOptions().position(lastLatLng));
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
+        } else {
+            mMapMarker.setPosition(lastLatLng);
+            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
+        }
 
+        // If we haven't rendered the user's route yet, set that up
+        if (mPolyline == null) {
             mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                     .add(lastLatLng)
                     .width(5)
                     .color(Color.RED));
-
-            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
-        } else {
-            mMapMarker.setPosition(lastLatLng);
-            mPolyline.setPoints(mRouteCoords);
-            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
         }
 
-        mNextRouteIndex = route.size();
+        mPolyline.setPoints(mRouteCoords);
+
+        mNextRouteLocationIndex = route.size();
     }
 
     private void setMapCenter(LatLng latLng) {

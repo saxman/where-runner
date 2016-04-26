@@ -179,10 +179,9 @@ public class MainActivity extends WearableActivity implements
 
         try {
             Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            Log.d(LOG_TAG, "Last known location: " + location.toString());
 
             if (location != null) {
-                Log.d(LOG_TAG, "Last known location " + location.toString());
-
                 mInitialLocation = location;
 
                 if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
@@ -193,8 +192,7 @@ public class MainActivity extends WearableActivity implements
                 Log.w(LOG_TAG, "Unable to retrieve user's last known location");
             }
         } catch (SecurityException e) {
-            // noop since getLastLocation is only called after location access has been granted
-            // TODO fix lint check and remove SecurityException
+            // noop since getLastLocation is only called directly after location access has been granted
             Log.e(LOG_TAG, "Exception getting last location", e);
         }
     }
@@ -271,9 +269,9 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case FRAGMENT_MAIN:
-                    return getDrawable(R.drawable.ic_cycling);
-                case FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_running);
+                case FRAGMENT_SETTINGS:
+                    return getDrawable(R.drawable.ic_settings);
             }
 
             return null;
@@ -281,8 +279,6 @@ public class MainActivity extends WearableActivity implements
 
         @Override
         public void onItemSelected(int pos) {
-            Log.d(LOG_TAG, "onItemSelected " + pos);
-
             Fragment fragment = null;
 
             switch (pos) {
@@ -307,7 +303,6 @@ public class MainActivity extends WearableActivity implements
 
     public int toggleRecording() {
         Log.d(LOG_TAG, "Toggling location recording");
-
         return mLocationService.toggleLocationUpdates();
     }
 
