@@ -32,6 +32,7 @@
         </activity>
 
         <service android:name=".services.GpsLocationService" />
+        <service android:name=".services.HeartRateSensorService" />
         <service android:name=".services.FusedLocationService" /><!-- ATTENTION: This was auto-generated to add Google Play services to your project for
      App Indexing.  See https://g.co/AppIndexing/AndroidStudio for more information. -->
         <meta-data

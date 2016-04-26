@@ -1,8 +1,5 @@
 package com.example.google.whererunner;
 
-import com.example.google.whererunner.framework.RouteDataService;
-import com.example.google.whererunner.framework.WearableFragment;
-
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.graphics.Point;
@@ -10,10 +7,11 @@ import android.os.Bundle;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
+import android.view.*;
 import android.widget.TextClock;
+
+import com.example.google.whererunner.framework.RouteDataService;
+import com.example.google.whererunner.framework.WearableFragment;
 
 public class MainFragment extends WearableFragment implements RouteDataService.RouteDataUpdateListener {
     private static final String LOG_TAG = MainFragment.class.getSimpleName();
@@ -80,6 +78,12 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof RouteDataService.RouteDataUpdateListener) {
             ((RouteDataService.RouteDataUpdateListener) fragment).onRouteDataUpdated(routeDataService);
+        }
+    }
+
+    public void setHeartRate(float heartRate){
+        if(getCurrentViewPagerFragment() instanceof HeartFragment){
+            ((HeartFragment)getCurrentViewPagerFragment()).setHeartRate(heartRate);
         }
     }
 

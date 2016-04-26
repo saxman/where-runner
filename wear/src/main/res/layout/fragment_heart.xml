@@ -1,9 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ImageButton
-    android:id="@+id/heart_button"
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:src="@drawable/ic_heart"
-    tools:context=".DataFragment"/>
+
+
+    <Button
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/heart_button"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/ic_heart"
+        android:layout_weight="1"
+        android:layout_gravity="center"
+        android:text="N/A"
+        tools:context=".DataFragment"/>
+
+
+
+
