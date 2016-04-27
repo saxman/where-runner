@@ -329,7 +329,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-    class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+    class MyWearableNavigationDrawerAdapter implements WearableNavigationDrawer.WearableNavigationDrawerAdapter {
         @Override
         public String getItemText (int pos) {
             switch (pos) {
