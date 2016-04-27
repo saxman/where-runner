@@ -236,9 +236,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
 
         try {
             Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            Log.d(LOG_TAG, "Last known location: " + location.toString());
+
 
             if (location != null) {
+                Log.d(LOG_TAG, "Last known location: " + location.toString());
                 mInitialLocation = location;
 
                 if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
