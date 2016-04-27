@@ -47,21 +47,11 @@ public class RouteMapFragment extends WearableFragment
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_route, container, false);
 
-        if (savedInstanceState != null) {
-            mLastLocation = savedInstanceState.getParcelable(PARAM_LAST_LOCATION);
-        }
-
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
         return view;
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        savedInstanceState.putParcelable(PARAM_LAST_LOCATION, mLastLocation);
     }
 
     @Override

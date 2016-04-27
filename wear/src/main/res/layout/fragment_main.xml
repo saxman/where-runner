@@ -37,10 +37,6 @@
 
     </FrameLayout>
 
-
-    <android.support.wearable.view.drawer.WearableActionDrawer
-        android:layout_width="match_parent"
-        android:layout_height="50pt"
-        android:background="@color/blue"/>
+    <include layout="@layout/actions_main"/>
 
 </android.support.wearable.view.drawer.WearableDrawerLayout>
