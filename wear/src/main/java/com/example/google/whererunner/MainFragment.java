@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.graphics.Point;
 import android.os.Bundle;
+import android.support.wearable.view.CircularButton;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
 import android.util.Log;
@@ -18,6 +19,9 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
+
+    private CircularButton mRecordButton;
+    private CircularButton mActivityTypeButton;
 
     private TextClock mTextClock;
 
@@ -35,6 +39,22 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
         mViewPager.setAdapter(mViewPagerAdapter);
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
+
+        mRecordButton = (CircularButton) view.findViewById(R.id.record_button);
+        mRecordButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleRecording();
+            }
+        });
+
+        mActivityTypeButton = (CircularButton) view.findViewById(R.id.activity_type_button);
+        mActivityTypeButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleActivityType();
+            }
+        });
 
         return view;
     }
@@ -87,6 +107,16 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
         }
     }
 
+    private void toggleRecording() {
+        // TODO
+        mRecordButton.setImageResource(R.drawable.ic_stop);
+    }
+
+    private void toggleActivityType() {
+        // TODO
+        mActivityTypeButton.setImageResource(R.drawable.ic_cycling);
+    }
+
     private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
         public MyFragmentGridPagerAdapter(FragmentManager fm) {
             super(fm);
@@ -94,8 +124,6 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
 
         @Override
         public Fragment getFragment(int row, int col) {
-            Log.d(LOG_TAG, "Getting fragment at row index " + row);
-
             Fragment fragment = null;
 
             switch (col) {

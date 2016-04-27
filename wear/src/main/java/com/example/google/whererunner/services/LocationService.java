@@ -60,7 +60,7 @@ public abstract class LocationService extends Service {
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true) // close the notification when the user triggers an action
                 .build();
-        
+
         // TODO add action to stop location recording
     }
 
