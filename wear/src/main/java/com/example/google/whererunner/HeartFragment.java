@@ -75,4 +75,8 @@ public class HeartFragment extends WearableFragment {
         heartButton.setText(""+heartRate);
     }
 
+    public void disableHeartRate(){
+        heartButton.setEnabled(false);
+        heartButton.setText("Heart Rate Monitor not found");
+    }
 }

@@ -4,10 +4,7 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.graphics.Point;
 import android.os.Bundle;
-import android.support.wearable.view.CircularButton;
-import android.support.wearable.view.FragmentGridPagerAdapter;
-import android.support.wearable.view.GridViewPager;
-import android.util.Log;
+import android.support.wearable.view.*;
 import android.view.*;
 import android.widget.TextClock;
 
@@ -104,6 +101,12 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
     public void setHeartRate(float heartRate){
         if(getCurrentViewPagerFragment() instanceof HeartFragment){
             ((HeartFragment)getCurrentViewPagerFragment()).setHeartRate(heartRate);
+        }
+    }
+
+    public void disableHeartRate(){
+        if(getCurrentViewPagerFragment() instanceof HeartFragment){
+            ((HeartFragment)getCurrentViewPagerFragment()).disableHeartRate();
         }
     }
 

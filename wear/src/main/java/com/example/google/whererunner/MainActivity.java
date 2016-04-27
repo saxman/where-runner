@@ -179,7 +179,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             if (mCurrentViewPagerFragment instanceof MainFragment) {
                 MainActivity.this.runOnUiThread(new Runnable() {
                     public void run () {
-                        ((MainFragment) mCurrentViewPagerFragment).setHeartRate(event.values[0]);
+                        if (event.sensor != null) {
+                            ((MainFragment) mCurrentViewPagerFragment).setHeartRate(event.values[0]);
+                        } else {
+                            ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
+                        }
                     }
                 });
             }
@@ -224,7 +228,15 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     private void startHeartRateSensor () {
-        mSensorManager.registerListener(this, mHeartRateMonitorSensor, SensorManager.SENSOR_DELAY_NORMAL);
+        if (!mSensorManager.registerListener(this, mHeartRateMonitorSensor, SensorManager.SENSOR_DELAY_NORMAL)) {
+            if (mCurrentViewPagerFragment instanceof MainFragment) {
+                MainActivity.this.runOnUiThread(new Runnable() {
+                    public void run () {
+                        ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
+                    }
+                });
+            }
+        }
     }
 
     private void stoptHeartRateSensor () {
