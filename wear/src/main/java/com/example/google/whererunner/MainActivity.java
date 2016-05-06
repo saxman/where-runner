@@ -14,9 +14,9 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.util.Log;
 
-import com.example.google.whererunner.framework.RouteDataService;
-import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.framework.*;
 import com.example.google.whererunner.services.*;
+import com.firebase.client.Firebase;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -81,6 +81,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     .addOnConnectionFailedListener(this)
                     .build();
         }
+        Firebase.setAndroidContext(this);
     }
 
     @Override
@@ -181,6 +182,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                     public void run () {
                         if (event.sensor != null) {
                             ((MainFragment) mCurrentViewPagerFragment).setHeartRate(event.values[0]);
+                            DataManager.getInstance().saveDataPoint("heart_rate", event.values[0]+"");
                         } else {
                             ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
                         }
@@ -232,7 +234,8 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             if (mCurrentViewPagerFragment instanceof MainFragment) {
                 MainActivity.this.runOnUiThread(new Runnable() {
                     public void run () {
-                        ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
+                        // TODO - there is a bug that disables the sensor manager on F.
+                        //((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
                     }
                 });
             }
