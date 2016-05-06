@@ -2,7 +2,7 @@
 <resources>
     <dimen name="clock_margin_top">5dp</dimen>
 
-    <dimen name="action_button_size">45dp</dimen>
+    <dimen name="action_button_size">40dp</dimen>
     <dimen name="action_button_label_spacing">7dp</dimen>
     <dimen name="action_button_spacing">5dp</dimen>
 </resources>

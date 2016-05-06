@@ -10,6 +10,7 @@ import android.widget.TextClock;
 
 import com.example.google.whererunner.framework.RouteDataService;
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.LocationService;
 
 public class MainFragment extends WearableFragment implements RouteDataService.RouteDataUpdateListener {
     private static final String LOG_TAG = MainFragment.class.getSimpleName();
@@ -25,7 +26,9 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
     private static final int FRAGMENT_ROUTE = 0;
     private static final int FRAGMENT_DATA = 1;
     private static final int FRAGMENT_HEART = 2;
-    private static final int FRAGMENT_CONTROL = 3;
+
+    private static final int PAGER_ROWS = 1;
+    private static final int PAGER_COLS = 3;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -111,8 +114,14 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
     }
 
     private void toggleRecording() {
-        // TODO
-        mRecordButton.setImageResource(R.drawable.ic_stop);
+        switch (((MainActivity) getActivity()).toggleRecording()) {
+            case LocationService.LOCATION_UPDATES_STOPPED:
+                mRecordButton.setImageResource(R.drawable.ic_record);
+                break;
+            case LocationService.LOCATION_UPDATING:
+                mRecordButton.setImageResource(R.drawable.ic_stop);
+                break;
+        }
     }
 
     private void toggleActivityType() {
@@ -139,9 +148,6 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
                 case FRAGMENT_HEART:
                     fragment = new HeartFragment();
                     break;
-                case FRAGMENT_CONTROL:
-                    fragment = new ControlFragment();
-                    break;
             }
 
             return fragment;
@@ -149,13 +155,13 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
 
         @Override
         public int getRowCount() {
-            return 1;
+            return PAGER_ROWS;
         }
 
         @Override
         public int getColumnCount(int i)
         {
-            return 4;
+            return PAGER_COLS;
         }
     }
 
