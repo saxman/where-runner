@@ -11,7 +11,7 @@
         android:layout_width="35dp"
         android:layout_height="35dp"
         android:id="@+id/test"
-        android:src="@drawable/ic_record"/>
+        android:src="@drawable/ic_record_white"/>
 
     <ImageView
         android:layout_width="35dp"

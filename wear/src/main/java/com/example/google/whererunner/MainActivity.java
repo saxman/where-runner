@@ -17,6 +17,7 @@ import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -42,6 +43,8 @@ public class MainActivity extends WearableActivity implements
     private WearableActionDrawer mWearableActionDrawer;
     private WearableNavigationDrawer mWearableNavigationDrawer;
 
+    private Menu mMenu;
+
     private static final int DRAWER_PEEK_TIME_MS = 2500;
 
     private static final int NAV_DRAWER_ITEMS = 2;
@@ -64,6 +67,9 @@ public class MainActivity extends WearableActivity implements
 
         View peekView = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
         mWearableActionDrawer.setPeekContent(peekView);
+
+        mMenu = mWearableActionDrawer.getMenu();
+        mWearableActionDrawer.setOnMenuItemClickListener(this);
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
 
@@ -111,22 +117,12 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
-    }
-
-    @Override
     public void onStop() {
         if (mLocationServiceBound) {
             unbindService(mLocationServiceConnection);
         }
 
         super.onStop();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
     }
 
     @Override
@@ -143,7 +139,9 @@ public class MainActivity extends WearableActivity implements
         return true;
     }
 
+    //
     // WearableActivity methods
+    //
 
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
@@ -172,10 +170,35 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
-    public int toggleRecording() {
-        Log.d(LOG_TAG, "Toggling location recording");
-        return mLocationService.toggleLocationUpdates();
+    //
+    // Class methods
+    //
+
+    private void toggleRecording() {
+        if (mLocationService.isRecording()) {
+            mLocationService.stopRecording();
+        } else {
+            mLocationService.startRecording();
+        }
+
+        setRecordingActionButtonState();
     }
+
+    private void setRecordingActionButtonState() {
+        MenuItem menuItem = mMenu.getItem(0);
+
+        if (mLocationService.isRecording()) {
+            menuItem.setIcon(getDrawable(R.drawable.ic_stop));
+            menuItem.setTitle(getString(R.string.stop_recording));
+        } else {
+            menuItem.setIcon(getDrawable(R.drawable.ic_record));
+            menuItem.setTitle(getString(R.string.record));
+        }
+    }
+
+    //
+    // Inner classes
+    //
 
     private ServiceConnection mLocationServiceConnection = new ServiceConnection() {
         @Override
@@ -183,6 +206,9 @@ public class MainActivity extends WearableActivity implements
             LocationService.LocationServiceBinder binder = (LocationService.LocationServiceBinder) service;
             mLocationService = (LocationService) binder.getService();
             mLocationServiceBound = true;
+
+            // Set the initial state of the recording action button
+            setRecordingActionButtonState();
         }
 
         @Override
@@ -208,7 +234,7 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    return getDrawable(R.drawable.ic_running);
+                    return getDrawable(R.drawable.ic_running_white);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
             }

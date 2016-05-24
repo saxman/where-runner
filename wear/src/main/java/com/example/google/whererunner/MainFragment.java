@@ -76,22 +76,6 @@ public class MainFragment extends WearableFragment {
 //        }
     }
 
-//    private void toggleRecording() {
-//        switch (((MainActivity) getActivity()).toggleRecording()) {
-//            case LocationService.LOCATION_UPDATES_STOPPED:
-//                mRecordButton.setImageResource(R.drawable.ic_record);
-//                break;
-//            case LocationService.LOCATION_UPDATING:
-//                mRecordButton.setImageResource(R.drawable.ic_stop);
-//                break;
-//        }
-//    }
-//
-//    private void toggleActivityType() {
-//        // TODO
-//        mActivityTypeButton.setImageResource(R.drawable.ic_cycling);
-//    }
-
     private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
         public MyFragmentGridPagerAdapter(FragmentManager fm) {
             super(fm);

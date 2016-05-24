@@ -31,6 +31,8 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .build();
+
+        startLocationUpdates();
     }
 
     @Override
@@ -66,25 +68,12 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
             Log.d(LOG_TAG, "Starting fused location service");
 
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-            startForeground(NOTIFICATION_ID, mNotification);
             mIsLocationUpdating = true;
         }
     }
 
     protected void stopLocationUpdates() {
         LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        stopForeground(true);
         mIsLocationUpdating = false;
-    }
-
-    @Override
-    public int toggleLocationUpdates() {
-        if (mIsLocationUpdating) {
-            stopLocationUpdates();
-        } else {
-            startLocationUpdates();
-        }
-
-        return mIsLocationUpdating ? LOCATION_UPDATING : LOCATION_UPDATES_STOPPED;
     }
 }
