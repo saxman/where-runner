@@ -101,18 +101,6 @@ public class MainFragment extends WearableFragment implements RouteDataService.R
         }
     }
 
-    public void setHeartRate(float heartRate){
-        if(getCurrentViewPagerFragment() instanceof HeartFragment){
-            ((HeartFragment)getCurrentViewPagerFragment()).setHeartRate(heartRate);
-        }
-    }
-
-    public void disableHeartRate(){
-        if(getCurrentViewPagerFragment() instanceof HeartFragment){
-            ((HeartFragment)getCurrentViewPagerFragment()).disableHeartRate();
-        }
-    }
-
     private void toggleRecording() {
         switch (((MainActivity) getActivity()).toggleRecording()) {
             case LocationService.LOCATION_UPDATES_STOPPED:

@@ -22,9 +22,8 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
-public class MainActivity extends WearableActivity implements SensorEventListener,
+public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
@@ -42,11 +41,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     private LocationService mLocationService;
     boolean mServiceBound = false;
     private LocationChangedReceiver mLocationChangedReceiver;
-    private HeartRateChangedReceiver mHeartRateChangedReceiver;
-
-    private Intent mHeartRateService;
-    private SensorManager mSensorManager;
-    private Sensor mHeartRateMonitorSensor;
 
     private Fragment mCurrentViewPagerFragment;
 
@@ -66,10 +60,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         WearableNavigationDrawer navDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
         navDrawer.setAdapter(new MyWearableNavigationDrawerAdapter());
 
-        mHeartRateService = new Intent(this, HeartRateSensorService.class);
-        mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
-        mHeartRateMonitorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-
         mCurrentViewPagerFragment = new MainFragment();
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
@@ -88,6 +78,9 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     public void onStart () {
         super.onStart();
 
+        Log.v(LOG_TAG, "Starting heart rate service in onStart");
+        startService(new Intent(this, HeartRateSensorService.class));
+
         mGoogleApiClient.connect();
 
         Intent intent = new Intent(this, FusedLocationService.class);
@@ -102,10 +95,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         if (mLocationChangedReceiver != null) {
             unregisterReceiver(mLocationChangedReceiver);
         }
-        if (mHeartRateChangedReceiver != null) {
-            unregisterReceiver(mHeartRateChangedReceiver);
-        }
-        mSensorManager.unregisterListener(this);
     }
 
     @Override
@@ -116,7 +105,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             unbindService(mServiceConnection);
             mServiceBound = false;
         }
-        //stopService(mHeartRateService);
 
         super.onStop();
     }
@@ -128,22 +116,17 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         if (mLocationChangedReceiver == null) {
             mLocationChangedReceiver = new LocationChangedReceiver();
         }
+        /*
         if (mHeartRateChangedReceiver == null) {
             mHeartRateChangedReceiver = new HeartRateChangedReceiver(this);
         }
-
+        */
         IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
         registerReceiver(mLocationChangedReceiver, intentFilter);
 
         if (mLocationChangedReceiver == null) {
             mLocationChangedReceiver = new LocationChangedReceiver();
         }
-
-        IntentFilter heartRateIntentFilter = new IntentFilter();
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_START);
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_STOP);
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        registerReceiver(mHeartRateChangedReceiver, heartRateIntentFilter);
     }
 
     @Override
@@ -174,34 +157,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    public void onSensorChanged (final SensorEvent event) {
-        Log.v(LOG_TAG, "Heart Rate Values: " + Arrays.toString(event.values));
-        if (event.values.length > 0) {
-            if (mCurrentViewPagerFragment instanceof MainFragment) {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    public void run () {
-                        if (event.sensor != null) {
-                            ((MainFragment) mCurrentViewPagerFragment).setHeartRate(event.values[0]);
-                            DataManager.getInstance().saveDataPoint("heart_rate", event.values[0]+"");
-                        } else {
-                            ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
-                        }
-                    }
-                });
-            }
-        }
-        /*Intent intent = new Intent();
-        intent.setAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        intent.putExtra(HeartRateSensorService.HEART_RATE, event.values);
-        sendBroadcast(intent);*/
-    }
-
-    @Override
-    public void onAccuracyChanged (Sensor sensor, int accuracy) {
-        Log.v(LOG_TAG, "Heart Rate Accuracy " + accuracy);
-    }
-
-    @Override
     public void onConnected (Bundle bundle) {
         Log.d(LOG_TAG, "GoogleApiClient connected");
 
@@ -209,6 +164,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
         } else {
             getLastLocation();
+        }
+
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BODY_SENSORS}, REQUEST_SENSORS);
         }
     }
 
@@ -222,28 +181,10 @@ public class MainActivity extends WearableActivity implements SensorEventListene
                 }
             case REQUEST_SENSORS:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //startService(mHeartRateService);
-                    startHeartRateSensor();
-                    Log.v(LOG_TAG, "Sensor Permission Granted, starting heart rate service.");
+                    startService(new Intent(this, HeartRateSensorService.class));
+                    Log.v(LOG_TAG, "Sensor Permission Granted.");
                 }
         }
-    }
-
-    private void startHeartRateSensor () {
-        if (!mSensorManager.registerListener(this, mHeartRateMonitorSensor, SensorManager.SENSOR_DELAY_NORMAL)) {
-            if (mCurrentViewPagerFragment instanceof MainFragment) {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    public void run () {
-                        // TODO - there is a bug that disables the sensor manager on F.
-                        //((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
-                    }
-                });
-            }
-        }
-    }
-
-    private void stoptHeartRateSensor () {
-        mSensorManager.unregisterListener(this);
     }
 
     private void getLastLocation () {
@@ -291,34 +232,6 @@ public class MainActivity extends WearableActivity implements SensorEventListene
             mServiceBound = false;
         }
     };
-
-    private class HeartRateChangedReceiver extends BroadcastReceiver {
-
-        private Context mContext;
-
-        public HeartRateChangedReceiver (Context context) {
-            mContext = context;
-        }
-
-        @Override
-        public void onReceive (Context context, Intent intent) {
-            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(((Activity) mContext), new String[]{Manifest.permission.BODY_SENSORS}, REQUEST_SENSORS);
-            } else {
-                if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_START)) {
-                    //startService(mHeartRateService);
-                    startHeartRateSensor();
-                    Log.d(LOG_TAG, "Heart Rate Sensor Start Request");
-                } else if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_STOP)) {
-                    //stopService(mHeartRateService);
-                    stoptHeartRateSensor();
-                    Log.d(LOG_TAG, "Heart Rate Sensor Stop Request");
-                } else if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_CHANGED)) {
-                    Log.d(LOG_TAG, "Heart Rate Sensor Data In Activity" + intent.getFloatArrayExtra(HeartRateSensorService.HEART_RATE));
-                }
-            }
-        }
-    }
 
     private class LocationChangedReceiver extends BroadcastReceiver {
         @Override
