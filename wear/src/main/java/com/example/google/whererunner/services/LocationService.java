@@ -8,18 +8,17 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
-import com.example.google.whererunner.MainFragment;
 import com.example.google.whererunner.R;
 
 public abstract class LocationService extends Service {
 
     private static final String LOG_TAG = LocationService.class.getSimpleName();
-
 
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
     public final static String ACTION_STATUS_CHANGED = "STATUS_CHANGED";
@@ -27,8 +26,7 @@ public abstract class LocationService extends Service {
     public final static String EXTRA_LOCATION = "LOCATION";
     public final static String EXTRA_STATUS = "STATUS";
 
-    public final static int LOCATION_UPDATING = 1;
-    public final static int LOCATION_UPDATES_STOPPED = 0;
+    protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
 
     protected int NOTIFICATION_ID = 1;
     protected Notification mNotification;
@@ -38,8 +36,16 @@ public abstract class LocationService extends Service {
 
     protected boolean mIsLocationUpdating = false;
 
+    private boolean mIsRecording = false;
+
     public LocationService() {
         mBinder = new LocationServiceBinder(this);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        super.onStartCommand(intent, flags, startId);
+        return START_STICKY;
     }
 
     @Override
@@ -60,8 +66,6 @@ public abstract class LocationService extends Service {
                 .setContentIntent(contentIntent)
                 .setAutoCancel(true) // close the notification when the user triggers an action
                 .build();
-
-        // TODO add action to stop location recording
     }
 
     @Override
@@ -76,33 +80,24 @@ public abstract class LocationService extends Service {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(LOG_TAG, "Start command received");
-
-        if (!mIsLocationUpdating) {
-            startLocationUpdates();
-        } else {
-            // Notification is set to auto cancel. Otherwise, it remains open after the user
-            // opens the app via the notification. Re-starting service in foreground will
-            // re-display the notification.
-            Log.d(LOG_TAG, "Service already receiving location updates. Re-starting service in foreground");
-            startForeground(NOTIFICATION_ID, mNotification);
+    public boolean onUnbind(Intent intent) {
+        if (!mIsRecording) {
+            stopLocationUpdates();
+            stopSelf();
         }
 
-        return START_STICKY;
+        // Must allow re-binding, otherwise, no future calls to onUnbind, when activity re-started,
+        // and therefore location updates aren't stopped here.
+        return true;
     }
 
     public void onLocationChanged(Location location) {
-        Log.d(LOG_TAG, "Location update received: " + location.toString());
-
         Intent intent = new Intent()
                 .setAction(ACTION_LOCATION_CHANGED)
                 .putExtra(EXTRA_LOCATION, location);
 
         sendBroadcast(intent);
     }
-
-    public abstract int toggleLocationUpdates();
 
     protected abstract void startLocationUpdates();
     protected abstract void stopLocationUpdates();
@@ -115,5 +110,36 @@ public abstract class LocationService extends Service {
         }
 
         return true;
+    }
+
+    public class LocationServiceBinder extends Binder {
+        private Service mService;
+
+        public LocationServiceBinder(Service service) {
+            mService = service;
+        }
+
+        public Service getService() {
+            return mService;
+        }
+    }
+
+    // Service interface methods
+
+    public void startRecording() {
+        // Notification is set to auto cancel. Otherwise, it remains open after the user
+        // opens the app via the notification. Re-starting service in foreground will
+        // re-display the notification.
+        startForeground(NOTIFICATION_ID, mNotification);
+        mIsRecording = true;
+    }
+
+    public void stopRecording() {
+        stopForeground(true);
+        mIsRecording = false;
+    }
+
+    public boolean isRecording() {
+        return mIsRecording;
     }
 }

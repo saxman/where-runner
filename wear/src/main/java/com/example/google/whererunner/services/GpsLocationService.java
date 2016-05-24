@@ -16,6 +16,8 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
         super.onCreate();
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+        startLocationUpdates();
     }
 
     @Override
@@ -54,10 +56,8 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     @Override
     protected void startLocationUpdates() {
         if (checkPermission()) {
-            //noinspection ResourceType
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10f, this);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, 10f, this);
             mLocationManager.removeGpsStatusListener(this);
-            startForeground(NOTIFICATION_ID, mNotification);
             mIsLocationUpdating = true;
         }
     }
@@ -65,22 +65,9 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     @Override
     protected void stopLocationUpdates() {
         if (checkPermission()) {
-            //noinspection ResourceType
             mLocationManager.removeUpdates(this);
             mLocationManager.removeGpsStatusListener(this);
-            stopForeground(true);
             mIsLocationUpdating = false;
         }
-    }
-
-    @Override
-    public int toggleLocationUpdates() {
-        if (mIsLocationUpdating) {
-            stopLocationUpdates();
-        } else {
-            startLocationUpdates();
-        }
-
-        return mIsLocationUpdating ? LOCATION_UPDATING : LOCATION_UPDATES_STOPPED;
     }
 }

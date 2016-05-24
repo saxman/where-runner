@@ -1,13 +1,16 @@
 package com.example.google.whererunner.services;
 
+import android.Manifest;
 import android.app.Service;
 import android.content.Intent;
 
+import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -39,6 +42,7 @@ public class HeartRateSensorService extends Service {
     public void onCreate () {
         super.onCreate();
         Log.v(TAG, "OnCreate Heart Rate Monitor Service");
+
         // We just need to wire up the sensor manager one time; putting this in onStartCommand
         // would mean that we could end up with multiple listeners being created?
         mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);

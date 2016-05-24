@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:id="@+id/record_button"
+        android:icon="@drawable/ic_record"
+        android:title="@string/record" />
+
+    <item android:id="@+id/activity_type_button"
+        android:icon="@drawable/ic_running"
+        android:title="@string/activity_type" />
+</menu>
