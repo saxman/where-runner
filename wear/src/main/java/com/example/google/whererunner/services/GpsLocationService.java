@@ -55,7 +55,7 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     protected void startLocationUpdates() {
         if (checkPermission()) {
             //noinspection ResourceType
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000, 10f, this);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, 10f, this);
             mLocationManager.removeGpsStatusListener(this);
             startForeground(NOTIFICATION_ID, mNotification);
             mIsLocationUpdating = true;

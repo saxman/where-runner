@@ -22,8 +22,8 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
         super.onCreate();
 
         mLocationRequest = new LocationRequest()
-                .setInterval(1000)
-                .setFastestInterval(1000)
+                .setInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setFastestInterval(LOCATION_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -59,14 +59,15 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
     protected void startLocationUpdates() {
         if (!mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
-        } else {
-            if (checkPermission()) {
-                Log.d(LOG_TAG, "Starting fused location service");
+            return;
+        }
 
-                LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-                startForeground(NOTIFICATION_ID, mNotification);
-                mIsLocationUpdating = true;
-            }
+        if (checkPermission()) {
+            Log.d(LOG_TAG, "Starting fused location service");
+
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            startForeground(NOTIFICATION_ID, mNotification);
+            mIsLocationUpdating = true;
         }
     }
 

@@ -1,153 +1,152 @@
 package com.example.google.whererunner;
 
-import android.Manifest;
-import android.app.*;
-import android.content.*;
-import android.content.pm.PackageManager;
+import android.app.Fragment;
+import android.app.FragmentManager;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.drawable.Drawable;
-import android.hardware.*;
-import android.location.Location;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.wearable.activity.WearableActivity;
+import android.support.wearable.view.drawer.WearableActionDrawer;
+import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewTreeObserver;
 
-import com.example.google.whererunner.framework.*;
-import com.example.google.whererunner.services.*;
+import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.FusedLocationService;
+import com.example.google.whererunner.services.HeartRateSensorService;
+import com.example.google.whererunner.services.LocationService;
+
 import com.firebase.client.Firebase;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
-public class MainActivity extends WearableActivity implements SensorEventListener,
-        ActivityCompat.OnRequestPermissionsResultCallback,
-        GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class MainActivity extends WearableActivity implements
+        ActivityCompat.OnRequestPermissionsResultCallback, WearableActionDrawer.OnMenuItemClickListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private GoogleApiClient mGoogleApiClient;
-
-    private MyRouteDataService mRouteDataService = new MyRouteDataService();
-    private Location mInitialLocation;
-    private Location mLastLocation;
-    private double mDistance;
-    private double mDuration;
-    private ArrayList<Location> mPath = new ArrayList<>();
-
     private LocationService mLocationService;
-    boolean mServiceBound = false;
-    private LocationChangedReceiver mLocationChangedReceiver;
-    private HeartRateChangedReceiver mHeartRateChangedReceiver;
-
-    private Intent mHeartRateService;
-    private SensorManager mSensorManager;
-    private Sensor mHeartRateMonitorSensor;
+    boolean mLocationServiceBound = false;
 
     private Fragment mCurrentViewPagerFragment;
 
-    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
-    private static final int REQUEST_SENSORS = 2;
+    private WearableDrawerLayout mWearableDrawerLayout;
+    private WearableActionDrawer mWearableActionDrawer;
+    private WearableNavigationDrawer mWearableNavigationDrawer;
 
-    private static final int FRAGMENT_MAIN = 0;
-    private static final int FRAGMENT_SETTINGS = 1;
+    private static final int DRAWER_PEEK_TIME_MS = 2500;
+
+    private static final int NAV_DRAWER_ITEMS = 2;
+    private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
+    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 1;
 
     @Override
-    public void onCreate (Bundle savedState) {
+    public void onCreate(Bundle savedState) {
         super.onCreate(savedState);
         setContentView(R.layout.activity_main);
 
-        setAmbientEnabled();
-
-        WearableNavigationDrawer navDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
-        navDrawer.setAdapter(new MyWearableNavigationDrawerAdapter());
-
-        mHeartRateService = new Intent(this, HeartRateSensorService.class);
-        mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
-        mHeartRateMonitorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE);
-
-        mCurrentViewPagerFragment = new MainFragment();
         FragmentManager fragmentManager = getFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, new MainFragment()).commit();
 
-        if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
-                    .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .build();
-        }
+        mWearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
+        mWearableNavigationDrawer.setAdapter(new MyWearableNavigationDrawerAdapter());
+
+        mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
+        mWearableActionDrawer.setOnMenuItemClickListener(this);
+
+        View peekView = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
+        mWearableActionDrawer.setPeekContent(peekView);
+
+        mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
+
+        // Wait until the drawer layout has been laid out, then peek its drawers
+        mWearableDrawerLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mWearableDrawerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
+                mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+
+                // Hide the peeking drawers after a few seconds
+                new CountDownTimer(DRAWER_PEEK_TIME_MS, DRAWER_PEEK_TIME_MS) {
+                    public void onTick(long millisUntilFinished) {}
+
+                    public void onFinish() {
+                        if (mWearableDrawerLayout.isPeeking(Gravity.TOP)) {
+                            mWearableDrawerLayout.closeDrawer(Gravity.TOP);
+                        }
+
+                        if (mWearableDrawerLayout.isPeeking(Gravity.BOTTOM)) {
+                            mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
+                        }
+                    }
+                }.start();
+            }
+        });
+
         Firebase.setAndroidContext(this);
+
+        setAmbientEnabled();
     }
 
     @Override
-    public void onStart () {
+    public void onStart() {
         super.onStart();
-
-        mGoogleApiClient.connect();
 
         Intent intent = new Intent(this, FusedLocationService.class);
         startService(intent);
-        bindService(intent, mServiceConnection, Context.BIND_AUTO_CREATE);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+//        intent = new Intent(this, HeartRateSensorService.class);
+//        startService(intent);
     }
 
     @Override
-    public void onPause () {
+    public void onPause() {
         super.onPause();
-
-        if (mLocationChangedReceiver != null) {
-            unregisterReceiver(mLocationChangedReceiver);
-        }
-        if (mHeartRateChangedReceiver != null) {
-            unregisterReceiver(mHeartRateChangedReceiver);
-        }
-        mSensorManager.unregisterListener(this);
     }
 
     @Override
-    public void onStop () {
-        mGoogleApiClient.disconnect();
-
-        if (mServiceBound) {
-            unbindService(mServiceConnection);
-            mServiceBound = false;
+    public void onStop() {
+        if (mLocationServiceBound) {
+            unbindService(mLocationServiceConnection);
         }
-        //stopService(mHeartRateService);
 
         super.onStop();
     }
 
     @Override
-    public void onResume () {
+    public void onResume() {
         super.onResume();
-
-        if (mLocationChangedReceiver == null) {
-            mLocationChangedReceiver = new LocationChangedReceiver();
-        }
-        if (mHeartRateChangedReceiver == null) {
-            mHeartRateChangedReceiver = new HeartRateChangedReceiver(this);
-        }
-
-        IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
-        registerReceiver(mLocationChangedReceiver, intentFilter);
-
-        if (mLocationChangedReceiver == null) {
-            mLocationChangedReceiver = new LocationChangedReceiver();
-        }
-
-        IntentFilter heartRateIntentFilter = new IntentFilter();
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_START);
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_STOP);
-        heartRateIntentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        registerReceiver(mHeartRateChangedReceiver, heartRateIntentFilter);
     }
 
     @Override
-    public void onEnterAmbient (Bundle ambientDetails) {
+    public boolean onMenuItemClick(MenuItem menuItem) {
+        switch (menuItem.getItemId()) {
+            case R.id.record_button:
+                toggleRecording();
+                return true;
+            case R.id.activity_type_button:
+                // TODO
+                return true;
+        }
+
+        return true;
+    }
+
+    // WearableActivity methods
+
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
@@ -156,7 +155,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    public void onExitAmbient () {
+    public void onExitAmbient() {
         super.onExitAmbient();
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
@@ -165,7 +164,7 @@ public class MainActivity extends WearableActivity implements SensorEventListene
     }
 
     @Override
-    public void onUpdateAmbient () {
+    public void onUpdateAmbient() {
         super.onUpdateAmbient();
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
@@ -173,184 +172,32 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
     }
 
-    @Override
-    public void onSensorChanged (final SensorEvent event) {
-        Log.v(LOG_TAG, "Heart Rate Values: " + Arrays.toString(event.values));
-        if (event.values.length > 0) {
-            if (mCurrentViewPagerFragment instanceof MainFragment) {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    public void run () {
-                        if (event.sensor != null) {
-                            ((MainFragment) mCurrentViewPagerFragment).setHeartRate(event.values[0]);
-                            DataManager.getInstance().saveDataPoint("heart_rate", event.values[0]+"");
-                        } else {
-                            ((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
-                        }
-                    }
-                });
-            }
-        }
-        /*Intent intent = new Intent();
-        intent.setAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        intent.putExtra(HeartRateSensorService.HEART_RATE, event.values);
-        sendBroadcast(intent);*/
+    public int toggleRecording() {
+        Log.d(LOG_TAG, "Toggling location recording");
+        return mLocationService.toggleLocationUpdates();
     }
 
-    @Override
-    public void onAccuracyChanged (Sensor sensor, int accuracy) {
-        Log.v(LOG_TAG, "Heart Rate Accuracy " + accuracy);
-    }
-
-    @Override
-    public void onConnected (Bundle bundle) {
-        Log.d(LOG_TAG, "GoogleApiClient connected");
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
-        } else {
-            getLastLocation();
-        }
-    }
-
-    @Override
-    public void onRequestPermissionsResult (int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_ACCESS_FINE_LOCATION:
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getLastLocation();
-                }
-            case REQUEST_SENSORS:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //startService(mHeartRateService);
-                    startHeartRateSensor();
-                    Log.v(LOG_TAG, "Sensor Permission Granted, starting heart rate service.");
-                }
-        }
-    }
-
-    private void startHeartRateSensor () {
-        if (!mSensorManager.registerListener(this, mHeartRateMonitorSensor, SensorManager.SENSOR_DELAY_NORMAL)) {
-            if (mCurrentViewPagerFragment instanceof MainFragment) {
-                MainActivity.this.runOnUiThread(new Runnable() {
-                    public void run () {
-                        // TODO - there is a bug that disables the sensor manager on F.
-                        //((MainFragment) mCurrentViewPagerFragment).disableHeartRate();
-                    }
-                });
-            }
-        }
-    }
-
-    private void stoptHeartRateSensor () {
-        mSensorManager.unregisterListener(this);
-    }
-
-    private void getLastLocation () {
-        Log.d(LOG_TAG, "Retrieving last know location");
-
-        try {
-            Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-
-            if (location != null) {
-                Log.d(LOG_TAG, "Last known location: " + location.toString());
-                mInitialLocation = location;
-
-                if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
-                    ((RouteDataService.RouteDataUpdateListener) mCurrentViewPagerFragment).onRouteDataUpdated(mRouteDataService);
-                }
-
-            } else {
-                Log.w(LOG_TAG, "Unable to retrieve user's last known location");
-            }
-        } catch (SecurityException e) {
-            // noop since getLastLocation is only called directly after location access has been granted
-            Log.e(LOG_TAG, "Exception getting last location", e);
-        }
-    }
-
-    @Override
-    public void onConnectionSuspended (int i) {
-    }
-
-    @Override
-    public void onConnectionFailed (ConnectionResult connectionResult) {
-    }
-
-    private ServiceConnection mServiceConnection = new ServiceConnection() {
+    private ServiceConnection mLocationServiceConnection = new ServiceConnection() {
         @Override
-        public void onServiceConnected (ComponentName className, IBinder service) {
-            LocationServiceBinder binder = (LocationServiceBinder) service;
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            LocationService.LocationServiceBinder binder = (LocationService.LocationServiceBinder) service;
             mLocationService = (LocationService) binder.getService();
-            mServiceBound = true;
+            mLocationServiceBound = true;
         }
 
         @Override
-        public void onServiceDisconnected (ComponentName arg0) {
-            mServiceBound = false;
+        public void onServiceDisconnected(ComponentName arg0) {
+            mLocationServiceBound = false;
         }
     };
 
-    private class HeartRateChangedReceiver extends BroadcastReceiver {
-
-        private Context mContext;
-
-        public HeartRateChangedReceiver (Context context) {
-            mContext = context;
-        }
-
-        @Override
-        public void onReceive (Context context, Intent intent) {
-            if (ActivityCompat.checkSelfPermission(mContext, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(((Activity) mContext), new String[]{Manifest.permission.BODY_SENSORS}, REQUEST_SENSORS);
-            } else {
-                if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_START)) {
-                    //startService(mHeartRateService);
-                    startHeartRateSensor();
-                    Log.d(LOG_TAG, "Heart Rate Sensor Start Request");
-                } else if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_STOP)) {
-                    //stopService(mHeartRateService);
-                    stoptHeartRateSensor();
-                    Log.d(LOG_TAG, "Heart Rate Sensor Stop Request");
-                } else if (intent.getAction().equals(HeartRateSensorService.ACTION_HEART_RATE_CHANGED)) {
-                    Log.d(LOG_TAG, "Heart Rate Sensor Data In Activity" + intent.getFloatArrayExtra(HeartRateSensorService.HEART_RATE));
-                }
-            }
-        }
-    }
-
-    private class LocationChangedReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive (Context context, Intent intent) {
-            if (intent.getAction().equals(LocationService.ACTION_LOCATION_CHANGED)) {
-                Log.d(LOG_TAG, "Location received");
-
-                Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-
-                if (mLastLocation != null) {
-                    mDistance += mLastLocation.distanceTo(location);
-                    // TODO duration should be calculated in real time an not based on when location samples come in
-                    mDuration = mLastLocation.getTime() - mPath.get(0).getTime();
-                }
-
-                mPath.add(location);
-                mLastLocation = location;
-
-                if (mCurrentViewPagerFragment instanceof RouteDataService.RouteDataUpdateListener) {
-                    ((RouteDataService.RouteDataUpdateListener) mCurrentViewPagerFragment).onRouteDataUpdated(mRouteDataService);
-                }
-            }
-        }
-    }
-
     class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
         @Override
-        public String getItemText (int pos) {
+        public String getItemText(int pos) {
             switch (pos) {
-                case FRAGMENT_MAIN:
+                case NAV_DRAWER_FRAGMENT_MAIN:
                     return getString(R.string.recording);
-                case FRAGMENT_SETTINGS:
+                case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getString(R.string.settings);
             }
 
@@ -358,11 +205,11 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         @Override
-        public Drawable getItemDrawable (int pos) {
+        public Drawable getItemDrawable(int pos) {
             switch (pos) {
-                case FRAGMENT_MAIN:
+                case NAV_DRAWER_FRAGMENT_MAIN:
                     return getDrawable(R.drawable.ic_running);
-                case FRAGMENT_SETTINGS:
+                case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
             }
 
@@ -370,53 +217,29 @@ public class MainActivity extends WearableActivity implements SensorEventListene
         }
 
         @Override
-        public void onItemSelected (int pos) {
+        public void onItemSelected(int pos) {
             Fragment fragment = null;
 
             switch (pos) {
-                case FRAGMENT_MAIN:
+                case NAV_DRAWER_FRAGMENT_MAIN:
                     fragment = new MainFragment();
                     break;
-                case FRAGMENT_SETTINGS:
+                case NAV_DRAWER_FRAGMENT_SETTINGS:
                     fragment = new SettingsFragment();
                     break;
             }
 
             mCurrentViewPagerFragment = fragment;
-            FragmentManager fragmentManager = getFragmentManager();
-            fragmentManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+
+            getFragmentManager()
+                    .beginTransaction()
+                    .replace(R.id.content_frame, fragment)
+                    .commit();
         }
 
         @Override
-        public int getCount () {
-            return 2;
-        }
-    }
-
-    public int toggleRecording () {
-        Log.d(LOG_TAG, "Toggling location recording");
-        return mLocationService.toggleLocationUpdates();
-    }
-
-    private class MyRouteDataService implements RouteDataService {
-        @Override
-        public Location getInitialLocation () {
-            return mInitialLocation;
-        }
-
-        @Override
-        public double getDistance () {
-            return mDistance;
-        }
-
-        @Override
-        public double getDuration () {
-            return mDuration;
-        }
-
-        @Override
-        public ArrayList<Location> getRoute () {
-            return mPath;
+        public int getCount() {
+            return NAV_DRAWER_ITEMS;
         }
     }
 }

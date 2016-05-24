@@ -8,6 +8,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
@@ -20,7 +21,6 @@ public abstract class LocationService extends Service {
 
     private static final String LOG_TAG = LocationService.class.getSimpleName();
 
-
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
     public final static String ACTION_STATUS_CHANGED = "STATUS_CHANGED";
 
@@ -29,6 +29,8 @@ public abstract class LocationService extends Service {
 
     public final static int LOCATION_UPDATING = 1;
     public final static int LOCATION_UPDATES_STOPPED = 0;
+
+    protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
 
     protected int NOTIFICATION_ID = 1;
     protected Notification mNotification;
@@ -115,5 +117,17 @@ public abstract class LocationService extends Service {
         }
 
         return true;
+    }
+
+    public class LocationServiceBinder extends Binder {
+        private Service mService;
+
+        public LocationServiceBinder(Service service) {
+            mService = service;
+        }
+
+        public Service getService() {
+            return mService;
+        }
     }
 }

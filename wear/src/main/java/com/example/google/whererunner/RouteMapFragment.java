@@ -1,15 +1,25 @@
 package com.example.google.whererunner;
 
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.example.google.whererunner.framework.RouteDataService;
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.LocationService;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -22,9 +32,9 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 
-public class RouteMapFragment extends WearableFragment
-        implements OnMapReadyCallback, RouteDataService.RouteDataUpdateListener {
+public class RouteMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks {
 
     private static final String LOG_TAG = RouteMapFragment.class.getSimpleName();
 
@@ -38,10 +48,15 @@ public class RouteMapFragment extends WearableFragment
 
     private int mNextRouteLocationIndex = 0;
 
-    private LatLng mLastLocation = null;
-    private RouteDataService mRouteDataService;
+    private GoogleApiClient mGoogleApiClient;
 
-    private static final String PARAM_LAST_LOCATION = "lastLocation";
+    private Location mLastLocation = null;
+
+    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
+
+    private BroadcastReceiver mLocationChangedReceiver;
+
+    private List<Location> mPathLocations = new ArrayList<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -51,13 +66,41 @@ public class RouteMapFragment extends WearableFragment
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
+        if (mGoogleApiClient == null) {
+            mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                    .addApi(LocationServices.API)
+                    .addConnectionCallbacks(this)
+                    .build();
+        }
+
         return view;
     }
 
     @Override
+    public void onStart() {
+        super.onStart();
+        mGoogleApiClient.connect();
+    }
+
+    @Override
     public void onResume() {
-        mMapView.onResume();
         super.onResume();
+
+        mMapView.onResume();
+
+        if (mLocationChangedReceiver == null) {
+            mLocationChangedReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                    mPathLocations.add(location);
+                    updateUI();
+                }
+            };
+        }
+
+        IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
+        getActivity().registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
     @Override
@@ -79,11 +122,34 @@ public class RouteMapFragment extends WearableFragment
     }
 
     @Override
+    public void onStop() {
+        mGoogleApiClient.disconnect();
+        getActivity().unregisterReceiver(mLocationChangedReceiver);
+        super.onStop();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        Log.d(LOG_TAG, "Location permission granted"); //xxx
+        switch (requestCode) {
+            case REQUEST_ACCESS_FINE_LOCATION:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    getLastLocation();
+                }
+                break;
+        }
+    }
+
+    // OnMapReadyCallback method
+
+    @Override
     public void onMapReady(GoogleMap googleMap) {
         Log.d(LOG_TAG, "Map ready");
         mGoogleMap = googleMap;
         updateUI();
     }
+
+    // WearableFragment methods
 
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
@@ -102,39 +168,32 @@ public class RouteMapFragment extends WearableFragment
         updateUI();
     }
 
-    @Override
-    public void onRouteDataUpdated(RouteDataService routeDataService) {
-        mRouteDataService = routeDataService;
+    // GoogleApiClient methods
 
-        if (!isAmbient()) {
-            updateUI();
-        }
+    @Override
+    public void onConnected(@Nullable Bundle bundle) {
+        getLastLocation();
     }
 
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    // Class methods
+
     private void updateUI() {
-        // Map not ready yet. Once it is, updateuI() will be called again
+        // Map not ready yet. Once it is, updateUi() will be called again
         if (mGoogleMap == null) {
             Log.d(LOG_TAG, "Deferring map UI update. Map not ready");
             return;
         }
 
-        // No route data yet...
-        if (mRouteDataService == null) {
-            Log.d(LOG_TAG, "Deferring map UI update. No route data");
-            return;
-        }
+        List<Location> route = mPathLocations; // TODO XXX
 
-        ArrayList<Location> route = mRouteDataService.getRoute();
-
-        // Nothing route to display yet
-        if (route.size() == 0) {
-            // If we have last known location, center map there instead of the user's current location
-            Location loc = mRouteDataService.getInitialLocation();
-            if (loc != null) {
-                mLastLocation = new LatLng(loc.getLatitude(), loc.getLongitude());
-                setMapCenter(mLastLocation);
-            }
-
+        if (route.size() == 0 && mLastLocation != null) {
+            LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            setMapCenter(latLng);
             return;
         }
 
@@ -176,5 +235,24 @@ public class RouteMapFragment extends WearableFragment
 
     private void setMapCenter(LatLng latLng) {
         mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+    }
+
+    private void getLastLocation() {
+        Log.d(LOG_TAG, "Retrieving last know location");
+
+        if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
+            return;
+        }
+
+        Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+
+        if (location != null) {
+            Log.d(LOG_TAG, "Last known location: " + location.toString());
+            mLastLocation = location;
+            updateUI();
+        } else {
+            Log.w(LOG_TAG, "Unable to retrieve user's last known location");
+        }
     }
 }
