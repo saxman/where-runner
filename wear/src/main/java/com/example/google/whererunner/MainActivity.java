@@ -131,6 +131,7 @@ public class MainActivity extends WearableActivity implements
         switch (menuItem.getItemId()) {
             case R.id.record_button:
                 toggleRecording();
+                mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
                 return true;
             case R.id.activity_type_button:
                 // TODO

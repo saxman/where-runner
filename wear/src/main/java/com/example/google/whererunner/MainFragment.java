@@ -9,6 +9,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
+import android.widget.TextClock;
 
 import com.example.google.whererunner.framework.WearableFragment;
 
@@ -17,6 +18,8 @@ public class MainFragment extends WearableFragment {
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
+
+    private TextClock mTextClock;
 
     private static final int FRAGMENT_ROUTE = 0;
     private static final int FRAGMENT_DATA = 1;
@@ -33,12 +36,17 @@ public class MainFragment extends WearableFragment {
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
         mViewPager.setAdapter(mViewPagerAdapter);
 
+        mTextClock = (TextClock) view.findViewById(R.id.time);
+
         return view;
     }
 
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
+
+        mTextClock.setFormat12Hour("h:mm");
+        mTextClock.setFormat24Hour("H:mm");
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -49,6 +57,9 @@ public class MainFragment extends WearableFragment {
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
+
+        mTextClock.setFormat12Hour("h:mm:ss");
+        mTextClock.setFormat24Hour("H:mm:ss");
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {

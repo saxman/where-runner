@@ -55,7 +55,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     private BroadcastReceiver mLocationChangedReceiver;
 
     private List<Location> mPathLocations = new ArrayList<>();
-    private LinkedList<LatLng> mPathCoords;
+    private LinkedList<LatLng> mPathPolylineLatLngs = new LinkedList<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -151,6 +151,14 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
+
+        mMapMarker = mGoogleMap.addMarker(new MarkerOptions().visible(false).position(new LatLng(0, 0)));
+
+        mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
+                .width(5)
+                .color(Color.RED)
+                .visible(false));
+
         updateUI();
     }
 
@@ -214,45 +222,43 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             // If we haven't displayed the user's current location yet, create the marker.
             // Otherwise, move the pre-existing marker
             LatLng lastLatLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            if (mMapMarker == null) {
-                mMapMarker = mGoogleMap.addMarker(new MarkerOptions().position(lastLatLng));
+            mMapMarker.setPosition(lastLatLng);
+
+            // If we haven't displayed the marker yet (i.e. we didn't have precise location
+            // previously, move the map to it's proper place and display the marker
+            if (!mMapMarker.isVisible()) {
+                mMapMarker.setVisible(true);
                 mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             } else {
-                mMapMarker.setPosition(lastLatLng);
                 mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             }
         }
 
-        // If we're recording and we have path data, render it
-        if (mIsRecording && mPathLocations.size() > 0) {
-            // If we haven't rendered the path polyline yet, create the polyline and re-create
-            // the collection for it's coordinates
-            // TODO move to onmapready
-            if (mPolyline == null) {
-                mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
-                        .width(5)
-                        .color(Color.RED));
-
-                mPathCoords = new LinkedList<>();
+        // If we're recording and we have new path data, update the path polyline
+        if (mIsRecording && mPathLocations.size() > mPathPolylineLatLngs.size()) {
+            // Add the new location samples from the location service to the polyline
+            for (int i = mPathPolylineLatLngs.size(); i < mPathLocations.size(); i++) {
+                Location location = mPathLocations.get(i);
+                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+                mPathPolylineLatLngs.add(latLng);
             }
 
-            // Update the polyline if we have new location samples
-            if (mPathLocations.size() > mPathCoords.size()) {
-                // Add the new location samples from mPathLocations to the polyline
-                for (int i = mPathCoords.size(); i < mPathLocations.size(); i++) {
-                    Location location = mPathLocations.get(i);
-                    LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    mPathCoords.add(latLng);
-                }
+            mPolyline.setPoints(mPathPolylineLatLngs);
 
-                mPolyline.setPoints(mPathCoords);
+            // If we haven't
+            if (!mPolyline.isVisible()) {
+                mPolyline.setVisible(true);
             }
         }
 
-        // If we're no longer recording, ensure the path polyline has been removed
-        if (!mIsRecording && mPolyline != null) {
-            mPolyline.remove();
-            mPolyline = null;
+        // If we're no longer recording, hide the path polyline and clear out its path data
+        if (!mIsRecording && mPolyline.isVisible()) {
+            mPolyline.setVisible(false);
+            mPathPolylineLatLngs.clear();
+            mPolyline.setPoints(mPathPolylineLatLngs);
+
+            // TODO better to place this where this class receives the end recording signal
+            mPathLocations.clear();
         }
     }
 
