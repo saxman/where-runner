@@ -235,7 +235,7 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    return getDrawable(R.drawable.ic_running);
+                    return getDrawable(R.drawable.ic_running_white);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
             }
