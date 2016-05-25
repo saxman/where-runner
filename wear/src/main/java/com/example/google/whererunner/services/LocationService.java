@@ -65,7 +65,6 @@ public abstract class LocationService extends Service {
 //                .setContentTitle(getText(R.string.local_service_label))  // the label of the entry
                 .setContentText(contentText)
                 .setContentIntent(contentIntent)
-                .setAutoCancel(true) // close the notification when the user triggers an action
                 .build();
     }
 
@@ -95,7 +94,6 @@ public abstract class LocationService extends Service {
     public void onLocationChanged(Location location) {
         Intent intent = new Intent()
                 .setAction(ACTION_LOCATION_CHANGED)
-                .putExtra(EXTRA_IS_RECORDING, mIsRecording)
                 .putExtra(EXTRA_LOCATION, location);
 
         sendBroadcast(intent);
@@ -129,16 +127,25 @@ public abstract class LocationService extends Service {
     // Service interface methods
 
     public void startRecording() {
-        // Notification is set to auto cancel. Otherwise, it remains open after the user
-        // opens the app via the notification. Re-starting service in foreground will
-        // re-display the notification.
         startForeground(NOTIFICATION_ID, mNotification);
         mIsRecording = true;
+
+        Intent intent = new Intent()
+                .setAction(ACTION_STATUS_CHANGED)
+                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
+
+        sendBroadcast(intent);
     }
 
     public void stopRecording() {
         stopForeground(true);
         mIsRecording = false;
+
+        Intent intent = new Intent()
+                .setAction(ACTION_STATUS_CHANGED)
+                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
+
+        sendBroadcast(intent);
     }
 
     public boolean isRecording() {

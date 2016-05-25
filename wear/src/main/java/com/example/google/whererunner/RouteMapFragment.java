@@ -6,7 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -24,6 +27,8 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -91,20 +96,40 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             mLocationChangedReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                    String action = intent.getAction();
+                    if (action.equals(LocationService.ACTION_LOCATION_CHANGED)) {
+                        Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                    if (mIsRecording) {
-                        mPathLocations.add(location);
+                        if (mIsRecording) {
+                            mPathLocations.add(location);
+                        }
+
+                        mLastLocation = location;
+                    } else if (action.equals(LocationService.ACTION_STATUS_CHANGED)) {
+                        mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+
+                        // TODO clean up updateUI and find a better place for this code
+                        if (mIsRecording) {
+                            BitmapDescriptor bd = loadDrawable(R.drawable.marker_red);
+                            mMapMarker.setIcon(bd);
+                        } else {
+                            BitmapDescriptor bd = loadDrawable(R.drawable.marker_blue);
+                            mMapMarker.setIcon(bd);
+
+                            // Clear out prior location samples
+                            mPathLocations.clear();
+                        }
                     }
 
-                    mLastLocation = location;
                     updateUI();
                 }
             };
         }
 
         IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
+        getActivity().registerReceiver(mLocationChangedReceiver, intentFilter);
+
+        intentFilter = new IntentFilter(LocationService.ACTION_STATUS_CHANGED);
         getActivity().registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
@@ -152,7 +177,15 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
-        mMapMarker = mGoogleMap.addMarker(new MarkerOptions().visible(false).position(new LatLng(0, 0)));
+        // TODO load marker bitmaps beforehand and re-use descriptors and recording state changes
+//        BitmapDescriptor bd = BitmapDescriptorFactory.fromResource(R.drawable.marker_blue);
+        BitmapDescriptor bd = loadDrawable(R.drawable.marker_blue);
+
+        mMapMarker = mGoogleMap.addMarker(
+                new MarkerOptions()
+                        .visible(false)
+                        .position(new LatLng(0, 0))
+                        .icon(bd));
 
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
@@ -256,9 +289,6 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             mPolyline.setVisible(false);
             mPathPolylineLatLngs.clear();
             mPolyline.setPoints(mPathPolylineLatLngs);
-
-            // TODO better to place this where this class receives the end recording signal
-            mPathLocations.clear();
         }
     }
 
@@ -277,5 +307,16 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         } else {
             Log.w(LOG_TAG, "Unable to retrieve user's last known location");
         }
+    }
+
+    private BitmapDescriptor loadDrawable(int id) {
+        Drawable circle = getResources().getDrawable(id, null);
+        Canvas canvas = new Canvas();
+        Bitmap bitmap = Bitmap.createBitmap(circle.getIntrinsicWidth(), circle.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(bitmap);
+        circle.setBounds(0, 0, circle.getIntrinsicWidth(), circle.getIntrinsicHeight());
+        circle.draw(canvas);
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }
