@@ -111,9 +111,6 @@ public class MainActivity extends WearableActivity implements
         Intent intent = new Intent(this, FusedLocationService.class);
 //        startService(intent);
         bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-
-//        intent = new Intent(this, HeartRateSensorService.class);
-//        startService(intent);
     }
 
     @Override
@@ -121,6 +118,10 @@ public class MainActivity extends WearableActivity implements
         if (mLocationServiceBound) {
             unbindService(mLocationServiceConnection);
         }
+
+        // TODO: Implement better HRM service management!
+        // HR service is started in HeartFragment; stopped here to kill when activity stops
+        stopService(new Intent(this, HeartRateSensorService.class));
 
         super.onStop();
     }

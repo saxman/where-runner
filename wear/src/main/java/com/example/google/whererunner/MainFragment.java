@@ -64,18 +64,6 @@ public class MainFragment extends WearableFragment {
         }
     }
 
-    public void setHeartRate(float heartRate){
-//        if(getCurrentViewPagerFragment() instanceof HeartFragment){
-//            ((HeartFragment)getCurrentViewPagerFragment()).setHeartRate(heartRate);
-//        }
-    }
-
-    public void disableHeartRate(){
-//        if(getCurrentViewPagerFragment() instanceof HeartFragment){
-//            ((HeartFragment)getCurrentViewPagerFragment()).disableHeartRate();
-//        }
-    }
-
     private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
         public MyFragmentGridPagerAdapter(FragmentManager fm) {
             super(fm);
