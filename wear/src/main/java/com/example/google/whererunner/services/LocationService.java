@@ -24,6 +24,7 @@ public abstract class LocationService extends Service {
     public final static String ACTION_STATUS_CHANGED = "STATUS_CHANGED";
 
     public final static String EXTRA_LOCATION = "LOCATION";
+    public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
     public final static String EXTRA_STATUS = "STATUS";
 
     protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
@@ -94,6 +95,7 @@ public abstract class LocationService extends Service {
     public void onLocationChanged(Location location) {
         Intent intent = new Intent()
                 .setAction(ACTION_LOCATION_CHANGED)
+                .putExtra(EXTRA_IS_RECORDING, mIsRecording)
                 .putExtra(EXTRA_LOCATION, location);
 
         sendBroadcast(intent);

@@ -109,7 +109,7 @@ public class MainActivity extends WearableActivity implements
         super.onStart();
 
         Intent intent = new Intent(this, FusedLocationService.class);
-        startService(intent);
+//        startService(intent);
         bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
 
 //        intent = new Intent(this, HeartRateSensorService.class);
@@ -234,7 +234,7 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    return getDrawable(R.drawable.ic_running_white);
+                    return getDrawable(R.drawable.ic_running);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
             }
