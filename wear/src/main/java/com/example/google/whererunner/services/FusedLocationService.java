@@ -65,8 +65,6 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
         }
 
         if (checkPermission()) {
-            Log.d(LOG_TAG, "Starting fused location service");
-
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
             mIsLocationUpdating = true;
         }

@@ -109,8 +109,8 @@ public class MainActivity extends WearableActivity implements
         super.onStart();
 
         Intent intent = new Intent(this, FusedLocationService.class);
-//        startService(intent);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+        startService(intent);
+        bindService(intent, mLocationServiceConnection, 0);
     }
 
     @Override

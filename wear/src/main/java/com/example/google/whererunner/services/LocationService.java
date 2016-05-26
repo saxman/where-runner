@@ -11,6 +11,7 @@ import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
@@ -45,6 +46,7 @@ public abstract class LocationService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.d(LOG_TAG, "onStartCommand");
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
@@ -86,31 +88,78 @@ public abstract class LocationService extends Service {
             stopSelf();
         }
 
-        // Must allow re-binding, otherwise, no future calls to onUnbind, when activity re-started,
-        // and therefore location updates aren't stopped here.
+        // Must allow re-binding, otherwise there are no future calls to onUnbind when the parent,
+        // binding activity is re-started, which means that location updates aren't later stopped
+        // here when the re-stated activity is again stopped.
         return true;
     }
 
+    /**
+     * Callback method that sends location change events to ACTION_LOCATION_CHANGED local broadcast
+     * receivers. This method is automatically called by subclasses of this class that implement
+     * either com.google.android.gms.location.LocationListener or android.location.LocationListener
+     * and that register themselves as listeners via FusedLocationApi.requestLocationUpdates(...)
+     * or LocationManager.requestLocationUpdates(...).
+     *
+     * @param location The new location, as a Location object.
+     */
     public void onLocationChanged(Location location) {
         Intent intent = new Intent()
                 .setAction(ACTION_LOCATION_CHANGED)
                 .putExtra(EXTRA_LOCATION, location);
 
-        sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
+
+    //
+    // Service interface methods (protected, to be implemented or used by subclasses)
+    //
 
     protected abstract void startLocationUpdates();
     protected abstract void stopLocationUpdates();
 
     protected boolean checkPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            Log.d(LOG_TAG, "Location permission not granted");
             // TODO (re)ask the user for permission
             return false;
         }
 
         return true;
     }
+
+    //
+    // Service interface methods (public, for objects binding this service)
+    //
+
+    public void startRecording() {
+        startForeground(NOTIFICATION_ID, mNotification);
+        mIsRecording = true;
+
+        Intent intent = new Intent()
+                .setAction(ACTION_STATUS_CHANGED)
+                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    public void stopRecording() {
+        stopForeground(true);
+        mIsRecording = false;
+
+        Intent intent = new Intent()
+                .setAction(ACTION_STATUS_CHANGED)
+                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    public boolean isRecording() {
+        return mIsRecording;
+    }
+
+    //
+    // Nested classes (public)
+    //
 
     public class LocationServiceBinder extends Binder {
         private Service mService;
@@ -122,33 +171,5 @@ public abstract class LocationService extends Service {
         public Service getService() {
             return mService;
         }
-    }
-
-    // Service interface methods
-
-    public void startRecording() {
-        startForeground(NOTIFICATION_ID, mNotification);
-        mIsRecording = true;
-
-        Intent intent = new Intent()
-                .setAction(ACTION_STATUS_CHANGED)
-                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
-
-        sendBroadcast(intent);
-    }
-
-    public void stopRecording() {
-        stopForeground(true);
-        mIsRecording = false;
-
-        Intent intent = new Intent()
-                .setAction(ACTION_STATUS_CHANGED)
-                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
-
-        sendBroadcast(intent);
-    }
-
-    public boolean isRecording() {
-        return mIsRecording;
     }
 }

@@ -14,6 +14,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -97,6 +98,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     String action = intent.getAction();
+
                     if (action.equals(LocationService.ACTION_LOCATION_CHANGED)) {
                         Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
@@ -127,10 +129,8 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         }
 
         IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
-        getActivity().registerReceiver(mLocationChangedReceiver, intentFilter);
-
-        intentFilter = new IntentFilter(LocationService.ACTION_STATUS_CHANGED);
-        getActivity().registerReceiver(mLocationChangedReceiver, intentFilter);
+        intentFilter.addAction(LocationService.ACTION_STATUS_CHANGED);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
     @Override
@@ -154,7 +154,8 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     @Override
     public void onStop() {
         mGoogleApiClient.disconnect();
-        getActivity().unregisterReceiver(mLocationChangedReceiver);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
+
         super.onStop();
     }
 
