@@ -47,6 +47,7 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
 
     @Override
     public void onConnectionFailed(ConnectionResult arg0) {
+        // TODO
     }
 
     @Override
@@ -56,6 +57,7 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
 
     @Override
     public void onConnectionSuspended(int i) {
+        // TODO
     }
 
     protected void startLocationUpdates() {
@@ -71,7 +73,9 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
     }
 
     protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        mIsLocationUpdating = false;
+        if (mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+            mIsLocationUpdating = false;
+        }
     }
 }

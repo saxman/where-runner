@@ -5,10 +5,12 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -22,11 +24,17 @@ public abstract class LocationService extends Service {
     private static final String LOG_TAG = LocationService.class.getSimpleName();
 
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
-    public final static String ACTION_STATUS_CHANGED = "STATUS_CHANGED";
+    public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS_CHANGED";
+
+    public final static String ACTION_REPORT_RECORDING_STATUS = "REPORT_RECORDING_STATUS";
+    public final static String ACTION_RECORDING_STATUS = "RECORDING_STATUS";
+
+    public final static String ACTION_STOP_LOCATION_UPDATES = "STOP_LOCATION_UPDATES";
+    public final static String ACTION_START_RECORDING = "START_RECORDING";
+    public final static String ACTION_STOP_RECORDING = "STOP_RECORDING";
 
     public final static String EXTRA_LOCATION = "LOCATION";
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
-    public final static String EXTRA_STATUS = "STATUS";
 
     protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
 
@@ -34,28 +42,23 @@ public abstract class LocationService extends Service {
     protected Notification mNotification;
     private NotificationManager mNotificationManager;
 
-    private LocationServiceBinder mBinder;
-
     protected boolean mIsLocationUpdating = false;
-
     private boolean mIsRecording = false;
 
-    public LocationService() {
-        mBinder = new LocationServiceBinder(this);
-    }
+    private BroadcastReceiver mBroadcastReceiver;
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.d(LOG_TAG, "onStartCommand");
-        super.onStartCommand(intent, flags, startId);
-        return START_STICKY;
+    public int onStartCommand(Intent startIntent, int flags, int startId) {
+        startLocationUpdates();
+
+        return START_NOT_STICKY;
     }
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        mNotificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
         CharSequence contentText = getString(R.string.notification_content_text);
         PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
@@ -68,31 +71,58 @@ public abstract class LocationService extends Service {
                 .setContentText(contentText)
                 .setContentIntent(contentIntent)
                 .build();
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_STOP_LOCATION_UPDATES);
+        intentFilter.addAction(ACTION_START_RECORDING);
+        intentFilter.addAction(ACTION_STOP_RECORDING);
+        intentFilter.addAction(ACTION_REPORT_RECORDING_STATUS);
+
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case ACTION_STOP_LOCATION_UPDATES:
+                        if (!mIsRecording) {
+                            stopLocationUpdates();
+                            stopSelf();
+                        }
+                        break;
+                    case ACTION_START_RECORDING:
+                        startRecording();
+                        break;
+                    case ACTION_STOP_RECORDING:
+                        stopRecording();
+                        break;
+                    case ACTION_REPORT_RECORDING_STATUS:
+                        Intent intentOut = new Intent()
+                                .setAction(ACTION_RECORDING_STATUS)
+                                .putExtra(EXTRA_IS_RECORDING, mIsRecording);
+
+                        LocalBroadcastManager.getInstance(LocationService.this).sendBroadcast(intentOut);
+                }
+
+            }
+        };
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
         super.onDestroy();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        return mBinder;
+        throw new IllegalAccessError("Don't bind me, bro!");
     }
 
-    @Override
-    public boolean onUnbind(Intent intent) {
-        if (!mIsRecording) {
-            stopLocationUpdates();
-            stopSelf();
-        }
-
-        // Must allow re-binding, otherwise there are no future calls to onUnbind when the parent,
-        // binding activity is re-started, which means that location updates aren't later stopped
-        // here when the re-stated activity is again stopped.
-        return true;
-    }
+    //
+    // Public service interface methods
+    //
 
     /**
      * Callback method that sends location change events to ACTION_LOCATION_CHANGED local broadcast
@@ -112,7 +142,7 @@ public abstract class LocationService extends Service {
     }
 
     //
-    // Service interface methods (protected, to be implemented or used by subclasses)
+    // Protected service interface methods (to be implemented or used by subclasses)
     //
 
     protected abstract void startLocationUpdates();
@@ -128,48 +158,28 @@ public abstract class LocationService extends Service {
     }
 
     //
-    // Service interface methods (public, for objects binding this service)
+    // Private methods
     //
 
-    public void startRecording() {
+    private void startRecording() {
         startForeground(NOTIFICATION_ID, mNotification);
         mIsRecording = true;
 
         Intent intent = new Intent()
-                .setAction(ACTION_STATUS_CHANGED)
+                .setAction(ACTION_RECORDING_STATUS_CHANGED)
                 .putExtra(EXTRA_IS_RECORDING, mIsRecording);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
-    public void stopRecording() {
+    private void stopRecording() {
         stopForeground(true);
         mIsRecording = false;
 
         Intent intent = new Intent()
-                .setAction(ACTION_STATUS_CHANGED)
+                .setAction(ACTION_RECORDING_STATUS_CHANGED)
                 .putExtra(EXTRA_IS_RECORDING, mIsRecording);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
-    public boolean isRecording() {
-        return mIsRecording;
-    }
-
-    //
-    // Nested classes (public)
-    //
-
-    public class LocationServiceBinder extends Binder {
-        private Service mService;
-
-        public LocationServiceBinder(Service service) {
-            mService = service;
-        }
-
-        public Service getService() {
-            return mService;
-        }
     }
 }

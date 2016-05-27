@@ -8,6 +8,9 @@ import android.os.Bundle;
 
 public class GpsLocationService extends LocationService implements GpsStatus.Listener, LocationListener {
 
+    public final static String ACTION_GPS_STATUS_CHANGED = "GPS_STATUS_CHANGED";
+    public final static String EXTRA_GPS_STATUS = "GPS_STATUS";
+
     private GpsStatus mGpsStatus;
     private LocationManager mLocationManager;
 
@@ -36,9 +39,9 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
         mGpsStatus = mLocationManager.getGpsStatus(mGpsStatus);
 
         Intent intent = new Intent();
-        intent.setAction(ACTION_STATUS_CHANGED);
+        intent.setAction(ACTION_GPS_STATUS_CHANGED);
 
-        intent.putExtra(EXTRA_STATUS, i);
+        intent.putExtra(EXTRA_GPS_STATUS, i);
     }
 
     @Override

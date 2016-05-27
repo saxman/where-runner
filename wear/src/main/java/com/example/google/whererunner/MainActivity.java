@@ -2,20 +2,19 @@ package com.example.google.whererunner;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
-import android.content.ComponentName;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.ServiceConnection;
+import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
-import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,15 +26,10 @@ import com.example.google.whererunner.services.FusedLocationService;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
 
-import com.firebase.client.Firebase;
-
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback, WearableActionDrawer.OnMenuItemClickListener {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
-
-    private LocationService mLocationService;
-    boolean mLocationServiceBound = false;
 
     private Fragment mCurrentViewPagerFragment;
 
@@ -44,6 +38,10 @@ public class MainActivity extends WearableActivity implements
     private WearableNavigationDrawer mWearableNavigationDrawer;
 
     private Menu mMenu;
+
+    private BroadcastReceiver mRecodringBroadcastRecevier;
+
+    private boolean mIsRecording = false;
 
     private static final int DRAWER_PEEK_TIME_MS = 2500;
 
@@ -99,8 +97,6 @@ public class MainActivity extends WearableActivity implements
             }
         });
 
-        Firebase.setAndroidContext(this);
-
         setAmbientEnabled();
     }
 
@@ -108,16 +104,44 @@ public class MainActivity extends WearableActivity implements
     public void onStart() {
         super.onStart();
 
+        // Start the location service so that child fragments can receive location and recording
+        // status updates via local broadcasts.
         Intent intent = new Intent(this, FusedLocationService.class);
         startService(intent);
-        bindService(intent, mLocationServiceConnection, 0);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        // Register a receiver to listen for the recording status of the location service.
+        if (mRecodringBroadcastRecevier == null) {
+            mRecodringBroadcastRecevier = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+                    setRecordingActionButtonState();
+                }
+            };
+        }
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRecodringBroadcastRecevier, intentFilter);
+
+        // Request the recording status from the location service.
+        Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
     public void onStop() {
-        if (mLocationServiceBound) {
-            unbindService(mLocationServiceConnection);
-        }
+        // Tell the location service that if can stop location updates, unless it's recording.
+        Intent intent = new Intent(LocationService.ACTION_STOP_LOCATION_UPDATES);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecodringBroadcastRecevier);
 
         // TODO: Implement better HRM service management!
         // HR service is started in HeartFragment; stopped here to kill when activity stops
@@ -130,12 +154,18 @@ public class MainActivity extends WearableActivity implements
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.record_button:
-                toggleRecording();
+                if (mIsRecording) {
+                    stopRecording();
+                } else {
+                    startRecording();
+                }
+
                 mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
-                return true;
+
+                break;
             case R.id.activity_type_button:
                 // TODO
-                return true;
+                break;
         }
 
         return true;
@@ -176,20 +206,10 @@ public class MainActivity extends WearableActivity implements
     // Class methods
     //
 
-    private void toggleRecording() {
-        if (mLocationService.isRecording()) {
-            mLocationService.stopRecording();
-        } else {
-            mLocationService.startRecording();
-        }
-
-        setRecordingActionButtonState();
-    }
-
     private void setRecordingActionButtonState() {
         MenuItem menuItem = mMenu.getItem(0);
 
-        if (mLocationService.isRecording()) {
+        if (mIsRecording) {
             menuItem.setIcon(getDrawable(R.drawable.ic_stop));
             menuItem.setTitle(getString(R.string.stop_recording));
         } else {
@@ -198,26 +218,21 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
+    private void stopRecording() {
+        // Tell the location service to stop recording
+        Intent intent = new Intent(LocationService.ACTION_STOP_RECORDING);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    private void startRecording() {
+        // Tell the location service to start recording
+        Intent intent = new Intent(LocationService.ACTION_START_RECORDING);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
     //
     // Inner classes
     //
-
-    private ServiceConnection mLocationServiceConnection = new ServiceConnection() {
-        @Override
-        public void onServiceConnected(ComponentName className, IBinder service) {
-            LocationService.LocationServiceBinder binder = (LocationService.LocationServiceBinder) service;
-            mLocationService = (LocationService) binder.getService();
-            mLocationServiceBound = true;
-
-            // Set the initial state of the recording action button
-            setRecordingActionButtonState();
-        }
-
-        @Override
-        public void onServiceDisconnected(ComponentName arg0) {
-            mLocationServiceBound = false;
-        }
-    };
 
     class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
         @Override

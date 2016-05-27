@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -22,6 +23,7 @@ import android.view.ViewGroup;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.LocationService;
+import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -40,7 +42,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class RouteMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks {
+public class RouteMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final String LOG_TAG = RouteMapFragment.class.getSimpleName();
 
@@ -62,6 +64,9 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
 
     private List<Location> mPathLocations = new ArrayList<>();
     private LinkedList<LatLng> mPathPolylineLatLngs = new LinkedList<>();
+
+    private BitmapDescriptor mRecordingMapMarkerIcon;
+    private BitmapDescriptor mDefaultMapMarkerIcon;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -97,30 +102,30 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             mLocationChangedReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    String action = intent.getAction();
+                    switch (intent.getAction()) {
+                        case LocationService.ACTION_LOCATION_CHANGED:
+                            Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                            mLastLocation = location;
 
-                    if (action.equals(LocationService.ACTION_LOCATION_CHANGED)) {
-                        Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                            if (mIsRecording) {
+                                mPathLocations.add(location);
+                            }
 
-                        if (mIsRecording) {
-                            mPathLocations.add(location);
-                        }
+                            break;
+                        case LocationService.ACTION_RECORDING_STATUS_CHANGED:
+                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+                            setMapMarkerIcon();
 
-                        mLastLocation = location;
-                    } else if (action.equals(LocationService.ACTION_STATUS_CHANGED)) {
-                        mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+                            if (!mIsRecording) {
+                                // Ensure that prior location samples are cleared out
+                                mPathLocations.clear();
+                            }
 
-                        // TODO clean up updateUI and find a better place for this code
-                        if (mIsRecording) {
-                            BitmapDescriptor bd = loadDrawable(R.drawable.marker_red);
-                            mMapMarker.setIcon(bd);
-                        } else {
-                            BitmapDescriptor bd = loadDrawable(R.drawable.marker_blue);
-                            mMapMarker.setIcon(bd);
-
-                            // Clear out prior location samples
-                            mPathLocations.clear();
-                        }
+                            break;
+                        case LocationService.ACTION_RECORDING_STATUS:
+                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+                            setMapMarkerIcon();
+                            break;
                     }
 
                     updateUI();
@@ -128,9 +133,14 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             };
         }
 
-        IntentFilter intentFilter = new IntentFilter(LocationService.ACTION_LOCATION_CHANGED);
-        intentFilter.addAction(LocationService.ACTION_STATUS_CHANGED);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
+        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
+
+        Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
+        LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
     }
 
     @Override
@@ -178,16 +188,18 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
-        // TODO load marker bitmaps beforehand and re-use descriptors and recording state changes
-//        BitmapDescriptor bd = BitmapDescriptorFactory.fromResource(R.drawable.marker_blue);
-        BitmapDescriptor bd = loadDrawable(R.drawable.marker_blue);
+        mRecordingMapMarkerIcon = loadDrawable(R.drawable.marker_red);
+        mDefaultMapMarkerIcon = loadDrawable(R.drawable.marker_blue);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
                         .visible(false)
                         .position(new LatLng(0, 0))
-                        .icon(bd));
+                        .icon(mDefaultMapMarkerIcon)
+                        .anchor(0.5f, 0.5f));
 
+        setMapMarkerIcon();
+        
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
                 .color(Color.RED)
@@ -231,10 +243,16 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         // TODO
     }
 
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        // TODO
+    }
+
     //
     // Class methods
     //
 
+    // TODO break this method into multiple UI update methods. e.g. updatePath, updateMapLocation, etc
     private void updateUI() {
         // Map not ready yet. Once it is, updateUI() will be called again
         if (mGoogleMap == null) {
@@ -290,6 +308,19 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
             mPolyline.setVisible(false);
             mPathPolylineLatLngs.clear();
             mPolyline.setPoints(mPathPolylineLatLngs);
+        }
+    }
+
+    private void setMapMarkerIcon() {
+        // Map marker not ready yet. setMapMarkerIcon will be called again once the marker is ready.
+        if (mMapMarker == null) {
+            return;
+        }
+
+        if (mIsRecording) {
+            mMapMarker.setIcon(mRecordingMapMarkerIcon);
+        } else {
+            mMapMarker.setIcon(mDefaultMapMarkerIcon);
         }
     }
 
