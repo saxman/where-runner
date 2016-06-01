@@ -128,7 +128,9 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
                             break;
                     }
 
-                    updateUI();
+                    if (!isAmbient()) {
+                        updateUI();
+                    }
                 }
             };
         }
@@ -222,6 +224,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     public void onExitAmbient() {
         super.onExitAmbient();
         mMapView.onExitAmbient();
+        updateUI();
     }
 
     @Override
@@ -341,6 +344,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         }
     }
 
+    // TODO move to util class?
     private BitmapDescriptor loadDrawable(int id) {
         Drawable circle = getResources().getDrawable(id, null);
         Canvas canvas = new Canvas();

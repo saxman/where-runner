@@ -8,6 +8,8 @@
     <string name="stop_recording">Stop</string>
 
     <string name="activity_type">Activity Type</string>
+    <string name="activity_running">Running</string>
+    <string name="activity_cycling">Cycling</string>
 
     <string name="notification_content_text">Where Runner?!</string>
 </resources>

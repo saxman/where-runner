@@ -5,6 +5,7 @@ import android.app.FragmentManager;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.support.wearable.view.*;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
