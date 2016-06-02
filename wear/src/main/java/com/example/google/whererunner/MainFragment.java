@@ -2,8 +2,14 @@ package com.example.google.whererunner;
 
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Point;
+import android.location.Location;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.*;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,16 +17,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
+import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.LocationService;
 
 public class MainFragment extends WearableFragment {
     private static final String LOG_TAG = MainFragment.class.getSimpleName();
-
-    private GridViewPager mViewPager;
-    private FragmentGridPagerAdapter mViewPagerAdapter;
-
-    private TextClock mTextClock;
 
     private static final int FRAGMENT_ROUTE = 0;
     private static final int FRAGMENT_DATA = 1;
@@ -28,6 +31,16 @@ public class MainFragment extends WearableFragment {
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
     private static final int PAGER_ITEMS = 3;
+
+    private BroadcastReceiver mLocationChangedReceiver;
+
+    private GridViewPager mViewPager;
+    private FragmentGridPagerAdapter mViewPagerAdapter;
+
+    private TextClock mTextClock;
+    private TextView mLocationAccuracyTextView;
+
+    private Location mLastLocation;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -38,8 +51,36 @@ public class MainFragment extends WearableFragment {
         mViewPager.setAdapter(mViewPagerAdapter);
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
+        mLocationAccuracyTextView = (TextView) view.findViewById(R.id.location_accuracy);
 
         return view;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        if (mLocationChangedReceiver == null) {
+            mLocationChangedReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    switch (intent.getAction()) {
+                        case LocationService.ACTION_LOCATION_CHANGED:
+                            mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+
+                            if (!isAmbient()) {
+                                updateUI();
+                            }
+
+                            break;
+                    }
+                }
+            };
+        }
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
     @Override
@@ -73,6 +114,16 @@ public class MainFragment extends WearableFragment {
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
             ((WearableFragment) fragment).onUpdateAmbient();
+        }
+
+        updateUI();
+    }
+
+    private void updateUI() {
+        if (mLastLocation != null) {
+            // Ensure that the view is visible, as it's invisible before data is available
+            mLocationAccuracyTextView.setVisibility(View.VISIBLE);
+            mLocationAccuracyTextView.setText(Float.toString(mLastLocation.getAccuracy()));
         }
     }
 

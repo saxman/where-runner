@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="clock_margin_top">10dp</dimen>
+    <dimen name="map_overlay_inset">10dp</dimen>
 </resources>

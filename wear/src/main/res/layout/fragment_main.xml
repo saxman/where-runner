@@ -21,12 +21,26 @@
         android:layout_gravity="center_horizontal"
         android:background="@drawable/bg_map_overlay"
         android:textColor="@color/black"
-        android:paddingLeft="5dp"
-        android:paddingRight="5dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp"
-        android:layout_marginTop="@dimen/clock_margin_top"
+        android:paddingLeft="@dimen/map_overlay_padding_horizontal"
+        android:paddingRight="@dimen/map_overlay_padding_horizontal"
+        android:paddingTop="@dimen/map_overlay_padding_horizontal"
+        android:paddingBottom="@dimen/map_overlay_padding_horizontal"
+        android:layout_marginTop="@dimen/map_overlay_inset"
         android:format12Hour="h:mm:ss"
         android:format24Hour="H:mm:ss" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/location_accuracy"
+        android:layout_gravity="center_vertical|left"
+        android:visibility="gone"
+        android:background="@drawable/bg_map_overlay"
+        android:textColor="@color/black"
+        android:paddingLeft="@dimen/map_overlay_padding_horizontal"
+        android:paddingRight="@dimen/map_overlay_padding_horizontal"
+        android:paddingTop="@dimen/map_overlay_padding_horizontal"
+        android:paddingBottom="@dimen/map_overlay_padding_horizontal"
+        android:layout_marginLeft="@dimen/map_overlay_inset" />
 
 </FrameLayout>
