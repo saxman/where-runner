@@ -43,4 +43,14 @@
         android:paddingBottom="@dimen/map_overlay_padding_horizontal"
         android:layout_marginLeft="@dimen/map_overlay_inset" />
 
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/phone_connectivity"
+        android:layout_gravity="center_vertical|right"
+        android:visibility="gone"
+        android:background="@drawable/bg_circular_map_overlay"
+        android:padding="@dimen/map_overlay_padding_vertical"
+        android:layout_marginRight="@dimen/map_overlay_inset" />
+
 </FrameLayout>
