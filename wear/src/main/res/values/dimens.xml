@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- distance from the edge of the map and the edge of the map -->
     <dimen name="map_overlay_inset">5dp</dimen>
-    <dimen name="map_overlay_padding_vertical">5dp</dimen>
-    <dimen name="map_overlay_padding_horizontal">2dp</dimen>
+
+    <dimen name="map_overlay_padding_vertical">0dp</dimen>
+    <dimen name="map_overlay_padding_horizontal">5dp</dimen>
 
     <dimen name="action_button_size">40dp</dimen>
     <dimen name="action_button_label_spacing">7dp</dimen>

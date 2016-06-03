@@ -178,6 +178,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     getLastLocation();
                 }
+
                 break;
         }
     }
@@ -204,7 +205,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
-                .color(Color.RED)
+                .color(getActivity().getColor(R.color.highlight_40))
                 .visible(false));
 
         updateUI();

@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -57,6 +58,8 @@ public class DataFragment extends WearableFragment {
     public void onResume() {
         super.onResume();
 
+        Log.d(LOG_TAG, "mDurationTimer = " + mDurationTimer);
+
         if (mLocationChangedReceiver == null) {
             mLocationChangedReceiver = new BroadcastReceiver() {
                 @Override
@@ -103,7 +106,11 @@ public class DataFragment extends WearableFragment {
                             if (mIsRecording) {
                                 // TODO start time should come from the location service
                                 mStartTime = System.currentTimeMillis();
-                                startDurationTimer();
+
+                                // If the timer isn't already running, start it
+                                if (mDurationTimer == null) {
+                                    startDurationTimer();
+                                }
                             }
 
                             break;
@@ -177,6 +184,7 @@ public class DataFragment extends WearableFragment {
     private void stopDurationTimer() {
         if (mDurationTimer != null) {
             mDurationTimer.cancel();
+            mDurationTimer = null;
         }
     }
 

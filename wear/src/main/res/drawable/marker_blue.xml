@@ -4,7 +4,7 @@
     android:shape="oval">
 
     <solid
-        android:color="@color/dark_blue"/>
+        android:color="@color/primary"/>
 
     <size
         android:width="@dimen/map_marker_size"

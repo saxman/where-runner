@@ -64,6 +64,8 @@ public class MainActivity extends WearableActivity implements
         super.onCreate(savedState);
         setContentView(R.layout.activity_main);
 
+        setAmbientEnabled();
+
         FragmentManager fragmentManager = getFragmentManager();
         mCurrentViewPagerFragment = new MainFragment();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
@@ -107,8 +109,6 @@ public class MainActivity extends WearableActivity implements
                 }.start();
             }
         });
-
-        setAmbientEnabled();
     }
 
     @Override
