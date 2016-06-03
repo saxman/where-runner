@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- distance from the edge of the map and the edge of the map -->
-    <dimen name="map_overlay_inset">5dp</dimen>
+    <!-- Margin between map overlays and the edge of the map. -->
+    <dimen name="map_overlay_margin">5dp</dimen>
 
+    <dimen name="map_overlay_padding">3dp</dimen>
     <dimen name="map_overlay_padding_vertical">0dp</dimen>
     <dimen name="map_overlay_padding_horizontal">5dp</dimen>
+
+    <!-- Spacing between map overlay items. Visual spacing will be 2x this amount. -->
+    <dimen name="map_overlay_spacing">2dp</dimen>
 
     <dimen name="action_button_size">40dp</dimen>
     <dimen name="action_button_label_spacing">7dp</dimen>
@@ -12,5 +16,7 @@
 
     <dimen name="map_marker_size">13dp</dimen>
 
-    <dimen name="data_text_size">18sp</dimen>
+    <dimen name="text_large">22sp</dimen>
+    <dimen name="text_medium">16sp</dimen>
+    <dimen name="text_small">12sp</dimen>
 </resources>

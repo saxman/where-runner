@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -191,8 +190,8 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
-        mRecordingMapMarkerIcon = loadDrawable(R.drawable.marker_red);
-        mDefaultMapMarkerIcon = loadDrawable(R.drawable.marker_blue);
+        mRecordingMapMarkerIcon = loadDrawable(R.drawable.map_marker_recording);
+        mDefaultMapMarkerIcon = loadDrawable(R.drawable.map_marker);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
@@ -205,7 +204,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
         
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
-                .color(getActivity().getColor(R.color.highlight_40))
+                .color(getActivity().getColor(R.color.highlight))
                 .visible(false));
 
         updateUI();

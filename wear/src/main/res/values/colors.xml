@@ -1,18 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Colors for primary UI elements -->
+    <item name="primary" type="color">@color/indigo</item>
+    <item name="primary_dark" type="color">@color/indigo_40b</item>
+    <item name="primary_accent" type="color">@color/indigo_100b</item>
+
+    <!-- Colors for UI highlights (e.g. map markers) -->
+    <item name="highlight" type="color">@color/red</item>
+    <item name="highlight_dark" type="color">@color/red_65b</item>
+
+    <item name="text_primary" type="color">#CCBBBBBB</item>
+    <item name="text_dark" type="color">#CC222222</item>
+
     <!-- Material Design Indigo 500 palette for wearables -->
-    <item name="primary" type="color">#FF3F51B5</item>
-    <item name="primary_dark" type="color">@color/primary_40</item>
-    <item name="primary_accent" type="color">@color/primary_100</item>
-    <item name="primary_100" type="color">#FF8093FF</item>
-    <item name="primary_65" type="color">#FF3A4AA6</item>
-    <item name="primary_40" type="color">#FF242E66</item>
-    <item name="primary_30" type="color">#FF000B4D</item>
-    <item name="primary_15" type="color">#FF000626</item>
+    <item name="indigo" type="color">#FF3F51B5</item>
+    <item name="indigo_100b" type="color">#FF8093FF</item>
+    <item name="indigo_65b" type="color">#FF3A4AA6</item>
+    <item name="indigo_40b" type="color">#FF242E66</item>
+    <item name="indigo_30b" type="color">#FF000B4D</item>
+    <item name="indigo_15b" type="color">#FF000626</item>
 
     <!-- Material Design Red 500 palette for wearables -->
-    <item name="highlight" type="color">#FFF44336</item>
-    <item name="highlight_dark" type="color">@color/highlight_65</item>
-    <item name="highlight_65" type="color">#FFA62C23</item>
-    <item name="highlight_40" type="color">#FF661B15</item>
+    <item name="red" type="color">#FFF44336</item>
+    <item name="red_65b" type="color">#FFA62C23</item>
+    <item name="red_40b" type="color">#FF661B15</item>
 </resources>

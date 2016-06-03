@@ -14,42 +14,49 @@
         android:layout_height="match_parent" />
 
     <TextClock
+        style="@style/map_overlay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/time"
         android:layout_gravity="center_horizontal"
-        android:background="@drawable/bg_map_overlay"
-        android:textColor="@color/black"
         android:paddingLeft="@dimen/map_overlay_padding_horizontal"
         android:paddingRight="@dimen/map_overlay_padding_horizontal"
         android:paddingTop="@dimen/map_overlay_padding_vertical"
         android:paddingBottom="@dimen/map_overlay_padding_vertical"
-        android:layout_marginTop="@dimen/map_overlay_inset"
+        android:layout_marginTop="@dimen/map_overlay_margin"
         android:format12Hour="h:mm:ss"
         android:format24Hour="H:mm:ss" />
 
-    <TextView
+    <RelativeLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/location_accuracy"
         android:layout_gravity="center_vertical|left"
-        android:visibility="gone"
-        android:background="@drawable/bg_map_overlay"
-        android:textColor="@color/black"
-        android:paddingLeft="@dimen/map_overlay_padding_horizontal"
-        android:paddingRight="@dimen/map_overlay_padding_horizontal"
-        android:paddingTop="@dimen/map_overlay_padding_vertical"
-        android:paddingBottom="@dimen/map_overlay_padding_vertical"
-        android:layout_marginLeft="@dimen/map_overlay_inset" />
+        android:layout_marginLeft="@dimen/map_overlay_margin">
 
-    <ImageView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/phone_connectivity"
-        android:layout_gravity="center_vertical|right"
-        android:visibility="gone"
-        android:background="@drawable/bg_circular_map_overlay"
-        android:padding="@dimen/map_overlay_padding_horizontal"
-        android:layout_marginRight="@dimen/map_overlay_inset" />
+        <TextView
+            style="@style/map_overlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/location_accuracy"
+            android:visibility="gone"
+            android:paddingLeft="@dimen/map_overlay_padding_horizontal"
+            android:paddingRight="@dimen/map_overlay_padding_horizontal"
+            android:paddingTop="@dimen/map_overlay_padding_vertical"
+            android:paddingBottom="@dimen/map_overlay_padding_vertical"
+            android:layout_marginTop="@dimen/map_overlay_spacing"
+            android:layout_marginBottom="@dimen/map_overlay_spacing" />
+
+        <ImageView
+            style="@style/map_overlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/phone_connectivity"
+            android:layout_below="@+id/location_accuracy"
+            android:visibility="gone"
+            android:padding="@dimen/map_overlay_padding"
+            android:layout_marginTop="@dimen/map_overlay_spacing"
+            android:layout_marginBottom="@dimen/map_overlay_spacing" />
+
+    </RelativeLayout>
 
 </FrameLayout>

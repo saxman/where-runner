@@ -1,0 +1,12 @@
+<resources>
+    <style name="header" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_large</item>
+    </style>
+
+    <style name="map_overlay" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_dark</item>
+        <item name="android:textSize">@dimen/text_small</item>
+        <item name="android:background">@drawable/bg_map_overlay</item>
+    </style>
+</resources>

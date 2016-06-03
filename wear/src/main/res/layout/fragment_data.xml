@@ -8,20 +8,20 @@
     tools:context=".DataFragment">
 
     <TextView
+        style="@style/header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/distance"
         android:gravity="center"
-        android:textSize="@dimen/data_text_size"
         android:text="DISTANCE" />
 
     <TextView
+        style="@style/header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/duration"
         android:gravity="center"
         android:layout_below="@id/distance"
-        android:textSize="@dimen/data_text_size"
         android:text="DURATION" />
 
 </RelativeLayout>

@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Where Runner</string>
 
-    <string name="recording">Recording</string>
+    <string name="recording">Record</string>
     <string name="settings">Settings</string>
 
     <string name="record">Record</string>

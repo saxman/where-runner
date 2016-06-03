@@ -24,6 +24,7 @@ import android.view.ViewTreeObserver;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.FusedLocationService;
+import com.example.google.whererunner.services.GpsLocationService;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
 
@@ -117,7 +118,8 @@ public class MainActivity extends WearableActivity implements
 
         // Start the location service so that child fragments can receive location and recording
         // status updates via local broadcasts.
-        Intent intent = new Intent(this, FusedLocationService.class);
+//        Intent intent = new Intent(this, FusedLocationService.class);
+        Intent intent = new Intent(this, GpsLocationService.class);
         startService(intent);
     }
 

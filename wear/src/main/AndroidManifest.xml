@@ -35,7 +35,6 @@
         <service android:name=".services.GpsLocationService" />
         <service android:name=".services.FusedLocationService" />
         <service android:name=".services.HeartRateSensorService" />
-
     </application>
 
 </manifest>
