@@ -11,7 +11,7 @@
         android:layout_weight="1"
         android:layout_gravity="center"
         android:text="N/A"
-        tools:context=".DataFragment"/>
+        tools:context=".ActivityDataFragment"/>
 
 
 

@@ -1,15 +1,25 @@
 package com.example.google.whererunner.services;
 
 import android.content.Intent;
+import android.location.GpsSatellite;
 import android.location.GpsStatus;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 public class GpsLocationService extends LocationService implements GpsStatus.Listener, LocationListener {
 
+    private static final String LOG_TAG = GpsLocationService.class.getSimpleName();
+
     public final static String ACTION_GPS_STATUS_CHANGED = "GPS_STATUS_CHANGED";
+
     public final static String EXTRA_GPS_STATUS = "GPS_STATUS";
+    public final static String EXTRA_GPS_TTFF = "GPS_TTFF";
+    public final static String EXTRA_GPS_SATELLITES = "GPS_SATELLITES";
+
+    private static final float GPS_MIN_DISTANCE = 10f;
 
     private GpsStatus mGpsStatus;
     private LocationManager mLocationManager;
@@ -26,7 +36,6 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     @Override
     public void onDestroy() {
         if (checkPermission()) {
-            //noinspection ResourceType
             mLocationManager.removeUpdates(this);
             mLocationManager.removeGpsStatusListener(this);
         }
@@ -35,13 +44,32 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     }
 
     @Override
-    public void onGpsStatusChanged(int i) {
+    public void onGpsStatusChanged(int status) {
         mGpsStatus = mLocationManager.getGpsStatus(mGpsStatus);
 
-        Intent intent = new Intent();
-        intent.setAction(ACTION_GPS_STATUS_CHANGED);
+        Intent intent = new Intent(ACTION_GPS_STATUS_CHANGED);
+        intent.putExtra(EXTRA_GPS_STATUS, status);
 
-        intent.putExtra(EXTRA_GPS_STATUS, i);
+        switch (status) {
+            case GpsStatus.GPS_EVENT_STARTED:
+            case GpsStatus.GPS_EVENT_STOPPED:
+                break;
+            case GpsStatus.GPS_EVENT_FIRST_FIX:
+                int i = mGpsStatus.getTimeToFirstFix();
+                intent.putExtra(EXTRA_GPS_TTFF, i);
+                break;
+            case GpsStatus.GPS_EVENT_SATELLITE_STATUS:
+                int s = 0;
+
+                for (GpsSatellite satellite : mGpsStatus.getSatellites()) {
+                    s++;
+                }
+
+                intent.putExtra(EXTRA_GPS_SATELLITES, s);
+                break;
+        }
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
@@ -59,8 +87,8 @@ public class GpsLocationService extends LocationService implements GpsStatus.Lis
     @Override
     protected void startLocationUpdates() {
         if (checkPermission()) {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, 10f, this);
-            mLocationManager.removeGpsStatusListener(this);
+            mLocationManager.addGpsStatusListener(this);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, this);
             mIsLocationUpdating = true;
         }
     }

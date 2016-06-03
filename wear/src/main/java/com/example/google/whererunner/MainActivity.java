@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.Drawable;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.support.v4.app.ActivityCompat;
@@ -15,7 +16,6 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -46,6 +46,7 @@ public class MainActivity extends WearableActivity implements
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
     private WearableNavigationDrawer mWearableNavigationDrawer;
+    private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
 
     private Fragment mCurrentViewPagerFragment;
 
@@ -68,11 +69,13 @@ public class MainActivity extends WearableActivity implements
         setAmbientEnabled();
 
         FragmentManager fragmentManager = getFragmentManager();
-        mCurrentViewPagerFragment = new MainFragment();
+        mCurrentViewPagerFragment = new ActivityMainFragment();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
 
+        mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
+
         mWearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
-        mWearableNavigationDrawer.setAdapter(new MyWearableNavigationDrawerAdapter());
+        mWearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
 
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
@@ -116,10 +119,18 @@ public class MainActivity extends WearableActivity implements
     public void onStart() {
         super.onStart();
 
+        Intent intent;
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
+        // If the device has a GPS sensor, use it over the FLP
+        if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
+            intent = new Intent(this, GpsLocationService.class);
+        } else {
+            intent = new Intent(this, FusedLocationService.class);
+        }
+
         // Start the location service so that child fragments can receive location and recording
         // status updates via local broadcasts.
-//        Intent intent = new Intent(this, FusedLocationService.class);
-        Intent intent = new Intent(this, GpsLocationService.class);
         startService(intent);
     }
 
@@ -157,7 +168,7 @@ public class MainActivity extends WearableActivity implements
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
 
         // TODO: Implement better HRM service management!
-        // HR service is started in HeartFragment; stopped here to kill when activity stops
+        // HR service is started in HeartRateFragment; stopped here to kill when activity stops
         stopService(new Intent(this, HeartRateSensorService.class));
 
         super.onStop();
@@ -192,8 +203,6 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
-        Log.d(LOG_TAG, "onEnterAmbient");
-
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
         }
@@ -203,8 +212,6 @@ public class MainActivity extends WearableActivity implements
     public void onExitAmbient() {
         super.onExitAmbient();
 
-        Log.d(LOG_TAG, "onExitAmbient");
-
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
         }
@@ -213,8 +220,6 @@ public class MainActivity extends WearableActivity implements
     @Override
     public void onUpdateAmbient() {
         super.onUpdateAmbient();
-
-        Log.d(LOG_TAG, "onUpdateAmbient");
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
@@ -249,6 +254,9 @@ public class MainActivity extends WearableActivity implements
             menuItem.setTitle(getString(R.string.activity_cycling));
             mActivityType = ACTIVITY_TYPE_CYCLING;
         }
+
+        // TODO does not seem to force the nav drawer to refresh icons...
+        mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
     private void stopRecording() {
@@ -284,7 +292,15 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    return getDrawable(R.drawable.ic_running_white);
+                    int id;
+
+                    if (mActivityType == ACTIVITY_TYPE_RUNNING) {
+                        id = R.drawable.ic_running_white;
+                    } else {
+                        id = R.drawable.ic_cycling_white;
+                    }
+
+                    return getDrawable(id);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
             }
@@ -298,7 +314,7 @@ public class MainActivity extends WearableActivity implements
 
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    fragment = new MainFragment();
+                    fragment = new ActivityMainFragment();
                     break;
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     fragment = new SettingsFragment();

@@ -7,7 +7,6 @@ import android.content.IntentFilter;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,18 +14,16 @@ import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.LocationService;
-import com.google.android.gms.maps.model.LatLng;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class DataFragment extends WearableFragment {
+public class ActivityDataFragment extends WearableFragment {
 
-    private static final String LOG_TAG = DataFragment.class.getSimpleName();
+    private static final String LOG_TAG = ActivityDataFragment.class.getSimpleName();
 
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
@@ -46,7 +43,7 @@ public class DataFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_data, container, false);
+        final View view = inflater.inflate(R.layout.fragment_activity_data, container, false);
 
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
@@ -57,8 +54,6 @@ public class DataFragment extends WearableFragment {
     @Override
     public void onResume() {
         super.onResume();
-
-        Log.d(LOG_TAG, "mDurationTimer = " + mDurationTimer);
 
         if (mLocationChangedReceiver == null) {
             mLocationChangedReceiver = new BroadcastReceiver() {

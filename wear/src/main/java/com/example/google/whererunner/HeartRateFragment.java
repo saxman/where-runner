@@ -18,10 +18,10 @@ import android.widget.Button;
 
 import com.example.google.whererunner.services.HeartRateSensorService;
 
-public class HeartFragment extends Fragment
+public class HeartRateFragment extends Fragment
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
-    private static final String TAG = HeartFragment.class.getSimpleName();
+    private static final String TAG = HeartRateFragment.class.getSimpleName();
     BroadcastReceiver hrReceiver;
     Button heartButton;
 
@@ -30,7 +30,7 @@ public class HeartFragment extends Fragment
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_heart, container, false);
+        View view = inflater.inflate(R.layout.fragment_heart_rate, container, false);
 
         heartButton = (Button) view.findViewById(R.id.heart_button);
         heartButton.setBackgroundResource(R.drawable.ic_heart_red);

@@ -26,22 +26,23 @@ import com.example.google.whererunner.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.CapabilityApi;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-public class MainFragment extends WearableFragment {
-    private static final String LOG_TAG = MainFragment.class.getSimpleName();
+public class ActivityMainFragment extends WearableFragment {
+    private static final String LOG_TAG = ActivityMainFragment.class.getSimpleName();
 
     private static final int FRAGMENT_ROUTE = 0;
     private static final int FRAGMENT_DATA = 1;
     private static final int FRAGMENT_HEART = 2;
+    private static final int FRAGMENT_GPS = 3;
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
-    private static final int PAGER_ITEMS = 3;
+    private static final int PAGER_ITEMS = 4;
 
     private BroadcastReceiver mLocationChangedReceiver;
 
@@ -60,7 +61,7 @@ public class MainFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_main, container, false);
+        final View view = inflater.inflate(R.layout.fragment_activity_main, container, false);
 
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
@@ -209,7 +210,8 @@ public class MainFragment extends WearableFragment {
         if (mLastLocation != null) {
             // Ensure that the view is visible, as it's invisible before data is available
             mLocationAccuracyTextView.setVisibility(View.VISIBLE);
-            mLocationAccuracyTextView.setText(Float.toString(mLastLocation.getAccuracy()));
+            String s = String.format(Locale.getDefault(), "%1$.1fm", mLastLocation.getAccuracy());
+            mLocationAccuracyTextView.setText(s);
         }
 
         if (mConnectedNodes != -1) {
@@ -241,13 +243,16 @@ public class MainFragment extends WearableFragment {
 
             switch (x) {
                 case FRAGMENT_ROUTE:
-                    fragment = new RouteMapFragment();
+                    fragment = new ActivityMapFragment();
                     break;
                 case FRAGMENT_DATA:
-                    fragment = new DataFragment();
+                    fragment = new ActivityDataFragment();
                     break;
                 case FRAGMENT_HEART:
-                    fragment = new HeartFragment();
+                    fragment = new HeartRateFragment();
+                    break;
+                case FRAGMENT_GPS:
+                    fragment = new GpsStatusFragment();
                     break;
             }
 

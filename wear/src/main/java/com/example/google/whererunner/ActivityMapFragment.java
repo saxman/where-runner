@@ -41,9 +41,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class RouteMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class ActivityMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String LOG_TAG = RouteMapFragment.class.getSimpleName();
+    private static final String LOG_TAG = ActivityMapFragment.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
     private MapView mMapView;
@@ -69,7 +69,7 @@ public class RouteMapFragment extends WearableFragment implements OnMapReadyCall
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_route, container, false);
+        final View view = inflater.inflate(R.layout.fragment_activity_map, container, false);
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);

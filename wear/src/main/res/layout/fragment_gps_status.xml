@@ -5,23 +5,21 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-    tools:context=".DataFragment">
+    tools:context=".ActivityDataFragment">
 
     <TextView
         style="@style/header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/distance"
-        android:gravity="center"
-        android:text="DISTANCE" />
+        android:id="@+id/satellites"
+        android:gravity="center" />
 
     <TextView
         style="@style/header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/duration"
+        android:id="@+id/ttff"
         android:gravity="center"
-        android:layout_below="@id/distance"
-        android:text="DURATION" />
+        android:layout_below="@id/satellites" />
 
 </RelativeLayout>
