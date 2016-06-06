@@ -16,6 +16,7 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -24,7 +25,6 @@ import android.view.ViewTreeObserver;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.FusedLocationService;
-import com.example.google.whererunner.services.GpsLocationService;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
 
@@ -144,7 +144,7 @@ public class MainActivity extends WearableActivity implements
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-                    setRecordingButtonState();
+                    setRecordingButtonUiState();
                 }
             };
         }
@@ -188,7 +188,7 @@ public class MainActivity extends WearableActivity implements
 
                 break;
             case R.id.activity_type_button:
-                setActivityTypeButtonState();
+                toggleActivityTypeUiState();
                 break;
         }
 
@@ -230,7 +230,7 @@ public class MainActivity extends WearableActivity implements
     // Class methods
     //
 
-    private void setRecordingButtonState() {
+    private void setRecordingButtonUiState() {
         MenuItem menuItem = mMenu.getItem(ACTION_RECORD_INDEX);
 
         if (mIsRecording) {
@@ -242,7 +242,7 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
-    private void setActivityTypeButtonState() {
+    private void toggleActivityTypeUiState() {
         MenuItem menuItem = mMenu.getItem(ACTION_ACTIVITY_TYPE_INDEX);
 
         if (mActivityType == ACTIVITY_TYPE_CYCLING) {

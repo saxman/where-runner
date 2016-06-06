@@ -63,9 +63,11 @@ public class ActivityMainFragment extends WearableFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_activity_main, container, false);
 
-        mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
+
+        mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPager.setAdapter(mViewPagerAdapter);
+        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(view));
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
         mLocationAccuracyTextView = (TextView) view.findViewById(R.id.location_accuracy);
@@ -269,5 +271,40 @@ public class ActivityMainFragment extends WearableFragment {
         {
             return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? PAGER_ITEMS : 1;
         }
+    }
+
+    private class GridViewPagerChangeListener implements GridViewPager.OnPageChangeListener {
+        private ImageView[] imageViews;
+
+        private int imageSelected = R.drawable.ic_more_circle_opaque;
+        private int imageDeselected = R.drawable.ic_more_circle;
+
+        public GridViewPagerChangeListener(View view) {
+            imageViews = new ImageView[] {
+                    (ImageView) view.findViewById(R.id.main_more_1),
+                    (ImageView) view.findViewById(R.id.main_more_2),
+                    (ImageView) view.findViewById(R.id.main_more_3),
+                    (ImageView) view.findViewById(R.id.main_more_4)
+            };
+        }
+
+        @Override
+        public void onPageSelected(int row, int col) {
+            int i = PAGER_ORIENTATION == LinearLayout.VERTICAL ? row : col;
+
+            for (int j = 0; j < imageViews.length; j++) {
+                if (i != j) {
+                    imageViews[j].setImageResource(imageDeselected);
+                } else {
+                    imageViews[j].setImageResource(imageSelected);
+                }
+            }
+        }
+
+        @Override
+        public void onPageScrolled(int i, int i1, float v, float v1, int i2, int i3) {}
+
+        @Override
+        public void onPageScrollStateChanged(int i) {}
     }
 }

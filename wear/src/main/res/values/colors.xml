@@ -5,12 +5,17 @@
     <item name="primary_dark" type="color">@color/indigo_40b</item>
     <item name="primary_accent" type="color">@color/indigo_100b</item>
 
-    <!-- Colors for UI highlights (e.g. map markers) -->
+    <!-- Colors for strong UI highlights (e.g. map markers) -->
     <item name="highlight" type="color">@color/red</item>
     <item name="highlight_dark" type="color">@color/red_65b</item>
 
     <item name="text_primary" type="color">#CCBBBBBB</item>
     <item name="text_dark" type="color">#CC222222</item>
+
+    <item name="white_80a" type="color">#CCFFFFFF</item>
+    <item name="white_70a" type="color">#B3FFFFFF</item>
+    <item name="white_60a" type="color">#99FFFFFF</item>
+    <item name="white_50a" type="color">#80FFFFFF</item>
 
     <!-- Subtle tinting for the map to darken and for theme color matching -->
     <item name="map_tint" type="color">#22000626</item>
