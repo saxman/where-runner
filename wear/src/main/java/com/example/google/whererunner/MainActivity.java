@@ -124,7 +124,7 @@ public class MainActivity extends WearableActivity implements
 
         // If the device has a GPS sensor, use it over the FLP
         if (locationManager.getProvider(LocationManager.GPS_PROVIDER) != null) {
-            intent = new Intent(this, GpsLocationService.class);
+            intent = new Intent(this, FusedLocationService.class);  // TODO use GPS service (once tested)
         } else {
             intent = new Intent(this, FusedLocationService.class);
         }

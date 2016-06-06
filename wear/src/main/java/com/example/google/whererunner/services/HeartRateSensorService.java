@@ -1,16 +1,13 @@
 package com.example.google.whererunner.services;
 
-import android.Manifest;
 import android.app.Service;
 import android.content.Intent;
 
-import android.content.pm.PackageManager;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.IBinder;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 

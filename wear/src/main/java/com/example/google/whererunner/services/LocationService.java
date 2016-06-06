@@ -121,29 +121,23 @@ public abstract class LocationService extends Service {
     }
 
     //
-    // Public service interface methods
+    // Protected service interface methods (to be implemented or used by subclasses)
     //
 
     /**
      * Callback method that sends location change events to ACTION_LOCATION_CHANGED local broadcast
-     * receivers. This method is automatically called by subclasses of this class that implement
-     * either com.google.android.gms.location.LocationListener or android.location.LocationListener
-     * and that register themselves as listeners via FusedLocationApi.requestLocationUpdates(...)
-     * or LocationManager.requestLocationUpdates(...).
+     * receivers. This method should be called by subclasses of this class as they receive location
+     * updates.
      *
      * @param location The new location, as a Location object.
      */
-    public void onLocationChanged(Location location) {
+    protected void onLocationChanged(Location location) {
         Intent intent = new Intent()
                 .setAction(ACTION_LOCATION_CHANGED)
                 .putExtra(EXTRA_LOCATION, location);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
-
-    //
-    // Protected service interface methods (to be implemented or used by subclasses)
-    //
 
     protected abstract void startLocationUpdates();
     protected abstract void stopLocationUpdates();
