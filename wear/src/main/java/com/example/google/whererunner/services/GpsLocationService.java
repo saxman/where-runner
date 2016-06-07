@@ -8,7 +8,6 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 public class GpsLocationService extends LocationService {
 
@@ -20,7 +19,7 @@ public class GpsLocationService extends LocationService {
     public final static String EXTRA_GPS_TTFF = "GPS_TTFF";
     public final static String EXTRA_GPS_SATELLITES = "GPS_SATELLITES";
 
-    private static final float GPS_MIN_DISTANCE = 10f;
+    private static final float GPS_MIN_DISTANCE = 0;
 
     private GpsStatus mGpsStatus;
     private LocationManager mLocationManager;
@@ -43,7 +42,7 @@ public class GpsLocationService extends LocationService {
     protected void startLocationUpdates() {
         if (checkPermission()) {
             mLocationManager.addGpsStatusListener(mGpsStatusListener);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_MIN_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
             mIsLocationUpdating = true;
         }
     }

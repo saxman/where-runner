@@ -59,47 +59,12 @@
 
     </RelativeLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:id="@+id/pager_more_pips"
         android:layout_gravity="center_vertical|right"
-        android:layout_marginRight="@dimen/map_overlay_margin">
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/main_more_1"
-            android:src="@drawable/ic_more_circle_opaque"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing" />
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/main_more_2"
-            android:src="@drawable/ic_more_circle"
-            android:layout_below="@+id/main_more_1"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing" />
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/main_more_3"
-            android:src="@drawable/ic_more_circle"
-            android:layout_below="@+id/main_more_2"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing" />
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/main_more_4"
-            android:src="@drawable/ic_more_circle"
-            android:layout_below="@+id/main_more_3"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing" />
-
-    </RelativeLayout>
+        android:orientation="vertical"
+        android:layout_marginRight="@dimen/map_overlay_margin" />
 
 </FrameLayout>

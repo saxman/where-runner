@@ -36,7 +36,7 @@ public abstract class LocationService extends Service {
     public final static String EXTRA_LOCATION = "LOCATION";
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
 
-    protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
+    protected static final int LOCATION_MIN_UPDATE_INTERVAL_MS = 1000;
 
     protected int NOTIFICATION_ID = 1;
     protected Notification mNotification;

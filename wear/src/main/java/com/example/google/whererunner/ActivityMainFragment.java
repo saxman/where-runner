@@ -42,7 +42,7 @@ public class ActivityMainFragment extends WearableFragment {
     private static final int FRAGMENT_GPS = 3;
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
-    private static final int PAGER_ITEMS = 4;
+    private static final int PAGER_ITEMS = 3;
 
     private BroadcastReceiver mLocationChangedReceiver;
 
@@ -67,7 +67,7 @@ public class ActivityMainFragment extends WearableFragment {
 
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPager.setAdapter(mViewPagerAdapter);
-        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(view));
+        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener((ViewGroup) view.findViewById(R.id.pager_more_pips)));
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
         mLocationAccuracyTextView = (TextView) view.findViewById(R.id.location_accuracy);
@@ -279,13 +279,21 @@ public class ActivityMainFragment extends WearableFragment {
         private int imageSelected = R.drawable.ic_more_circle_opaque;
         private int imageDeselected = R.drawable.ic_more_circle;
 
-        public GridViewPagerChangeListener(View view) {
-            imageViews = new ImageView[] {
-                    (ImageView) view.findViewById(R.id.main_more_1),
-                    (ImageView) view.findViewById(R.id.main_more_2),
-                    (ImageView) view.findViewById(R.id.main_more_3),
-                    (ImageView) view.findViewById(R.id.main_more_4)
-            };
+        public GridViewPagerChangeListener(ViewGroup root) {
+            LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+            imageViews = new ImageView[PAGER_ITEMS];
+
+            int spacing = (int) getResources().getDimension(R.dimen.map_overlay_spacing);
+
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMargins(0, spacing, 0, spacing);
+
+            for (int i = 0; i < PAGER_ITEMS; i++) {
+                ImageView view = (ImageView) inflater.inflate(R.layout.pager_pip, null);
+                root.addView(view, lp);
+                imageViews[i] = view;
+            }
         }
 
         @Override

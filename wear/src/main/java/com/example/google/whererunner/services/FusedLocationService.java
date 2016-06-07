@@ -2,9 +2,6 @@ package com.example.google.whererunner.services;
 
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -26,8 +23,8 @@ public class FusedLocationService extends LocationService {
         super.onCreate();
 
         mLocationRequest = new LocationRequest()
-                .setInterval(LOCATION_UPDATE_INTERVAL_MS)
-                .setFastestInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
+                .setFastestInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
