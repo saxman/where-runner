@@ -19,13 +19,13 @@
         android:id="@+id/nav_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/dark_blue" />
+        android:background="?android:attr/colorPrimaryDark" />
 
     <android.support.wearable.view.drawer.WearableActionDrawer
         android:id="@+id/action_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@color/dark_blue"
+        android:background="?android:attr/colorPrimaryDark"
         app:action_menu="@menu/action_drawer_menu" />
 
 </android.support.wearable.view.drawer.WearableDrawerLayout>

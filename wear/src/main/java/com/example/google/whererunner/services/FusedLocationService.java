@@ -1,7 +1,7 @@
 package com.example.google.whererunner.services;
 
+import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -9,27 +9,28 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-public class FusedLocationService extends LocationService implements GoogleApiClient.ConnectionCallbacks,
-        GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class FusedLocationService extends LocationService {
 
     private static final String LOG_TAG = FusedLocationService.class.getSimpleName();
 
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
 
+    private GoogleApiClientCallbacks mGoogleApiClientCallbacks = new GoogleApiClientCallbacks();
+
     @Override
     public void onCreate() {
         super.onCreate();
 
         mLocationRequest = new LocationRequest()
-                .setInterval(LOCATION_UPDATE_INTERVAL_MS)
-                .setFastestInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
+                .setFastestInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
+                .addConnectionCallbacks(mGoogleApiClientCallbacks)
+                .addOnConnectionFailedListener(mGoogleApiClientCallbacks)
                 .build();
 
         startLocationUpdates();
@@ -37,25 +38,13 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
 
     @Override
     public void onDestroy() {
+        stopLocationUpdates();
+
         if (mGoogleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
 
         super.onDestroy();
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult arg0) {
-    }
-
-    @Override
-    public void onConnected(Bundle bundle) {
-        startLocationUpdates();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
     }
 
     protected void startLocationUpdates() {
@@ -65,15 +54,42 @@ public class FusedLocationService extends LocationService implements GoogleApiCl
         }
 
         if (checkPermission()) {
-            Log.d(LOG_TAG, "Starting fused location service");
-
-            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+            LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, mLocationListener);
             mIsLocationUpdating = true;
         }
     }
 
     protected void stopLocationUpdates() {
-        LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
-        mIsLocationUpdating = false;
+        if (mGoogleApiClient.isConnected()) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, mLocationListener);
+            mIsLocationUpdating = false;
+        }
+    }
+
+    private LocationListener mLocationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(Location location) {
+            FusedLocationService.this.onLocationChanged(location);
+        }
+    };
+
+    private class GoogleApiClientCallbacks implements
+            GoogleApiClient.ConnectionCallbacks,
+            GoogleApiClient.OnConnectionFailedListener {
+
+        @Override
+        public void onConnected(Bundle bundle) {
+            startLocationUpdates();
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            // TODO
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult arg0) {
+            // TODO
+        }
     }
 }

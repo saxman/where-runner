@@ -5,7 +5,9 @@ import android.os.Bundle;
 
 /**
  * Base class for fragments embedded in WearableActivities, so that ambient mode change and UI
- * update messages can be passed from a WearableActivity to it children WearableFragments. Note:
+ * update messages can be passed from a WearableActivity to it child WearableFragments.
+ *
+ * Note:
  * These messages are not sent automatically; the parent WearableActivity class must call the
  * appropriate WearableFragment methods when a WearableFragment is in view.
  *

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:nestedScrollingEnabled="true"
+    tools:context=".ActivityMainFragment">
+
+    <android.support.wearable.view.GridViewPager
+        android:id="@+id/pager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextClock
+        style="@style/map_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/time"
+        android:layout_gravity="center_horizontal"
+        android:paddingLeft="@dimen/map_overlay_padding_horizontal"
+        android:paddingRight="@dimen/map_overlay_padding_horizontal"
+        android:paddingTop="@dimen/map_overlay_padding_vertical"
+        android:paddingBottom="@dimen/map_overlay_padding_vertical"
+        android:layout_marginTop="@dimen/map_overlay_margin"
+        android:format12Hour="h:mm:ss"
+        android:format24Hour="H:mm:ss" />
+
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical|left"
+        android:layout_marginLeft="@dimen/map_overlay_margin">
+
+        <TextView
+            style="@style/map_overlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/location_accuracy"
+            android:visibility="gone"
+            android:paddingLeft="@dimen/map_overlay_padding_horizontal"
+            android:paddingRight="@dimen/map_overlay_padding_horizontal"
+            android:paddingTop="@dimen/map_overlay_padding_vertical"
+            android:paddingBottom="@dimen/map_overlay_padding_vertical"
+            android:layout_marginTop="@dimen/map_overlay_spacing"
+            android:layout_marginBottom="@dimen/map_overlay_spacing" />
+
+        <ImageView
+            style="@style/map_overlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/phone_connectivity"
+            android:layout_below="@+id/location_accuracy"
+            android:visibility="gone"
+            android:padding="@dimen/map_overlay_padding"
+            android:layout_marginTop="@dimen/map_overlay_spacing"
+            android:layout_marginBottom="@dimen/map_overlay_spacing" />
+
+    </RelativeLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/pager_more_pips"
+        android:layout_gravity="center_vertical|right"
+        android:orientation="vertical"
+        android:layout_marginRight="@dimen/map_overlay_margin" />
+
+</FrameLayout>
