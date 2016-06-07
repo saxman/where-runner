@@ -48,6 +48,7 @@ public class HeartRateSensorService extends Service {
         mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
 
         // Check that the device has a HRM
+        // This will also return null if BODY permissions have not been granted
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
             Log.v(TAG, "Heart rate monitor found");
             sensorListener = new HRMSensorEventListener();
@@ -56,7 +57,7 @@ public class HeartRateSensorService extends Service {
                     SensorManager.SENSOR_DELAY_NORMAL);
         }
         else {
-            Log.v(TAG, "No heart rate sensor on this device");
+            Log.v(TAG, "No heart rate sensor (or permission to access) detected");
         }
     }
 
@@ -65,7 +66,6 @@ public class HeartRateSensorService extends Service {
      */
     @Override
     public void onDestroy () {
-        Log.v(TAG, "OnDestroy Heart Rate Monitor Service");
         mSensorManager.unregisterListener(sensorListener);
         super.onDestroy();
     }
