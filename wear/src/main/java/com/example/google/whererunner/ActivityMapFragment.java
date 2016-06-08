@@ -8,12 +8,10 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -80,12 +78,12 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         mMapView.getMapAsync(this);
 
         if (mGoogleApiClient == null) {
-            GoogleApiClientConnectivityListener listener = new GoogleApiClientConnectivityListener();
+            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
 
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
                     .addApi(LocationServices.API)
-                    .addConnectionCallbacks(listener)
-                    .addOnConnectionFailedListener(listener)
+                    .addConnectionCallbacks(callbacks)
+                    .addOnConnectionFailedListener(callbacks)
                     .build();
         }
 
@@ -357,7 +355,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
-    private class GoogleApiClientConnectivityListener implements
+    private class GoogleApiClientCallbacks implements
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         @Override

@@ -12,17 +12,14 @@ import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.*;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
-import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.LocationService;
@@ -33,7 +30,6 @@ import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class ActivityMainFragment extends WearableFragment {
@@ -84,11 +80,11 @@ public class ActivityMainFragment extends WearableFragment {
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
 
         if (mGoogleApiClient == null) {
-            GoogleApiClientConnectivityListener listener = new GoogleApiClientConnectivityListener();
+            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
 
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                    .addConnectionCallbacks(listener)
-                    .addOnConnectionFailedListener(listener)
+                    .addConnectionCallbacks(callbacks)
+                    .addOnConnectionFailedListener(callbacks)
                     .addApi(Wearable.API)
                     .build();
         }
@@ -308,7 +304,7 @@ public class ActivityMainFragment extends WearableFragment {
         public void onPageScrollStateChanged(int i) {}
     }
 
-    private class GoogleApiClientConnectivityListener implements
+    private class GoogleApiClientCallbacks implements
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         @Override

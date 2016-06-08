@@ -16,8 +16,6 @@ public class FusedLocationService extends LocationService {
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
 
-    private GoogleApiClientCallbacks mGoogleApiClientCallbacks = new GoogleApiClientCallbacks();
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -29,10 +27,12 @@ public class FusedLocationService extends LocationService {
                 .setMaxWaitTime(LOCATION_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+        GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
+
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks(mGoogleApiClientCallbacks)
-                .addOnConnectionFailedListener(mGoogleApiClientCallbacks)
+                .addConnectionCallbacks(callbacks)
+                .addOnConnectionFailedListener(callbacks)
                 .build();
 
         startLocationUpdates();
