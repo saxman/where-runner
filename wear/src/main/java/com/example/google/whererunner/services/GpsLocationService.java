@@ -42,7 +42,7 @@ public class GpsLocationService extends LocationService {
     protected void startLocationUpdates() {
         if (checkPermission()) {
             mLocationManager.addGpsStatusListener(mGpsStatusListener);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_MIN_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
             mIsLocationUpdating = true;
         }
     }

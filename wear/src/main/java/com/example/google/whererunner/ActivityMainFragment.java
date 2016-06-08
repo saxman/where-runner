@@ -9,7 +9,10 @@ import android.content.IntentFilter;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
+import android.os.CountDownTimer;
+import android.os.Vibrator;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.*;
 import android.util.Log;
@@ -44,18 +47,23 @@ public class ActivityMainFragment extends WearableFragment {
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
     private static final int PAGER_ITEMS = 3;
 
+    private static final int VIBRATOR_DURATION_MS = 200;
+
     private BroadcastReceiver mLocationChangedReceiver;
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
 
     private TextClock mTextClock;
-    private TextView mLocationAccuracyTextView;
     private ImageView mPhoneConnectedImageView;
+    private ImageView mGpsConnectivityImageView;
+    private ViewGroup mPagerPagePips;
 
     private Location mLastLocation;
 
     private GoogleApiClient mGoogleApiClient;
+
+    private CountDownTimer mLocationSampleTimer;
 
     private int mConnectedNodes = -1;
 
@@ -65,65 +73,22 @@ public class ActivityMainFragment extends WearableFragment {
 
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
 
+        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_page_pips);
+
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPager.setAdapter(mViewPagerAdapter);
-        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener((ViewGroup) view.findViewById(R.id.pager_more_pips)));
+        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
-        mLocationAccuracyTextView = (TextView) view.findViewById(R.id.location_accuracy);
         mPhoneConnectedImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
+        mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
 
         if (mGoogleApiClient == null) {
+            GoogleApiClientConnectivityListener listener = new GoogleApiClientConnectivityListener();
+
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                    .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                        @Override
-                        public void onConnected(Bundle connectionHint) {
-                            Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
-                                @Override
-                                public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                                    mConnectedNodes = getConnectedNodesResult.getNodes().size();
-
-                                    if (!isAmbient()) {
-                                        updateUI();
-                                    }
-                                }
-                            }, 1000, TimeUnit.MILLISECONDS);
-
-                            // TODO use non-deprecated API
-                            Wearable.NodeApi.addListener(mGoogleApiClient, new NodeApi.NodeListener() {
-                                @Override
-                                public void onPeerConnected(Node node) {
-                                    mConnectedNodes = 1;
-
-                                    if (!isAmbient()) {
-                                        updateUI();
-                                    }
-                                }
-
-                                @Override
-                                public void onPeerDisconnected(Node node) {
-                                    mConnectedNodes = 0;
-
-                                    if (!isAmbient()) {
-                                        updateUI();
-                                    }
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void onConnectionSuspended(int cause) {
-                            Log.d(LOG_TAG, "onConnectionSuspended: " + cause);
-                            // TODO
-                        }
-                    })
-                    .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                        @Override
-                        public void onConnectionFailed(ConnectionResult result) {
-                            Log.d(LOG_TAG, "onConnectionFailed: " + result);
-                            // TODO
-                        }
-                    })
+                    .addConnectionCallbacks(listener)
+                    .addOnConnectionFailedListener(listener)
                     .addApi(Wearable.API)
                     .build();
         }
@@ -142,6 +107,11 @@ public class ActivityMainFragment extends WearableFragment {
         mGoogleApiClient.disconnect();
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
 
+        if (mLocationSampleTimer != null) {
+            mLocationSampleTimer.cancel();
+            mLocationSampleTimer = null;
+        }
+
         super.onStop();
     }
 
@@ -157,11 +127,34 @@ public class ActivityMainFragment extends WearableFragment {
                         case LocationService.ACTION_LOCATION_CHANGED:
                             mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                            if (!isAmbient()) {
-                                updateUI();
+                            // Reset (cancel) pre-existing timer
+                            if (mLocationSampleTimer != null) {
+                                mLocationSampleTimer.cancel();
                             }
 
+                            // Start a timer to detect if we're not receiving location samples in regular intervals
+                            mLocationSampleTimer = new CountDownTimer(LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS, LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS) {
+                                public void onTick(long millisUntilFinished) {}
+
+                                public void onFinish() {
+                                    // We haven't received a location sample in too long. Set the last location to null so updateUI() shows a disconnected icon next refresh cycle
+                                    mLastLocation = null;
+
+                                    // TODO should be updated even if in ambient mode
+                                    if (!isAmbient()) {
+                                        updateUI();
+                                    }
+
+                                    Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                                    vibrator.vibrate(VIBRATOR_DURATION_MS);
+                                }
+                            }.start();
+
                             break;
+                    }
+
+                    if (!isAmbient()) {
+                        updateUI();
                     }
                 }
             };
@@ -179,6 +172,8 @@ public class ActivityMainFragment extends WearableFragment {
         mTextClock.setFormat12Hour("h:mm");
         mTextClock.setFormat24Hour("H:mm");
 
+        mPagerPagePips.setVisibility(View.INVISIBLE);
+
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
             ((WearableFragment) fragment).onEnterAmbient(ambientDetails);
@@ -191,6 +186,8 @@ public class ActivityMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm:ss");
         mTextClock.setFormat24Hour("H:mm:ss");
+
+        mPagerPagePips.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -210,10 +207,9 @@ public class ActivityMainFragment extends WearableFragment {
 
     private void updateUI() {
         if (mLastLocation != null) {
-            // Ensure that the view is visible, as it's invisible before data is available
-            mLocationAccuracyTextView.setVisibility(View.VISIBLE);
-            String s = String.format(Locale.getDefault(), "%1$.1fm", mLastLocation.getAccuracy());
-            mLocationAccuracyTextView.setText(s);
+            mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_fixed);
+        } else {
+            mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_not_fixed);
         }
 
         if (mConnectedNodes != -1) {
@@ -274,25 +270,21 @@ public class ActivityMainFragment extends WearableFragment {
     }
 
     private class GridViewPagerChangeListener implements GridViewPager.OnPageChangeListener {
-        private ImageView[] imageViews;
+        private ImageView[] mPipImageViews;
 
-        private int imageSelected = R.drawable.ic_more_circle_opaque;
-        private int imageDeselected = R.drawable.ic_more_circle;
-
-        public GridViewPagerChangeListener(ViewGroup root) {
+        public GridViewPagerChangeListener(ViewGroup rootView) {
             LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            imageViews = new ImageView[PAGER_ITEMS];
+            mPipImageViews = new ImageView[PAGER_ITEMS];
 
             int spacing = (int) getResources().getDimension(R.dimen.map_overlay_spacing);
-
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            lp.setMargins(0, spacing, 0, spacing);
+            layoutParams.setMargins(0, spacing, 0, spacing);
 
             for (int i = 0; i < PAGER_ITEMS; i++) {
                 ImageView view = (ImageView) inflater.inflate(R.layout.pager_pip, null);
-                root.addView(view, lp);
-                imageViews[i] = view;
+                rootView.addView(view, layoutParams);
+                mPipImageViews[i] = view;
             }
         }
 
@@ -300,11 +292,11 @@ public class ActivityMainFragment extends WearableFragment {
         public void onPageSelected(int row, int col) {
             int i = PAGER_ORIENTATION == LinearLayout.VERTICAL ? row : col;
 
-            for (int j = 0; j < imageViews.length; j++) {
+            for (int j = 0; j < mPipImageViews.length; j++) {
                 if (i != j) {
-                    imageViews[j].setImageResource(imageDeselected);
+                    mPipImageViews[j].setImageResource(R.drawable.ic_more_circle);
                 } else {
-                    imageViews[j].setImageResource(imageSelected);
+                    mPipImageViews[j].setImageResource(R.drawable.ic_more_circle_opaque);
                 }
             }
         }
@@ -314,5 +306,54 @@ public class ActivityMainFragment extends WearableFragment {
 
         @Override
         public void onPageScrollStateChanged(int i) {}
+    }
+
+    private class GoogleApiClientConnectivityListener implements
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+        @Override
+        public void onConnected(@NonNull Bundle connectionHint) {
+            Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+                @Override
+                public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
+                    mConnectedNodes = getConnectedNodesResult.getNodes().size();
+
+                    if (!isAmbient()) {
+                        updateUI();
+                    }
+                }
+            }, 1000, TimeUnit.MILLISECONDS);
+
+            // TODO use non-deprecated API
+            Wearable.NodeApi.addListener(mGoogleApiClient, new NodeApi.NodeListener() {
+                @Override
+                public void onPeerConnected(Node node) {
+                    mConnectedNodes = 1;
+
+                    if (!isAmbient()) {
+                        updateUI();
+                    }
+                }
+
+                @Override
+                public void onPeerDisconnected(Node node) {
+                    mConnectedNodes = 0;
+
+                    if (!isAmbient()) {
+                        updateUI();
+                    }
+                }
+            });
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            // TODO
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            // TODO
+        }
     }
 }

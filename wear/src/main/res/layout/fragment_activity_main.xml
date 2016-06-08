@@ -33,16 +33,13 @@
         android:layout_gravity="center_vertical|left"
         android:layout_marginLeft="@dimen/map_overlay_margin">
 
-        <TextView
+        <ImageView
             style="@style/map_overlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/location_accuracy"
-            android:visibility="gone"
-            android:paddingLeft="@dimen/map_overlay_padding_horizontal"
-            android:paddingRight="@dimen/map_overlay_padding_horizontal"
-            android:paddingTop="@dimen/map_overlay_padding_vertical"
-            android:paddingBottom="@dimen/map_overlay_padding_vertical"
+            android:id="@+id/gps_connectivity"
+            android:src="@drawable/ic_gps_not_fixed"
+            android:padding="@dimen/map_overlay_padding"
             android:layout_marginTop="@dimen/map_overlay_spacing"
             android:layout_marginBottom="@dimen/map_overlay_spacing" />
 
@@ -51,7 +48,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/phone_connectivity"
-            android:layout_below="@+id/location_accuracy"
+            android:layout_below="@+id/gps_connectivity"
             android:visibility="gone"
             android:padding="@dimen/map_overlay_padding"
             android:layout_marginTop="@dimen/map_overlay_spacing"
@@ -62,7 +59,7 @@
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/pager_more_pips"
+        android:id="@+id/pager_page_pips"
         android:layout_gravity="center_vertical|right"
         android:orientation="vertical"
         android:layout_marginRight="@dimen/map_overlay_margin" />

@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
@@ -31,6 +32,8 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -41,7 +44,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ActivityMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class ActivityMapFragment extends WearableFragment implements OnMapReadyCallback {
 
     private static final String LOG_TAG = ActivityMapFragment.class.getSimpleName();
 
@@ -50,6 +53,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
 
     private Marker mMapMarker;
     private Polyline mPolyline;
+    private Circle mAccuracyCircle;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -76,9 +80,12 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         mMapView.getMapAsync(this);
 
         if (mGoogleApiClient == null) {
+            GoogleApiClientConnectivityListener listener = new GoogleApiClientConnectivityListener();
+
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
                     .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
+                    .addConnectionCallbacks(listener)
+                    .addOnConnectionFailedListener(listener)
                     .build();
         }
 
@@ -207,6 +214,13 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                 .color(getActivity().getColor(R.color.highlight))
                 .visible(false));
 
+        mAccuracyCircle = mGoogleMap.addCircle(new CircleOptions()
+                .center(new LatLng(0, 0))
+                .radius(0)
+                .strokeWidth(0)
+                .fillColor(getResources().getColor(R.color.location_accuracy_circle, null))
+                .visible(false));
+
         updateUI();
     }
 
@@ -230,25 +244,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     @Override
     public void onUpdateAmbient() {
         updateUI();
-    }
-
-    //
-    // GoogleApiClient methods
-    //
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        getLastLocation();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        // TODO
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        // TODO
     }
 
     //
@@ -287,6 +282,12 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
             } else {
                 mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             }
+
+            // TODO remove accuracy circle if location samples time out
+            // Update the location accuracy circle
+            mAccuracyCircle.setCenter(lastLatLng);
+            mAccuracyCircle.setRadius(mLastLocation.getAccuracy());
+            mAccuracyCircle.setVisible(true);
         }
 
         // If we're recording and we have new path data, update the path polyline
@@ -344,7 +345,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         }
     }
 
-    // TODO move to util class?
+    // TODO move to util class? run in background thread?
     private BitmapDescriptor loadDrawable(int id) {
         Drawable circle = getResources().getDrawable(id, null);
         Canvas canvas = new Canvas();
@@ -354,5 +355,24 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         circle.draw(canvas);
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    private class GoogleApiClientConnectivityListener implements
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+        @Override
+        public void onConnected(@NonNull Bundle connectionHint) {
+            getLastLocation();
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            // TODO
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            // TODO
+        }
     }
 }

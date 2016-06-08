@@ -15,7 +15,8 @@
         map:uiZoomGestures="false"
         map:uiScrollGestures="false"
         map:uiRotateGestures="false"
-        map:uiTiltGestures="false" />
+        map:uiTiltGestures="false"
+        map:ambientEnabled="true" />
 
     <FrameLayout
         android:layout_width="match_parent"

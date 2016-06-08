@@ -22,9 +22,11 @@ public class FusedLocationService extends LocationService {
     public void onCreate() {
         super.onCreate();
 
+        // Request location samples at regular intervals, if they're available
         mLocationRequest = new LocationRequest()
-                .setInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
-                .setFastestInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
+                .setInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setFastestInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setMaxWaitTime(LOCATION_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
