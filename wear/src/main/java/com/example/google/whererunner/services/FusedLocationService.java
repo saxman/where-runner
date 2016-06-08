@@ -34,12 +34,12 @@ public class FusedLocationService extends LocationService {
                 .addConnectionCallbacks(callbacks)
                 .addOnConnectionFailedListener(callbacks)
                 .build();
-
-        startLocationUpdates();
     }
 
     @Override
     public void onDestroy() {
+        // Also called by LocationService; however, want to de-register listener before
+        // disconnecting for GoogleApiClient
         stopLocationUpdates();
 
         if (mGoogleApiClient.isConnected()) {

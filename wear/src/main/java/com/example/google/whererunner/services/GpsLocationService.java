@@ -29,13 +29,6 @@ public class GpsLocationService extends LocationService {
         super.onCreate();
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        startLocationUpdates();
-    }
-
-    @Override
-    public void onDestroy() {
-        stopLocationUpdates();
-        super.onDestroy();
     }
 
     @Override

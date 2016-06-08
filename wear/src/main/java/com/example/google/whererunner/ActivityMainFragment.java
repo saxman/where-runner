@@ -129,6 +129,7 @@ public class ActivityMainFragment extends WearableFragment {
                             }
 
                             // Start a timer to detect if we're not receiving location samples in regular intervals
+                            // TODO move timer to location service and broadcast timeout
                             mLocationSampleTimer = new CountDownTimer(LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS, LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS) {
                                 public void onTick(long millisUntilFinished) {}
 

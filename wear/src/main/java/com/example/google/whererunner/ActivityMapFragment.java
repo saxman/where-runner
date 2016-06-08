@@ -59,8 +59,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     private Location mLastLocation = null;
     private boolean mIsRecording = false;
 
-    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
-
     private BroadcastReceiver mLocationChangedReceiver;
 
     private List<Location> mPathLocations = new ArrayList<>();
@@ -175,18 +173,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         super.onStop();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_ACCESS_FINE_LOCATION:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getLastLocation();
-                }
-
-                break;
-        }
-    }
-
     //
     // OnMapReadyCallback method
     //
@@ -252,7 +238,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     private void updateUI() {
         // Map not ready yet. Once it is, updateUI() will be called again
         if (mGoogleMap == null) {
-            Log.d(LOG_TAG, "Deferring map UI update. Map not ready");
             return;
         }
 
@@ -327,19 +312,19 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     }
 
     private void getLastLocation() {
+        // If the user hasn't granted fine location permission (handled by MainActivity), don't bother asking for their last location
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
             return;
         }
 
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (location != null) {
-            Log.d(LOG_TAG, "Last known location: " + location.toString());
             mInitialLocation = location;
-            updateUI();
-        } else {
-            Log.w(LOG_TAG, "Unable to retrieve user's last known location");
+
+            if (!isAmbient()) {
+                updateUI();
+            }
         }
     }
 

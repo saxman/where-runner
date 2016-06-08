@@ -1,11 +1,13 @@
 package com.example.google.whererunner;
 
+import android.Manifest;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -44,6 +46,8 @@ public class MainActivity extends WearableActivity implements
 
     private static final int ACTIVITY_TYPE_RUNNING = 0;
     private static final int ACTIVITY_TYPE_CYCLING = 1;
+
+    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
@@ -118,10 +122,21 @@ public class MainActivity extends WearableActivity implements
     public void onStart() {
         super.onStart();
 
-        // Start the location service so that child fragments can receive location and recording
-        // status updates via local broadcasts.
-        Intent  intent = new Intent(this, FusedLocationService.class);
-        startService(intent);
+        startLocationService();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_ACCESS_FINE_LOCATION:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startLocationService();
+                }
+
+                // TODO inform the user that they really, really need to grant permission
+
+                break;
+        }
     }
 
     @Override
@@ -227,6 +242,19 @@ public class MainActivity extends WearableActivity implements
     //
     // Class methods
     //
+
+    private void startLocationService() {
+        // If the user hasn't granted fine location permission, request it
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
+            return;
+        }
+
+        // Start the location service so that child fragments can receive location and recording
+        // status updates via local broadcasts
+        Intent intent = new Intent(this, FusedLocationService.class);
+        startService(intent);
+    }
 
     private void setRecordingButtonUiState() {
         MenuItem menuItem = mMenu.getItem(ACTION_RECORD_INDEX);

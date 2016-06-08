@@ -112,8 +112,10 @@ public abstract class LocationService extends Service {
 
     @Override
     public void onDestroy() {
+        stopLocationUpdates();
         mNotificationManager.cancel(NOTIFICATION_ID);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+
         super.onDestroy();
     }
 
