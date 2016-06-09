@@ -43,11 +43,9 @@ public class SettingsFragment extends Fragment {
 
     private static final class WearableListViewAdapter extends WearableListView.Adapter {
         private String[] mDataset;
-        private final Context mContext;
         private final LayoutInflater mInflater;
 
         public WearableListViewAdapter(Context context, String[] dataset) {
-            mContext = context;
             mInflater = LayoutInflater.from(context);
             mDataset = dataset;
         }

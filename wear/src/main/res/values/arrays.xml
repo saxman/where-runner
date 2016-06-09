@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="settings_list">
-        <item>one</item>
-        <item>two</item>
-        <item>three</item>
+        <item>Show map location accuracy circle?</item>
+        <item>Only use GPS sensor on watch?</item>
+        <item>Vibrate when signal lost?</item>
+        <item>No signal timeout (secs)</item>
+        <item>Location accuracy threshold (meters)</item>
+        <item>Show phone connectivity state?</item>
     </string-array>
 </resources>

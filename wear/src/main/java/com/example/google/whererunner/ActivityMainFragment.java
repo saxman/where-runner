@@ -59,8 +59,6 @@ public class ActivityMainFragment extends WearableFragment {
 
     private GoogleApiClient mGoogleApiClient;
 
-    private CountDownTimer mLocationSampleTimer;
-
     private int mConnectedNodes = -1;
 
     @Override
@@ -103,11 +101,6 @@ public class ActivityMainFragment extends WearableFragment {
         mGoogleApiClient.disconnect();
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
 
-        if (mLocationSampleTimer != null) {
-            mLocationSampleTimer.cancel();
-            mLocationSampleTimer = null;
-        }
-
         super.onStop();
     }
 
@@ -122,30 +115,20 @@ public class ActivityMainFragment extends WearableFragment {
                     switch (intent.getAction()) {
                         case LocationService.ACTION_LOCATION_CHANGED:
                             mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                            break;
 
-                            // Reset (cancel) pre-existing timer
-                            if (mLocationSampleTimer != null) {
-                                mLocationSampleTimer.cancel();
+                        case LocationService.ACTION_CONNECTIVITY_LOST:
+                            // We haven't received a location sample in too long. Set the last
+                            // location to null so updateUI() shows a disconnected icon next refresh cycle
+                            mLastLocation = null;
+
+                            // TODO should be updated even if in ambient mode
+                            if (!isAmbient()) {
+                                updateUI();
                             }
 
-                            // Start a timer to detect if we're not receiving location samples in regular intervals
-                            // TODO move timer to location service and broadcast timeout
-                            mLocationSampleTimer = new CountDownTimer(LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS, LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS) {
-                                public void onTick(long millisUntilFinished) {}
-
-                                public void onFinish() {
-                                    // We haven't received a location sample in too long. Set the last location to null so updateUI() shows a disconnected icon next refresh cycle
-                                    mLastLocation = null;
-
-                                    // TODO should be updated even if in ambient mode
-                                    if (!isAmbient()) {
-                                        updateUI();
-                                    }
-
-                                    Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                                    vibrator.vibrate(VIBRATOR_DURATION_MS);
-                                }
-                            }.start();
+                            Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                            vibrator.vibrate(VIBRATOR_DURATION_MS);
 
                             break;
                     }
@@ -159,6 +142,7 @@ public class ActivityMainFragment extends WearableFragment {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
+        intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
