@@ -16,25 +16,22 @@ public class WhereRunnerApp extends Application {
     public static final String PREF_LOCATION_ACCURACY_TIMEOUT = "LOCATION_ACCURACY_TIMEOUT";
     public static final String PREF_PHONE_CONNECTIVITY_STATUS = "PHONE_CONNECTIVITY_STATUS";
 
-    private static SharedPreferences mSharedPrefs;
-
-    private static WhereRunnerApp sInstance;
+    private static SharedPreferences sSharedPrefs;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        sInstance = this;
 
-        mSharedPrefs = getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
+        sSharedPrefs = getSharedPreferences(SHARED_PREFS, Context.MODE_PRIVATE);
     }
 
     public static void storeUserPreference(String pref, String value) {
-        SharedPreferences.Editor editor = sInstance.mSharedPrefs.edit();
+        SharedPreferences.Editor editor = sSharedPrefs.edit();
         editor.putString(pref, value);
         editor.commit();
     }
 
     public static String retrieveUserPreference(String pref) {
-        return sInstance.mSharedPrefs.getString(pref, "");
+        return sSharedPrefs.getString(pref, "");
     }
 }
