@@ -12,4 +12,6 @@
     <string name="activity_cycling">Cycling</string>
 
     <string name="notification_content_text">Where Runner?!</string>
+
+    <string name="hrm_no_data">No Data</string>
 </resources>

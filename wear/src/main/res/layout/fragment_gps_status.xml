@@ -8,14 +8,14 @@
     tools:context=".WorkoutDataFragment">
 
     <TextView
-        style="@style/header"
+        style="@style/text_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/satellites"
         android:gravity="center" />
 
     <TextView
-        style="@style/header"
+        style="@style/text_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/ttff"

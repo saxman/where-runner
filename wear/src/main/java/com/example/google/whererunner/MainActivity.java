@@ -154,14 +154,13 @@ public class MainActivity extends WearableActivity implements
 
     @Override
     public void onStop() {
-        // Tell the location service that if can stop location updates, unless it's recording.
+        // Tell the location service that if can stop location updates, unless it's recording
         Intent intent = new Intent(LocationService.ACTION_STOP_LOCATION_UPDATES);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
 
-        // TODO: Implement better HRM service management!
-        // HR service is started in HeartRateFragment; stopped here to kill when activity stops
+        // TODO only stop the HRM service if we're not recording
         stopService(new Intent(this, HeartRateSensorService.class));
 
         super.onStop();
