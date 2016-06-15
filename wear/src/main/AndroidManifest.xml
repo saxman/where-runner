@@ -37,6 +37,8 @@
         <service android:name=".services.GpsLocationService" />
         <service android:name=".services.FusedLocationService" />
         <service android:name=".services.HeartRateSensorService" />
+        <service android:name=".services.ActivityRecordingService" />
+
     </application>
 
 </manifest>
