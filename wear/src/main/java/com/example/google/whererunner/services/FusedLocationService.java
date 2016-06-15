@@ -16,28 +16,30 @@ public class FusedLocationService extends LocationService {
     private LocationRequest mLocationRequest;
     private GoogleApiClient mGoogleApiClient;
 
-    private GoogleApiClientCallbacks mGoogleApiClientCallbacks = new GoogleApiClientCallbacks();
-
     @Override
     public void onCreate() {
         super.onCreate();
 
+        // Request location samples at regular intervals, if they're available
         mLocationRequest = new LocationRequest()
-                .setInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
-                .setFastestInterval(LOCATION_MIN_UPDATE_INTERVAL_MS)
+                .setInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setFastestInterval(LOCATION_UPDATE_INTERVAL_MS)
+                .setMaxWaitTime(LOCATION_UPDATE_INTERVAL_MS)
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks(mGoogleApiClientCallbacks)
-                .addOnConnectionFailedListener(mGoogleApiClientCallbacks)
+                .addConnectionCallbacks(callbacks)
+                .addOnConnectionFailedListener(callbacks)
                 .build();
-
-        startLocationUpdates();
     }
 
     @Override
     public void onDestroy() {
+        // Also called by LocationService; however, want to de-register listener before
+        // disconnecting for GoogleApiClient
         stopLocationUpdates();
 
         if (mGoogleApiClient.isConnected()) {

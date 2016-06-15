@@ -29,20 +29,13 @@ public class GpsLocationService extends LocationService {
         super.onCreate();
 
         mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        startLocationUpdates();
-    }
-
-    @Override
-    public void onDestroy() {
-        stopLocationUpdates();
-        super.onDestroy();
     }
 
     @Override
     protected void startLocationUpdates() {
         if (checkPermission()) {
             mLocationManager.addGpsStatusListener(mGpsStatusListener);
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_MIN_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
             mIsLocationUpdating = true;
         }
     }

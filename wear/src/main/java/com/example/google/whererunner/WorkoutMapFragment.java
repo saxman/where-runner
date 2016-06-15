@@ -12,10 +12,8 @@ import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +29,8 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.Circle;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -41,23 +41,23 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ActivityMapFragment extends WearableFragment implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCallback {
 
-    private static final String LOG_TAG = ActivityMapFragment.class.getSimpleName();
+    private static final String LOG_TAG = WorkoutMapFragment.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
     private MapView mMapView;
 
     private Marker mMapMarker;
     private Polyline mPolyline;
+    private Circle mAccuracyCircle;
 
     private GoogleApiClient mGoogleApiClient;
 
     private Location mInitialLocation = null;
     private Location mLastLocation = null;
     private boolean mIsRecording = false;
-
-    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
+    private boolean mIsLocationFixed = false;
 
     private BroadcastReceiver mLocationChangedReceiver;
 
@@ -69,16 +69,19 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_activity_map, container, false);
+        final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
         if (mGoogleApiClient == null) {
+            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
+
             mGoogleApiClient = new GoogleApiClient.Builder(getContext())
                     .addApi(LocationServices.API)
-                    .addConnectionCallbacks(this)
+                    .addConnectionCallbacks(callbacks)
+                    .addOnConnectionFailedListener(callbacks)
                     .build();
         }
 
@@ -105,6 +108,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                         case LocationService.ACTION_LOCATION_CHANGED:
                             Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
                             mLastLocation = location;
+                            mIsLocationFixed = true;
 
                             if (mIsRecording) {
                                 mPathLocations.add(location);
@@ -116,7 +120,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                             setMapMarkerIcon();
 
                             if (!mIsRecording) {
-                                // Ensure that prior location samples are cleared out
+                                // Ensure that the prior location samples are cleared out
                                 mPathLocations.clear();
                             }
 
@@ -124,6 +128,10 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                         case LocationService.ACTION_RECORDING_STATUS:
                             mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
                             setMapMarkerIcon();
+                            break;
+                        case LocationService.ACTION_CONNECTIVITY_LOST:
+                            // We haven't received a location sample in too long, so hide the accuracy circle
+                            mIsLocationFixed = false;
                             break;
                     }
 
@@ -138,6 +146,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
         intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
 
         Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
@@ -170,18 +179,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         super.onStop();
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_ACCESS_FINE_LOCATION:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    getLastLocation();
-                }
-
-                break;
-        }
-    }
-
     //
     // OnMapReadyCallback method
     //
@@ -205,6 +202,13 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
                 .color(getActivity().getColor(R.color.highlight))
+                .visible(false));
+
+        mAccuracyCircle = mGoogleMap.addCircle(new CircleOptions()
+                .center(new LatLng(0, 0))
+                .radius(0)
+                .strokeWidth(0)
+                .fillColor(getResources().getColor(R.color.location_accuracy_circle, null))
                 .visible(false));
 
         updateUI();
@@ -233,25 +237,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     }
 
     //
-    // GoogleApiClient methods
-    //
-
-    @Override
-    public void onConnected(@Nullable Bundle bundle) {
-        getLastLocation();
-    }
-
-    @Override
-    public void onConnectionSuspended(int i) {
-        // TODO
-    }
-
-    @Override
-    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        // TODO
-    }
-
-    //
     // Class methods
     //
 
@@ -259,7 +244,6 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     private void updateUI() {
         // Map not ready yet. Once it is, updateUI() will be called again
         if (mGoogleMap == null) {
-            Log.d(LOG_TAG, "Deferring map UI update. Map not ready");
             return;
         }
 
@@ -286,6 +270,16 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                 mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             } else {
                 mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
+            }
+
+            if (mIsLocationFixed) {
+                // Update the location accuracy circle and ensure that's it's visible, as it's initially
+                // hidden, and is hidden when the accuracy falls below the threshold
+                mAccuracyCircle.setCenter(lastLatLng);
+                mAccuracyCircle.setRadius(mLastLocation.getAccuracy());
+                mAccuracyCircle.setVisible(true);
+            } else {
+                mAccuracyCircle.setVisible(false);
             }
         }
 
@@ -328,23 +322,23 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     }
 
     private void getLastLocation() {
+        // If the user hasn't granted fine location permission (handled by MainActivity), don't bother asking for their last location
         if (ActivityCompat.checkSelfPermission(getContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
             return;
         }
 
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (location != null) {
-            Log.d(LOG_TAG, "Last known location: " + location.toString());
             mInitialLocation = location;
-            updateUI();
-        } else {
-            Log.w(LOG_TAG, "Unable to retrieve user's last known location");
+
+            if (!isAmbient()) {
+                updateUI();
+            }
         }
     }
 
-    // TODO move to util class?
+    // TODO move to util class? run in background thread?
     private BitmapDescriptor loadDrawable(int id) {
         Drawable circle = getResources().getDrawable(id, null);
         Canvas canvas = new Canvas();
@@ -354,5 +348,24 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         circle.draw(canvas);
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    private class GoogleApiClientCallbacks implements
+            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+        @Override
+        public void onConnected(@NonNull Bundle connectionHint) {
+            getLastLocation();
+        }
+
+        @Override
+        public void onConnectionSuspended(int i) {
+            // TODO
+        }
+
+        @Override
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+            // TODO
+        }
     }
 }

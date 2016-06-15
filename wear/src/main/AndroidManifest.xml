@@ -8,15 +8,16 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
-        android:allowBackup="true"
+        android:name=".WhereRunnerApp"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme">
-        <uses-library
-            android:name="com.google.android.wearable"
-            android:required="false" />
+        android:theme="@style/AppTheme"
+        android:allowBackup="true">
+
+        <uses-library android:name="com.google.android.wearable" android:required="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -26,9 +27,9 @@
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleTop">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -37,6 +38,7 @@
         <service android:name=".services.FusedLocationService" />
         <service android:name=".services.HeartRateSensorService" />
         <service android:name=".services.ActivityRecordingService" />
+
     </application>
 
 </manifest>

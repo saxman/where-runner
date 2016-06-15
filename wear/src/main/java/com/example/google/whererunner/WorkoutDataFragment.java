@@ -21,9 +21,9 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class ActivityDataFragment extends WearableFragment {
+public class WorkoutDataFragment extends WearableFragment {
 
-    private static final String LOG_TAG = ActivityDataFragment.class.getSimpleName();
+    private static final String LOG_TAG = WorkoutDataFragment.class.getSimpleName();
 
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
@@ -43,7 +43,7 @@ public class ActivityDataFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_activity_data, container, false);
+        final View view = inflater.inflate(R.layout.fragment_workout_data, container, false);
 
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
