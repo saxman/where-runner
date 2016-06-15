@@ -1,7 +1,17 @@
 <resources>
-    <style name="header" parent="@android:style/Widget.TextView">
+    <style name="text_header" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_large</item>
+    </style>
+
+    <style name="text_normal" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_medium</item>
+    </style>
+
+    <style name="text_small" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_small</item>
     </style>
 
     <style name="map_overlay" parent="@android:style/Widget.TextView">
