@@ -25,6 +25,7 @@ import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.FusedLocationService;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
+import com.example.google.whererunner.services.WorkoutRecordingService;
 
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
@@ -99,6 +100,7 @@ public class MainActivity extends WearableActivity implements
         super.onStart();
 
         startLocationService();
+        startRecordingService();
     }
 
     @Override
@@ -253,6 +255,11 @@ public class MainActivity extends WearableActivity implements
         }
 
         Intent intent = new Intent(this, HeartRateSensorService.class);
+        startService(intent);
+    }
+
+    private void startRecordingService() {
+        Intent intent = new Intent(this, WorkoutRecordingService.class);
         startService(intent);
     }
 

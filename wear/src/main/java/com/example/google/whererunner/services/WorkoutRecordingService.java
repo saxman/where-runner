@@ -17,15 +17,25 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-public class ActivityRecordingService extends Service {
+import java.util.ArrayList;
+
+public class WorkoutRecordingService extends Service {
 
     @SuppressWarnings("unused")
-    private static final String TAG = ActivityRecordingService.class.getSimpleName();
+    private static final String TAG = WorkoutRecordingService.class.getSimpleName();
 
     // Receivers
     private BroadcastReceiver recordingReceiver;
     private BroadcastReceiver hrReceiver;
     private BroadcastReceiver locationReceiver;
+
+    // Data caches
+    private ArrayList<Float> hrCache = new ArrayList<>();
+    private ArrayList<Location> locationCache = new ArrayList<>();
+
+    //
+    // Service override methods
+    //
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -42,17 +52,34 @@ public class ActivityRecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        // Set up the recording broadcast receiver
+        // Set up the recording broadcast receiver listener
         recordingReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                Log.v(TAG, "Received ACTION_RECORDING_STATUS_CHANGED");
                 boolean isRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-                // TODO: Handle what to do when recording message received
+                if (isRecording) {
+                    Log.v(TAG, "Received isRecording");
+                    recordingStateManager(RecordingTransition.START_RECORDING);
+                } else {
+                    Log.v(TAG, "Received not isRecording");
+                    recordingStateManager(RecordingTransition.STOP_RECORDING);
+                }
             }
         };
-        IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        IntentFilter filter = new IntentFilter(LocationService.ACTION_RECORDING_STATUS_CHANGED);
         LocalBroadcastManager.getInstance(this).registerReceiver(recordingReceiver, filter);
     }
+
+    @Override
+    public void onDestroy() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(recordingReceiver);
+        super.onDestroy();
+    }
+
+    //
+    // Service implementation methods
+    //
 
     /**
      * Manages the recording state of the service
@@ -62,7 +89,7 @@ public class ActivityRecordingService extends Service {
      */
     private enum RecordingTransition {START_RECORDING, STOP_RECORDING}
     private enum RecordingState {RECORDING, NOT_RECORDING}
-    private RecordingState mRecordingState;
+    private RecordingState mRecordingState = RecordingState.NOT_RECORDING;
     private long startTime, stopTime;
 
     /**
@@ -92,16 +119,32 @@ public class ActivityRecordingService extends Service {
         }
     }
 
+    /**
+     * Starts recording a workout session
+     */
     private void startRecording() {
+        Log.v(TAG, "In startRecording");
         startTime =  System.currentTimeMillis();
+        startHRRecording();
+        startGPSRecording();
     }
 
+    /**
+     * Stops recording a workout session and persists data
+     */
     private void stopRecording() {
+        Log.v(TAG, "In stopRecording");
         stopTime = System.currentTimeMillis();
-        // TODO: Save the session at this point!
+        stopHRRecording();
+        stopGPSRecording();
+        saveWorkout();
+        emptyCaches();
     }
 
-    private void startRecordingHR() {
+    /**
+     * Starts listening for HR notifications and records values
+     */
+    private void startHRRecording() {
         if (hrReceiver ==null) {
             hrReceiver = new BroadcastReceiver() {
                 @Override
@@ -109,7 +152,7 @@ public class ActivityRecordingService extends Service {
                     // Show the last reading
                     float[] hrValues = intent.getFloatArrayExtra(HeartRateSensorService.HEART_RATE);
                     for (float hr : hrValues) {
-                        // TODO: Save the HR value here!
+                        hrCache.add(hr);
                     }
                 }
             };
@@ -118,10 +161,16 @@ public class ActivityRecordingService extends Service {
             LocalBroadcastManager.getInstance(this).registerReceiver(hrReceiver, filter);
     }
 
-    private void stopRecordingHR() {
+    /**
+     * Stops listening for HR notification
+     */
+    private void stopHRRecording() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(hrReceiver);
     }
 
+    /**
+     * Starts listeneing for GPS notifications and records values
+     */
     private void startGPSRecording() {
 
         if (locationReceiver == null) {
@@ -129,7 +178,7 @@ public class ActivityRecordingService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-                    // TODO: Record the location here!
+                    locationCache.add(location);
                 }
             };
         }
@@ -139,8 +188,30 @@ public class ActivityRecordingService extends Service {
         LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver, intentFilter);
     }
 
+    /**
+     * Stops listening for GPS notifications
+     */
     private void stopGPSRecording() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver);
+    }
+
+    /**
+     * Saves the workout session data
+     */
+    private void saveWorkout() {
+        // TODO: no saving implemented; just writes data to console
+        Log.i(TAG, "Start time: " + new java.util.Date(this.startTime));
+        Log.i(TAG, "End time: " + new java.util.Date(this.stopTime));
+        Log.i(TAG, "Nr. HR values: " + this.hrCache.size());
+        Log.i(TAG, "Nr. location values: " + this.locationCache.size());
+    }
+
+    /**
+     * Empties all the data caches
+     */
+    private void emptyCaches() {
+        this.hrCache.clear();
+        this.locationCache.clear();
     }
 
 }
