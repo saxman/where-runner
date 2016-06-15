@@ -150,7 +150,7 @@ public class WorkoutRecordingService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     // Show the last reading
-                    float[] hrValues = intent.getFloatArrayExtra(HeartRateSensorService.HEART_RATE);
+                    float[] hrValues = intent.getFloatArrayExtra(HeartRateSensorService.EXTRA_HEART_RATE);
                     for (float hr : hrValues) {
                         hrCache.add(hr);
                     }
