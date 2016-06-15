@@ -10,19 +10,16 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewTreeObserver;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.FusedLocationService;
@@ -35,8 +32,6 @@ public class MainActivity extends WearableActivity implements
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private static final int DRAWER_PEEK_TIME_MS = 2500;
-
     private static final int NAV_DRAWER_ITEMS = 2;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
     private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 1;
@@ -48,6 +43,7 @@ public class MainActivity extends WearableActivity implements
     private static final int ACTIVITY_TYPE_CYCLING = 1;
 
     private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
+    private static final int REQUEST_ACCESS_BODY_SENSORS = 2;
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
@@ -72,7 +68,7 @@ public class MainActivity extends WearableActivity implements
         setAmbientEnabled();
 
         FragmentManager fragmentManager = getFragmentManager();
-        mCurrentViewPagerFragment = new ActivityMainFragment();
+        mCurrentViewPagerFragment = new WorkoutMainFragment();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
@@ -83,6 +79,10 @@ public class MainActivity extends WearableActivity implements
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
 
+        // Using a custom peek view since currently the drawer draws a white circle behind drawables
+        // in the drawer, but not in the peek, which causes the drawable to look different in the
+        // peek vs the drawer
+        // TODO re-test and remove when SDK fixed
         View peekView = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
         mWearableActionDrawer.setPeekContent(peekView);
 
@@ -90,32 +90,8 @@ public class MainActivity extends WearableActivity implements
         mWearableActionDrawer.setOnMenuItemClickListener(this);
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
-
-        // Wait until the drawer layout has been laid out, then peek its drawers
-        mWearableDrawerLayout.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                mWearableDrawerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-
-                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
-                mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
-
-                // Hide the peeking drawers after a few seconds
-                new CountDownTimer(DRAWER_PEEK_TIME_MS, DRAWER_PEEK_TIME_MS) {
-                    public void onTick(long millisUntilFinished) {}
-
-                    public void onFinish() {
-                        if (mWearableDrawerLayout.isPeeking(Gravity.TOP)) {
-                            mWearableDrawerLayout.closeDrawer(Gravity.TOP);
-                        }
-
-                        if (mWearableDrawerLayout.isPeeking(Gravity.BOTTOM)) {
-                            mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
-                        }
-                    }
-                }.start();
-            }
-        });
+        mWearableDrawerLayout.peekDrawer(Gravity.TOP);
+        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
     }
 
     @Override
@@ -134,6 +110,14 @@ public class MainActivity extends WearableActivity implements
                 }
 
                 // TODO inform the user that they really, really need to grant permission
+
+                break;
+            case REQUEST_ACCESS_BODY_SENSORS:
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    startHearRateSensorService();
+                }
+
+                // TODO allow the user to perpetually reject this permission
 
                 break;
         }
@@ -254,6 +238,22 @@ public class MainActivity extends WearableActivity implements
         // status updates via local broadcasts
         Intent intent = new Intent(this, FusedLocationService.class);
         startService(intent);
+
+        // Once we've gotten location permission, ask for hrm sensor permission if the sensor exists
+        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
+            startHearRateSensorService();
+        }
+    }
+
+    private void startHearRateSensorService() {
+        // If the user hasn't granted body sensor permission, request it
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BODY_SENSORS}, REQUEST_ACCESS_BODY_SENSORS);
+            return;
+        }
+
+        Intent intent = new Intent(this, HeartRateSensorService.class);
+        startService(intent);
     }
 
     private void setRecordingButtonUiState() {
@@ -281,7 +281,7 @@ public class MainActivity extends WearableActivity implements
             mActivityType = ACTIVITY_TYPE_CYCLING;
         }
 
-        // TODO does not seem to force the nav drawer to refresh icons...
+        // Notify the nav drawer adapter that the data has changed, to have the above icon refreshed
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
@@ -328,7 +328,7 @@ public class MainActivity extends WearableActivity implements
 
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    fragment = new ActivityMainFragment();
+                    fragment = new WorkoutMainFragment();
                     // Ensure the action drawer is visible, since other nav drawer pages could have hidden it
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
                     break;

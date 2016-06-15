@@ -9,7 +9,6 @@ import android.content.IntentFilter;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.CountDownTimer;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
@@ -32,8 +31,8 @@ import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
 
-public class ActivityMainFragment extends WearableFragment {
-    private static final String LOG_TAG = ActivityMainFragment.class.getSimpleName();
+public class WorkoutMainFragment extends WearableFragment {
+    private static final String LOG_TAG = WorkoutMainFragment.class.getSimpleName();
 
     private static final int FRAGMENT_ROUTE = 0;
     private static final int FRAGMENT_DATA = 1;
@@ -63,7 +62,7 @@ public class ActivityMainFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_activity_main, container, false);
+        final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
 
@@ -222,10 +221,10 @@ public class ActivityMainFragment extends WearableFragment {
 
             switch (x) {
                 case FRAGMENT_ROUTE:
-                    fragment = new ActivityMapFragment();
+                    fragment = new WorkoutMapFragment();
                     break;
                 case FRAGMENT_DATA:
-                    fragment = new ActivityDataFragment();
+                    fragment = new WorkoutDataFragment();
                     break;
                 case FRAGMENT_HEART:
                     fragment = new HeartRateFragment();

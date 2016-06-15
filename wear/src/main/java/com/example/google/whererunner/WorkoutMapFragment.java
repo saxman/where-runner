@@ -14,7 +14,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,9 +41,9 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 
-public class ActivityMapFragment extends WearableFragment implements OnMapReadyCallback {
+public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCallback {
 
-    private static final String LOG_TAG = ActivityMapFragment.class.getSimpleName();
+    private static final String LOG_TAG = WorkoutMapFragment.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
     private MapView mMapView;
@@ -58,6 +57,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
     private Location mInitialLocation = null;
     private Location mLastLocation = null;
     private boolean mIsRecording = false;
+    private boolean mIsLocationFixed = false;
 
     private BroadcastReceiver mLocationChangedReceiver;
 
@@ -69,7 +69,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_activity_map, container, false);
+        final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -108,6 +108,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                         case LocationService.ACTION_LOCATION_CHANGED:
                             Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
                             mLastLocation = location;
+                            mIsLocationFixed = true;
 
                             if (mIsRecording) {
                                 mPathLocations.add(location);
@@ -119,7 +120,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                             setMapMarkerIcon();
 
                             if (!mIsRecording) {
-                                // Ensure that prior location samples are cleared out
+                                // Ensure that the prior location samples are cleared out
                                 mPathLocations.clear();
                             }
 
@@ -127,6 +128,10 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                         case LocationService.ACTION_RECORDING_STATUS:
                             mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
                             setMapMarkerIcon();
+                            break;
+                        case LocationService.ACTION_CONNECTIVITY_LOST:
+                            // We haven't received a location sample in too long, so hide the accuracy circle
+                            mIsLocationFixed = false;
                             break;
                     }
 
@@ -141,6 +146,7 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
         intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
 
         Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
@@ -266,11 +272,15 @@ public class ActivityMapFragment extends WearableFragment implements OnMapReadyC
                 mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             }
 
-            // TODO remove accuracy circle if location samples time out
-            // Update the location accuracy circle
-            mAccuracyCircle.setCenter(lastLatLng);
-            mAccuracyCircle.setRadius(mLastLocation.getAccuracy());
-            mAccuracyCircle.setVisible(true);
+            if (mIsLocationFixed) {
+                // Update the location accuracy circle and ensure that's it's visible, as it's initially
+                // hidden, and is hidden when the accuracy falls below the threshold
+                mAccuracyCircle.setCenter(lastLatLng);
+                mAccuracyCircle.setRadius(mLastLocation.getAccuracy());
+                mAccuracyCircle.setVisible(true);
+            } else {
+                mAccuracyCircle.setVisible(false);
+            }
         }
 
         // If we're recording and we have new path data, update the path polyline
