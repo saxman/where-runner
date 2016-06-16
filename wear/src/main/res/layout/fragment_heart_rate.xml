@@ -19,8 +19,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="22dp"
-        android:visibility="gone" />
+        android:layout_marginTop="22dp" />
 
     <TextView
         android:id="@+id/hr_instantaneous"
@@ -37,7 +36,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/hr_instantaneous"
-        android:layout_centerHorizontal="true"
-        android:visibility="gone" />
+        android:layout_centerHorizontal="true" />
 
 </RelativeLayout>

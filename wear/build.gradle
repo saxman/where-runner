@@ -1,24 +1,24 @@
 apply plugin: 'com.android.application'
 
 android {
-//    compileSdkVersion 'android-N'
-    signingConfigs {
-        debug {
-            storeFile file('/Users/mattsullivan/.android/where-runner-debug.keystore')
-            keyAlias 'androiddebugkey'
-        }
-    }
     compileSdkVersion 23
     buildToolsVersion '24.0.0-rc3'
+
     defaultConfig {
         applicationId "com.example.google.whererunner"
-//        minSdkVersion 'N'
-//        targetSdkVersion 'N'
         minSdkVersion 23
         targetSdkVersion 23
         versionCode 1
         versionName "1.0"
     }
+
+    signingConfigs {
+        debug {
+            storeFile file(rootProject.projectDir.absolutePath + '\\debug.keystore')
+            keyAlias 'androiddebugkey'
+        }
+    }
+    
     buildTypes {
         release {
             minifyEnabled false

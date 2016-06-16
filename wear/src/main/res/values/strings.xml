@@ -13,5 +13,5 @@
 
     <string name="notification_content_text">Where Runner?!</string>
 
-    <string name="hrm_no_data">No Data</string>
+    <string name="hrm_no_data">- -</string>
 </resources>

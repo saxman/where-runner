@@ -20,6 +20,9 @@ public class HeartRateSensorService extends Service {
 
     public static final String ACTION_HEART_RATE_CHANGED = "HEART_RATE_CHANGED";
     public static final String EXTRA_HEART_RATE = "HEART_RATE";
+    public static final String EXTRA_HEART_RATE_MIN = "HEART_RATE_MIN";
+    public static final String EXTRA_HEART_RATE_MAX = "HEART_RATE_MAX";
+    public static final String EXTRA_TIMESTAMP = "TIMESTAMP";
 
     private CountDownTimer mSensorSampleTimer;
 
@@ -28,6 +31,9 @@ public class HeartRateSensorService extends Service {
 
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
+
+    private float mHeartRateMin = Float.MAX_VALUE;
+    private float mHeartRateMax = Float.MIN_VALUE;
 
     @Override
     public void onCreate () {
@@ -58,7 +64,7 @@ public class HeartRateSensorService extends Service {
         if (mSensorSampleTimer != null) {
             mSensorSampleTimer.cancel();
         }
-        
+
         super.onDestroy();
     }
 
@@ -78,7 +84,6 @@ public class HeartRateSensorService extends Service {
      * a new HR reading is received.
      */
     private class HRMSensorEventListener implements SensorEventListener {
-
         @Override
         public void onSensorChanged(SensorEvent event) {
             // Don't broadcast low quality readings
@@ -99,17 +104,22 @@ public class HeartRateSensorService extends Service {
                     LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
                 }
             }.start();
-            
-            // TODO if we don't have an accurate reading in a set period of time, notify the listeners so that they can remove "instantaneous" readings
 
-            Intent intent = new Intent();
-            intent.setAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, event.values);
+            // Get the last sample; however, there appears to only ever be one value...
+            float val = event.values[event.values.length - 1];
+
+            mHeartRateMin = (val < mHeartRateMin) ? val : mHeartRateMin;
+            mHeartRateMax = (val > mHeartRateMax) ? val : mHeartRateMax;
+
+            Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, val);
+            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE_MIN, mHeartRateMin);
+            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE_MAX, mHeartRateMax);
+            intent.putExtra(HeartRateSensorService.EXTRA_TIMESTAMP, event.timestamp);
             LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
         }
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {}
     }
-
 }

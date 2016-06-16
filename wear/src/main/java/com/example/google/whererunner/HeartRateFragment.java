@@ -55,12 +55,14 @@ public class HeartRateFragment extends Fragment
                             isHrmActive = true;
                         }
 
-                        // Show the last reading from the sensor
-                        float[] hrValues = intent.getFloatArrayExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-                        if (hrValues.length > 0) {
-                            float hr = hrValues[hrValues.length - 1];
-                            mHrInstantaneousText.setText(String.valueOf(hr));
-                        }
+                        float val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, -1);
+                        mHrInstantaneousText.setText(String.valueOf(val));
+
+                        val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE_MIN, -1);
+                        mHrMinText.setText(String.valueOf(val));
+
+                        val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE_MAX, -1);
+                        mHrMaxText.setText(String.valueOf(val));
 
                         break;
 
