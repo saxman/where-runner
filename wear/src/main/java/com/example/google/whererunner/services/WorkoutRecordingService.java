@@ -154,12 +154,9 @@ public class WorkoutRecordingService extends Service {
             hrReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    // Show the last reading
-                    float hr = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, 0);
-                    long ts = intent.getLongExtra(HeartRateSensorService.EXTRA_TIMESTAMP, 0);
-                    if (ts != 0) {
-                        hrCache.add(new HeartRate(System.currentTimeMillis(), hr));
-                    }
+                    float val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, -1);
+                    long timestamp = intent.getLongExtra(HeartRateSensorService.EXTRA_TIMESTAMP, -1);
+                    hrCache.add(new HeartRate(timestamp, val));
                 }
             };
         }
