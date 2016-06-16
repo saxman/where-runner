@@ -64,6 +64,8 @@ public class HeartRateFragment extends Fragment
                         val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE_MAX, -1);
                         mHrMaxText.setText(String.valueOf(val));
 
+                        /// TODO animate the heart to beat at the current rate
+
                         break;
 
                     case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:

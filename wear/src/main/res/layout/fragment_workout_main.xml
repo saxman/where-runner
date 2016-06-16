@@ -33,25 +33,37 @@
         android:layout_marginLeft="@dimen/map_overlay_margin">
 
         <ImageView
+            android:id="@+id/gps_connectivity"
             style="@style/map_overlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/gps_connectivity"
             android:src="@drawable/ic_gps_not_fixed"
             android:padding="@dimen/map_overlay_padding"
             android:layout_marginTop="@dimen/map_overlay_spacing"
             android:layout_marginBottom="@dimen/map_overlay_spacing" />
 
         <ImageView
+            android:id="@+id/phone_connectivity"
             style="@style/map_overlay"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/phone_connectivity"
             android:layout_below="@+id/gps_connectivity"
             android:visibility="gone"
             android:padding="@dimen/map_overlay_padding"
             android:layout_marginTop="@dimen/map_overlay_spacing"
             android:layout_marginBottom="@dimen/map_overlay_spacing" />
+
+        <ImageView
+            android:id="@+id/hrm_connectivity"
+            style="@style/map_overlay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/phone_connectivity"
+            android:padding="@dimen/map_overlay_padding"
+            android:layout_marginTop="@dimen/map_overlay_spacing"
+            android:layout_marginBottom="@dimen/map_overlay_spacing"
+            android:src="@drawable/ic_heart_12"
+            android:visibility="gone" />
 
     </RelativeLayout>
 

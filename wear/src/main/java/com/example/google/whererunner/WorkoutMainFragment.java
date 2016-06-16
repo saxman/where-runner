@@ -6,8 +6,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Point;
-import android.location.Location;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.annotation.NonNull;
@@ -21,6 +21,7 @@ import android.widget.LinearLayout;
 import android.widget.TextClock;
 
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class WorkoutMainFragment extends WearableFragment {
     private static final String LOG_TAG = WorkoutMainFragment.class.getSimpleName();
 
-    private static final int FRAGMENT_ROUTE = 0;
+    private static final int FRAGMENT_MAP = 0;
     private static final int FRAGMENT_DATA = 1;
     private static final int FRAGMENT_HEART = 2;
     private static final int FRAGMENT_GPS = 3;
@@ -50,15 +51,17 @@ public class WorkoutMainFragment extends WearableFragment {
     private FragmentGridPagerAdapter mViewPagerAdapter;
 
     private TextClock mTextClock;
-    private ImageView mPhoneConnectedImageView;
-    private ImageView mGpsConnectivityImageView;
     private ViewGroup mPagerPagePips;
 
-    private Location mLastLocation;
+    private ImageView mPhoneConnectivityImageView;
+    private ImageView mGpsConnectivityImageView;
+    private ImageView mHrmConnectivityImageView;
+
+    private boolean mIsHrmConnected = false;
+    private boolean mIsPhoneConnected = false;
+    private boolean mIsLocationServiceConnected = false;
 
     private GoogleApiClient mGoogleApiClient;
-
-    private int mConnectedNodes = -1;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -73,8 +76,16 @@ public class WorkoutMainFragment extends WearableFragment {
         mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
-        mPhoneConnectedImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
+        mPhoneConnectivityImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
+        mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
+
+        // If the device has a heart rate monitor, display its status
+        if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
+            mHrmConnectivityImageView.setVisibility(View.VISIBLE);
+        } else {
+            // TODO if the device doesn't have a heart rate monitor, hide the HRM fragment
+        }
 
         if (mGoogleApiClient == null) {
             GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
@@ -113,21 +124,31 @@ public class WorkoutMainFragment extends WearableFragment {
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
                         case LocationService.ACTION_LOCATION_CHANGED:
-                            mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+                            mIsLocationServiceConnected = true;
                             break;
 
                         case LocationService.ACTION_CONNECTIVITY_LOST:
-                            // We haven't received a location sample in too long. Set the last
-                            // location to null so updateUI() shows a disconnected icon next refresh cycle
-                            mLastLocation = null;
-
-                            // TODO should be updated even if in ambient mode
-                            if (!isAmbient()) {
-                                updateUI();
-                            }
+                            // TODO UI should be updated even if in ambient mode
+                            mIsLocationServiceConnected = false;
 
                             Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
                             vibrator.vibrate(VIBRATOR_DURATION_MS);
+
+                            break;
+
+                        case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
+                            mIsHrmConnected = false;
+                            break;
+
+                        case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                            if (mIsHrmConnected) {
+                                // No need to update the UI if the status hasn't changed
+                                return;
+                            } else {
+                                mIsHrmConnected = true;
+                            }
+
+                            // TODO animate the heart to beat at the current rate
 
                             break;
                     }
@@ -142,6 +163,8 @@ public class WorkoutMainFragment extends WearableFragment {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
+        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
+        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
@@ -186,20 +209,25 @@ public class WorkoutMainFragment extends WearableFragment {
     }
 
     private void updateUI() {
-        if (mLastLocation != null) {
+        if (mIsLocationServiceConnected) {
             mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_fixed);
         } else {
             mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_not_fixed);
         }
 
-        if (mConnectedNodes != -1) {
-            mPhoneConnectedImageView.setVisibility(View.VISIBLE);
+        if (mIsPhoneConnected) {
+            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+            mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_connected);
+        } else {
+            mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_disconnected);
+        }
 
-            if (mConnectedNodes == 0) {
-                mPhoneConnectedImageView.setImageResource(R.drawable.ic_phone_disconnected);
-            } else {
-                mPhoneConnectedImageView.setImageResource(R.drawable.ic_phone_connected);
-            }
+        // TODO can set image tint instead of changing icon
+        // TODO determine how this vector image is scale and make it larger
+        if (mIsHrmConnected) {
+            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_red_12);
+        } else {
+            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_12);
         }
     }
 
@@ -220,7 +248,7 @@ public class WorkoutMainFragment extends WearableFragment {
             int x = PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? col : row;
 
             switch (x) {
-                case FRAGMENT_ROUTE:
+                case FRAGMENT_MAP:
                     fragment = new WorkoutMapFragment();
                     break;
                 case FRAGMENT_DATA:
@@ -293,10 +321,15 @@ public class WorkoutMainFragment extends WearableFragment {
 
         @Override
         public void onConnected(@NonNull Bundle connectionHint) {
+            // Get the initial connectivity state of the phone
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override
                 public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                    mConnectedNodes = getConnectedNodesResult.getNodes().size();
+                     if (getConnectedNodesResult.getNodes().size() > 0) {
+                         mIsPhoneConnected = true;
+                     } else {
+                         mIsPhoneConnected = false;
+                     }
 
                     if (!isAmbient()) {
                         updateUI();
@@ -304,11 +337,12 @@ public class WorkoutMainFragment extends WearableFragment {
                 }
             }, 1000, TimeUnit.MILLISECONDS);
 
+            // Get updates on the connectivity state of the phone
             // TODO use non-deprecated API
             Wearable.NodeApi.addListener(mGoogleApiClient, new NodeApi.NodeListener() {
                 @Override
                 public void onPeerConnected(Node node) {
-                    mConnectedNodes = 1;
+                    mIsPhoneConnected = true;
 
                     if (!isAmbient()) {
                         updateUI();
@@ -317,7 +351,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
                 @Override
                 public void onPeerDisconnected(Node node) {
-                    mConnectedNodes = 0;
+                    mIsPhoneConnected = false;
 
                     if (!isAmbient()) {
                         updateUI();

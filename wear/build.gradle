@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '24.0.0-rc3'
+    buildToolsVersion "23.0.3"
 
     defaultConfig {
         applicationId "com.example.google.whererunner"
@@ -14,11 +14,11 @@ android {
 
     signingConfigs {
         debug {
-            storeFile file(rootProject.projectDir.absolutePath + '\\debug.keystore')
+            storeFile file(rootProject.projectDir.absolutePath + '/debug.keystore')
             keyAlias 'androiddebugkey'
         }
     }
-    
+
     buildTypes {
         release {
             minifyEnabled false

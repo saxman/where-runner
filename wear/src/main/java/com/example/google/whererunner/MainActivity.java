@@ -235,12 +235,17 @@ public class MainActivity extends WearableActivity implements
             return;
         }
 
+        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
+            // TODO if the device has a GPS sensor, use it instead of FLP, if the user prefers to do so (settings)
+        }
+
         // Start the location service so that child fragments can receive location and recording
         // status updates via local broadcasts
         Intent intent = new Intent(this, FusedLocationService.class);
         startService(intent);
 
         // Once we've gotten location permission, ask for hrm sensor permission if the sensor exists
+        // If these aren't asked serially in this manner, only one permission is surfaced to the user
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
             startHearRateSensorService();
         }
