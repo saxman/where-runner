@@ -51,6 +51,10 @@ public class HeartRateFragment extends Fragment
                 switch (intent.getAction()) {
                     case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
                         if (!isHrmActive) {
+                            // Ensure the min/max views are visible, since they're gone by default
+                            mHrMinText.setVisibility(View.VISIBLE);
+                            mHrMaxText.setVisibility(View.VISIBLE);
+
                             mHrContainer.setBackgroundResource(R.drawable.ic_heart_red);
                             isHrmActive = true;
                         }
@@ -70,8 +74,6 @@ public class HeartRateFragment extends Fragment
 
                     case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
                         mHrContainer.setBackgroundResource(R.drawable.ic_heart);
-                        mHrInstantaneousText.setText(getString(R.string.hrm_no_data));
-
                         isHrmActive = false;
 
                         break;
