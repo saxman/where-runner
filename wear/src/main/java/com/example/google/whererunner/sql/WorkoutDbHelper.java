@@ -5,6 +5,11 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
+import com.example.google.whererunner.datatypes.HeartRate;
+import com.example.google.whererunner.datatypes.LatLng;
+
+import java.util.ArrayList;
+
 /**
  * SQL DB helper for workouts
  */
@@ -37,7 +42,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     //
 
     /**
-     * Write a workout to the db
+     * Writes a workout to the db
      */
     public long writeWorkout(WorkoutContract.WorkoutType type, long startTime, long endTime) {
         // Gets the data repository in write mode
@@ -51,6 +56,41 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
 
         // Insert the new row, returning the primary key value of the new row
         return db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
+    }
+
+    /**
+     * Writes an array of heart rate values to the db
+     */
+    public void writeHeartRates(ArrayList<HeartRate> heartRates) {
+        SQLiteDatabase db = getWritableDatabase();
+
+        db.beginTransaction();
+
+        for (HeartRate heartrate : heartRates) {
+            ContentValues values = new ContentValues();
+            values.put(WorkoutContract.HeartRate.COLUMN_NAME_TIMESTAMP, heartrate.getTimestamp());
+            values.put(WorkoutContract.HeartRate.COLUMN_NAME_HEART_RATE, heartrate.getHeartRate());
+            db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
+        }
+        db.endTransaction();
+    }
+
+    /**
+     * Write an array of lat lngs to the db
+     */
+    public void writeLatLngs(ArrayList<LatLng> latlngs) {
+        SQLiteDatabase db = getWritableDatabase();
+
+        db.beginTransaction();
+
+        for (LatLng latlng : latlngs) {
+            ContentValues values = new ContentValues();
+            values.put(WorkoutContract.LatLng.COLUMN_NAME_TIMESTAMP, latlng.getTimestamp());
+            values.put(WorkoutContract.LatLng.COLUMN_NAME_LAT, latlng.getLat());
+            values.put(WorkoutContract.LatLng.COLUMN_NAME_LNG, latlng.getLng());
+            db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
+        }
+        db.endTransaction();
     }
 
 }
