@@ -17,6 +17,9 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.example.google.whererunner.sql.WorkoutContract;
+import com.example.google.whererunner.sql.WorkoutDbHelper;
+
 import java.util.ArrayList;
 
 public class WorkoutRecordingService extends Service {
@@ -169,7 +172,7 @@ public class WorkoutRecordingService extends Service {
     }
 
     /**
-     * Starts listeneing for GPS notifications and records values
+     * Starts listening for GPS notifications and records values
      */
     private void startGPSRecording() {
 
@@ -199,11 +202,14 @@ public class WorkoutRecordingService extends Service {
      * Saves the workout session data
      */
     private void saveWorkout() {
-        // TODO: no saving implemented; just writes data to console
         Log.i(TAG, "Start time: " + new java.util.Date(this.startTime));
         Log.i(TAG, "End time: " + new java.util.Date(this.stopTime));
         Log.i(TAG, "Nr. HR values: " + this.hrCache.size());
         Log.i(TAG, "Nr. location values: " + this.locationCache.size());
+
+        WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
+        // TODO: write in correct workout type
+        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, startTime, stopTime);
     }
 
     /**
