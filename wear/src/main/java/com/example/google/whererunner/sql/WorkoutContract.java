@@ -47,8 +47,8 @@ public final class WorkoutContract {
     /**
      * Defines the location coordinates table
      */
-    public static abstract class LatLng implements BaseColumns {
-        public static final String TABLE_NAME = "latlng";
+    public static abstract class Location implements BaseColumns {
+        public static final String TABLE_NAME = "location";
         public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
         public static final String COLUMN_NAME_LAT = "lat";
         public static final String COLUMN_NAME_LNG = "lng";
@@ -99,18 +99,18 @@ public final class WorkoutContract {
     /**
      * Create the latlng table
      */
-     static final String SQL_CREATE_LAT_LNGS =
-            "CREATE TABLE " + LatLng.TABLE_NAME + " (" +
-                    LatLng._ID + " INTEGER PRIMARY KEY," +
-                    LatLng.COLUMN_NAME_TIMESTAMP + INT_TYPE + NOT_NULL + COMMA_SEP +
-                    LatLng.COLUMN_NAME_LAT + REAL_TYPE + NOT_NULL + COMMA_SEP +
-                    LatLng.COLUMN_NAME_LNG + REAL_TYPE + NOT_NULL +
+     static final String SQL_CREATE_LOCATIONS =
+            "CREATE TABLE " + Location.TABLE_NAME + " (" +
+                    Location._ID + " INTEGER PRIMARY KEY," +
+                    Location.COLUMN_NAME_TIMESTAMP + INT_TYPE + NOT_NULL + COMMA_SEP +
+                    Location.COLUMN_NAME_LAT + REAL_TYPE + NOT_NULL + COMMA_SEP +
+                    Location.COLUMN_NAME_LNG + REAL_TYPE + NOT_NULL +
                     " )";
 
     /**
      * Drop the latlng table
      */
-     static final String SQL_DELETE_LAT_LNGS =
-            "DROP TABLE IF EXISTS " + LatLng.TABLE_NAME;
+     static final String SQL_DELETE_LOCATIONS =
+            "DROP TABLE IF EXISTS " + Location.TABLE_NAME;
 
 }

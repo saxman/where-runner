@@ -4,9 +4,9 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.location.Location;
 
 import com.example.google.whererunner.datatypes.HeartRate;
-import com.example.google.whererunner.datatypes.LatLng;
 
 import java.util.ArrayList;
 
@@ -26,14 +26,14 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(WorkoutContract.SQL_CREATE_WORKOUTS);
         db.execSQL(WorkoutContract.SQL_CREATE_HEARTRATES);
-        db.execSQL(WorkoutContract.SQL_CREATE_LAT_LNGS);
+        db.execSQL(WorkoutContract.SQL_CREATE_LOCATIONS);
     }
 
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Database upgrades wipes all data!
         db.execSQL(WorkoutContract.SQL_DELETE_WORKOUTS);
         db.execSQL(WorkoutContract.SQL_DELETE_HEARTRATES);
-        db.execSQL(WorkoutContract.SQL_DELETE_LAT_LNGS);
+        db.execSQL(WorkoutContract.SQL_DELETE_LOCATIONS);
         onCreate(db);
     }
 
@@ -76,19 +76,20 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     }
 
     /**
-     * Write an array of lat lngs to the db
+     * Write an array of locations to the db
      */
-    public void writeLatLngs(ArrayList<LatLng> latlngs) {
+    public void writeLocations(ArrayList<Location> locations) {
         SQLiteDatabase db = getWritableDatabase();
 
         db.beginTransaction();
 
-        for (LatLng latlng : latlngs) {
+        for (Location location : locations) {
             ContentValues values = new ContentValues();
-            values.put(WorkoutContract.LatLng.COLUMN_NAME_TIMESTAMP, latlng.getTimestamp());
-            values.put(WorkoutContract.LatLng.COLUMN_NAME_LAT, latlng.getLat());
-            values.put(WorkoutContract.LatLng.COLUMN_NAME_LNG, latlng.getLng());
-            db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
+            location.getTime();
+            values.put(WorkoutContract.Location.COLUMN_NAME_TIMESTAMP, location.getTime());
+            values.put(WorkoutContract.Location.COLUMN_NAME_LAT, location.getLatitude());
+            values.put(WorkoutContract.Location.COLUMN_NAME_LNG, location.getLongitude());
+            db.insert(WorkoutContract.Location.TABLE_NAME, null, values);
         }
         db.endTransaction();
     }

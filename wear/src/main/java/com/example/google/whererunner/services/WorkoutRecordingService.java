@@ -18,7 +18,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.example.google.whererunner.datatypes.HeartRate;
-import com.example.google.whererunner.datatypes.LatLng;
 import com.example.google.whererunner.sql.WorkoutContract;
 import com.example.google.whererunner.sql.WorkoutDbHelper;
 
@@ -34,9 +33,10 @@ public class WorkoutRecordingService extends Service {
     private BroadcastReceiver hrReceiver;
     private BroadcastReceiver locationReceiver;
 
+
     // Data caches
     private ArrayList<HeartRate> hrCache = new ArrayList<>();
-    private ArrayList<LatLng> latlngCache = new ArrayList<>();
+    private ArrayList<Location> locationCache = new ArrayList<>();
 
     //
     // Service override methods
@@ -155,8 +155,9 @@ public class WorkoutRecordingService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     // Show the last reading
-                    float[] hrValues = intent.getFloatArrayExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-                    for (float hr : hrValues) {
+                    float hr = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, 0);
+                    long ts = intent.getLongExtra(HeartRateSensorService.EXTRA_TIMESTAMP, 0);
+                    if (ts != 0) {
                         hrCache.add(new HeartRate(System.currentTimeMillis(), hr));
                     }
                 }
@@ -183,8 +184,7 @@ public class WorkoutRecordingService extends Service {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-                    latlngCache.add(new LatLng(System.currentTimeMillis(),
-                            location.getLatitude(), location.getLongitude()));
+                    locationCache.add(location);
                 }
             };
         }
@@ -208,13 +208,13 @@ public class WorkoutRecordingService extends Service {
         Log.i(TAG, "Start time: " + new java.util.Date(this.startTime));
         Log.i(TAG, "End time: " + new java.util.Date(this.stopTime));
         Log.i(TAG, "Nr. HR values: " + this.hrCache.size());
-        Log.i(TAG, "Nr. location values: " + this.latlngCache.size());
+        Log.i(TAG, "Nr. location values: " + this.locationCache.size());
 
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
         // TODO: write in correct workout type
         mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, startTime, stopTime);
         mDbHelper.writeHeartRates(hrCache);
-        mDbHelper.writeLatLngs(latlngCache);
+        mDbHelper.writeLocations(locationCache);
     }
 
     /**
@@ -222,7 +222,7 @@ public class WorkoutRecordingService extends Service {
      */
     private void emptyCaches() {
         this.hrCache.clear();
-        this.latlngCache.clear();
+        this.locationCache.clear();
     }
 
 }
