@@ -1,12 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string-array name="settings_list">
-        <item>Show map location accuracy circle?</item>
-        <item>Force use GPS sensor on watch?</item>
-        <item>Vibrate when signal lost?</item>
-        <item>No location update timeout (secs)</item>
-        <item>Location accuracy threshold (meters)</item>
-        <item>Show phone connectivity state?</item>
-        <item>Show HRM connectivity state?</item>
+        <item>Map Overlays</item>
+        <item>Location/GPS</item>
+    </string-array>
+
+    <string-array name="settings_map_list">
+        <item>Accuracy circle</item>
+        <item>Phone connectivity</item>
+        <item>Location connectivity</item>
+        <item>HRM connectivity</item>
+    </string-array>
+
+    <string-array name="settings_location_list">
+        <item>Force watch GPS</item>
+        <item>Update timeout (secs)</item>
+        <item>Accuracy threshold (meters)</item>
+        <item>Vibrate when signal lost</item>
     </string-array>
 </resources>
