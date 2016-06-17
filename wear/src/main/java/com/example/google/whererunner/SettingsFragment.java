@@ -2,18 +2,11 @@ package com.example.google.whererunner;
 
 import android.app.Fragment;
 import android.content.Context;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.WearableListView;
-import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.TextView;
 
 public class SettingsFragment extends Fragment {

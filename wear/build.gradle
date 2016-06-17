@@ -1,22 +1,22 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 23
+    compileSdkVersion 24
     buildToolsVersion "23.0.3"
-
-    defaultConfig {
-        applicationId "com.example.google.whererunner"
-        minSdkVersion 23
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-    }
 
     signingConfigs {
         debug {
             storeFile file(rootProject.projectDir.absolutePath + '/debug.keystore')
             keyAlias 'androiddebugkey'
         }
+    }
+
+    defaultConfig {
+        applicationId "com.example.google.whererunner"
+        minSdkVersion 23
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0"
     }
 
     buildTypes {
@@ -31,7 +31,7 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     provided 'com.google.android.wearable:wearable:1.0.0'
     compile 'com.google.android.support:wearable:2.0.0-alpha99'
-    compile 'com.android.support:support-v4:23.4.0'
+    compile 'com.android.support:support-v4:24.0.0'
     compile 'com.google.android.gms:play-services-wearable:9.0.2'
     compile 'com.google.android.gms:play-services-maps:9.0.2'
     compile 'com.google.android.gms:play-services-location:9.0.2'

@@ -12,13 +12,12 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.CountDownTimer;
 import android.os.IBinder;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 public class HeartRateSensorService extends Service {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = HeartRateSensorService.class.getSimpleName();
 
     public static final String ACTION_HEART_RATE_SENSOR_TIMEOUT = "HEART_RATE_SENSOR_TIMEOUT";
@@ -26,7 +25,7 @@ public class HeartRateSensorService extends Service {
     public static final String ACTION_HEART_RATE_CHANGED = "HEART_RATE_CHANGED";
     public static final String EXTRA_HEART_RATE = "HEART_RATE";
 
-    public static final String ACTION_STOP_SENSOR_SERIVCE = "STOP_SENSOR_SERVICE";
+    public static final String ACTION_STOP_SENSOR_SERVICE = "STOP_SENSOR_SERVICE";
 
     private CountDownTimer mSensorSampleTimer;
 
@@ -66,7 +65,7 @@ public class HeartRateSensorService extends Service {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
-                    case ACTION_STOP_SENSOR_SERIVCE:
+                    case ACTION_STOP_SENSOR_SERVICE:
                         mSensorManager.unregisterListener(mSensorListener);
                         stopSelf();
                         break;
@@ -75,7 +74,7 @@ public class HeartRateSensorService extends Service {
         };
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ACTION_STOP_SENSOR_SERIVCE);
+        intentFilter.addAction(ACTION_STOP_SENSOR_SERVICE);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }

@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -341,10 +342,20 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     // TODO move to util class? run in background thread?
     private BitmapDescriptor loadDrawable(int id) {
         Drawable circle = getResources().getDrawable(id, null);
+
+        int width = 24;
+        int height = 24;
+        try {
+            width = circle.getIntrinsicWidth();
+            height = circle.getIntrinsicHeight();
+        } catch (NullPointerException e) {
+            Log.w(LOG_TAG, "Drawable must have intrinsic width and height. Using arbitrary default of 24");
+        }
+
         Canvas canvas = new Canvas();
-        Bitmap bitmap = Bitmap.createBitmap(circle.getIntrinsicWidth(), circle.getIntrinsicHeight(), Bitmap.Config.ARGB_8888);
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
         canvas.setBitmap(bitmap);
-        circle.setBounds(0, 0, circle.getIntrinsicWidth(), circle.getIntrinsicHeight());
+        circle.setBounds(0, 0, width, height);
         circle.draw(canvas);
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
@@ -354,7 +365,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         @Override
-        public void onConnected(@NonNull Bundle connectionHint) {
+        public void onConnected(Bundle connectionHint) {
             getLastLocation();
         }
 

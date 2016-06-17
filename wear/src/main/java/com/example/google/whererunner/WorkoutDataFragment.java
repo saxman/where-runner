@@ -61,7 +61,7 @@ public class WorkoutDataFragment extends WearableFragment {
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
                         case LocationService.ACTION_LOCATION_CHANGED:
-                            // TODO don't need to listen for location changes until recordign started
+                            // TODO don't need to listen for location changes until recording started
 
                             if (mIsRecording) {
                                 Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);

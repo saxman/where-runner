@@ -33,7 +33,7 @@ public class WhereRunnerApp extends Application {
     public static void storeUserPreference(String pref, String value) {
         SharedPreferences.Editor editor = sInstance.mSharedPrefs.edit();
         editor.putString(pref, value);
-        editor.commit();
+        editor.apply();
 
         // Notify listeners that that the user preferences have changed
         Intent intent = new Intent(ACTION_SETTINGS_CHANGED);

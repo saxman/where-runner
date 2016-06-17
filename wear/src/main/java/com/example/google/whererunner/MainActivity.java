@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.activity.WearableActivity;
@@ -31,6 +32,7 @@ public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
         WearableActionDrawer.OnMenuItemClickListener {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
     private static final int NAV_DRAWER_ITEMS = 2;
@@ -48,7 +50,6 @@ public class MainActivity extends WearableActivity implements
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
-    private WearableNavigationDrawer mWearableNavigationDrawer;
     private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
 
     private Fragment mCurrentViewPagerFragment;
@@ -74,8 +75,8 @@ public class MainActivity extends WearableActivity implements
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
 
-        mWearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
-        mWearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
+        WearableNavigationDrawer wearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
+        wearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
 
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
@@ -104,7 +105,7 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_ACCESS_FINE_LOCATION:
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -161,7 +162,7 @@ public class MainActivity extends WearableActivity implements
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         // Tell the HR service that if can stop sampling heart rate
-        intent = new Intent(HeartRateSensorService.ACTION_STOP_SENSOR_SERIVCE);
+        intent = new Intent(HeartRateSensorService.ACTION_STOP_SENSOR_SERVICE);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);

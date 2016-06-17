@@ -8,20 +8,18 @@
     tools:context=".WorkoutDataFragment">
 
     <TextView
+        android:id="@+id/distance"
         style="@style/text_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/distance"
-        android:gravity="center"
-        android:text="DISTANCE" />
+        android:gravity="center" />
 
     <TextView
+        android:id="@+id/duration"
         style="@style/text_header"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/duration"
-        android:gravity="center"
         android:layout_below="@id/distance"
-        android:text="DURATION" />
+        android:gravity="center" />
 
 </RelativeLayout>

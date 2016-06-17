@@ -280,7 +280,7 @@ public class WorkoutMainFragment extends WearableFragment {
     private class GridViewPagerChangeListener implements GridViewPager.OnPageChangeListener {
         private ImageView[] mPipImageViews;
 
-        public GridViewPagerChangeListener(ViewGroup rootView) {
+        public GridViewPagerChangeListener(ViewGroup parent) {
             LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             mPipImageViews = new ImageView[PAGER_ITEMS];
 
@@ -291,7 +291,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
             for (int i = 0; i < PAGER_ITEMS; i++) {
                 ImageView view = (ImageView) inflater.inflate(R.layout.pager_pip, null);
-                rootView.addView(view, layoutParams);
+                parent.addView(view, layoutParams);
                 mPipImageViews[i] = view;
             }
         }

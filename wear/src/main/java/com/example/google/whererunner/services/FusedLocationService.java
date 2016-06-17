@@ -2,6 +2,7 @@ package com.example.google.whererunner.services;
 
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -90,7 +91,7 @@ public class FusedLocationService extends LocationService {
         }
 
         @Override
-        public void onConnectionFailed(ConnectionResult arg0) {
+        public void onConnectionFailed(@NonNull ConnectionResult arg0) {
             // TODO
         }
     }

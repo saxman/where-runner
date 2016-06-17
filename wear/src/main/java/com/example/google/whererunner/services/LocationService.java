@@ -15,13 +15,13 @@ import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
 
 public abstract class LocationService extends Service {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = LocationService.class.getSimpleName();
 
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
@@ -43,8 +43,8 @@ public abstract class LocationService extends Service {
     private static final int LOCATION_UPDATE_INTERVAL_TIMEOUT_MS = 10000;
     private static final int LOCATION_ACCURACY_MAX_METERS = 25;
 
-    protected int NOTIFICATION_ID = 1;
-    protected Notification mNotification;
+    private int NOTIFICATION_ID = 1;
+    private Notification mNotification;
     private NotificationManager mNotificationManager;
 
     protected boolean mIsLocationUpdating = false;
