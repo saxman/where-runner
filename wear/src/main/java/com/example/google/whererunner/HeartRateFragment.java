@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.google.whererunner.services.HeartRateSensorEvent;
 import com.example.google.whererunner.services.HeartRateSensorService;
 
 public class HeartRateFragment extends Fragment
@@ -59,14 +60,12 @@ public class HeartRateFragment extends Fragment
                             isHrmActive = true;
                         }
 
-                        float val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, -1);
-                        mHrInstantaneousText.setText(String.valueOf(val));
+                        HeartRateSensorEvent hrEvent =
+                                intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
 
-                        val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE_MIN, -1);
-                        mHrMinText.setText(String.valueOf(val));
-
-                        val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE_MAX, -1);
-                        mHrMaxText.setText(String.valueOf(val));
+                        mHrInstantaneousText.setText(String.valueOf(hrEvent.getHeartRate()));
+                        mHrMinText.setText(String.valueOf(hrEvent.getMinHeartRate()));
+                        mHrMaxText.setText(String.valueOf(hrEvent.getMaxHeartRate()));
 
                         /// TODO animate the heart to beat at the current rate
 

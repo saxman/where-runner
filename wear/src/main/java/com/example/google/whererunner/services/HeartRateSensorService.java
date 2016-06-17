@@ -12,6 +12,8 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -23,9 +25,6 @@ public class HeartRateSensorService extends Service {
 
     public static final String ACTION_HEART_RATE_CHANGED = "HEART_RATE_CHANGED";
     public static final String EXTRA_HEART_RATE = "HEART_RATE";
-    public static final String EXTRA_HEART_RATE_MIN = "HEART_RATE_MIN";
-    public static final String EXTRA_HEART_RATE_MAX = "HEART_RATE_MAX";
-    public static final String EXTRA_TIMESTAMP = "TIMESTAMP";
 
     public static final String ACTION_STOP_SENSOR_SERIVCE = "STOP_SENSOR_SERVICE";
 
@@ -136,19 +135,16 @@ public class HeartRateSensorService extends Service {
             mHeartRateMin = (val < mHeartRateMin) ? val : mHeartRateMin;
             mHeartRateMax = (val > mHeartRateMax) ? val : mHeartRateMax;
 
+            HeartRateSensorEvent evt = new HeartRateSensorEvent(val,
+                    mHeartRateMin, mHeartRateMax, event.timestamp);
+
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, val);
-            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE_MIN, mHeartRateMin);
-            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE_MAX, mHeartRateMax);
-            intent.putExtra(HeartRateSensorService.EXTRA_TIMESTAMP, event.timestamp);
+            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, evt);
+
             LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
         }
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {}
-    }
-
-    private void stopSensorUpdates() {
-
     }
 }
