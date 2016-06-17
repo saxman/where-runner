@@ -160,10 +160,11 @@ public class MainActivity extends WearableActivity implements
         Intent intent = new Intent(LocationService.ACTION_STOP_LOCATION_UPDATES);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
+        // Tell the HR service that if can stop sampling heart rate
+        intent = new Intent(HeartRateSensorService.ACTION_STOP_SENSOR_SERIVCE);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-        // TODO only stop the HRM service if we're not recording
-        stopService(new Intent(this, HeartRateSensorService.class));
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
 
         super.onStop();
     }

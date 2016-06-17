@@ -79,12 +79,6 @@ public abstract class LocationService extends Service {
                 .setContentIntent(contentIntent)
                 .build();
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ACTION_STOP_LOCATION_UPDATES);
-        intentFilter.addAction(ACTION_START_RECORDING);
-        intentFilter.addAction(ACTION_STOP_RECORDING);
-        intentFilter.addAction(ACTION_REPORT_RECORDING_STATUS);
-
         mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -111,6 +105,12 @@ public abstract class LocationService extends Service {
 
             }
         };
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_STOP_LOCATION_UPDATES);
+        intentFilter.addAction(ACTION_START_RECORDING);
+        intentFilter.addAction(ACTION_STOP_RECORDING);
+        intentFilter.addAction(ACTION_REPORT_RECORDING_STATUS);
 
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }

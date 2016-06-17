@@ -1,8 +1,11 @@
 package com.example.google.whererunner.services;
 
 import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 
+import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -24,6 +27,8 @@ public class HeartRateSensorService extends Service {
     public static final String EXTRA_HEART_RATE_MAX = "HEART_RATE_MAX";
     public static final String EXTRA_TIMESTAMP = "TIMESTAMP";
 
+    public static final String ACTION_STOP_SENSOR_SERIVCE = "STOP_SENSOR_SERVICE";
+
     private CountDownTimer mSensorSampleTimer;
 
     private static final int HRM_UPDATE_INTERVAL_TIMEOUT_MS = 5000;
@@ -34,6 +39,8 @@ public class HeartRateSensorService extends Service {
 
     private float mHeartRateMin = Float.MAX_VALUE;
     private float mHeartRateMax = Float.MIN_VALUE;
+
+    private BroadcastReceiver mBroadcastReceiver;
 
     @Override
     public void onCreate () {
@@ -55,11 +62,29 @@ public class HeartRateSensorService extends Service {
         else {
             Log.v(LOG_TAG, "No heart rate sensor (or permission to access) detected");
         }
+
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case ACTION_STOP_SENSOR_SERIVCE:
+                        mSensorManager.unregisterListener(mSensorListener);
+                        stopSelf();
+                        break;
+                }
+            }
+        };
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(ACTION_STOP_SENSOR_SERIVCE);
+
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onDestroy () {
         mSensorManager.unregisterListener(mSensorListener);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
 
         if (mSensorSampleTimer != null) {
             mSensorSampleTimer.cancel();
@@ -121,5 +146,9 @@ public class HeartRateSensorService extends Service {
 
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+    }
+
+    private void stopSensorUpdates() {
+
     }
 }
