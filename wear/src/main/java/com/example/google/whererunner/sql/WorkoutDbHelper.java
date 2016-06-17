@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
 
-import com.example.google.whererunner.datatypes.HeartRate;
+import com.example.google.whererunner.services.HeartRateSensorEvent;
 
 import java.util.ArrayList;
 
@@ -61,15 +61,16 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     /**
      * Writes an array of heart rate values to the db
      */
-    public void writeHeartRates(ArrayList<HeartRate> heartRates) {
+    public void writeHeartRates(ArrayList<HeartRateSensorEvent> hrEvents) {
         SQLiteDatabase db = getWritableDatabase();
 
         db.beginTransaction();
 
-        for (HeartRate heartrate : heartRates) {
+        for (HeartRateSensorEvent hrEvent : hrEvents) {
             ContentValues values = new ContentValues();
-            values.put(WorkoutContract.HeartRate.COLUMN_NAME_TIMESTAMP, heartrate.getTimestamp());
-            values.put(WorkoutContract.HeartRate.COLUMN_NAME_HEART_RATE, heartrate.getHeartRate());
+            // TODO: Save min/max heart rate?
+            values.put(WorkoutContract.HeartRate.COLUMN_NAME_TIMESTAMP, hrEvent.getTimestamp());
+            values.put(WorkoutContract.HeartRate.COLUMN_NAME_HEART_RATE, hrEvent.getHeartRate());
             db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
         }
         db.endTransaction();

@@ -17,7 +17,6 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import com.example.google.whererunner.datatypes.HeartRate;
 import com.example.google.whererunner.sql.WorkoutContract;
 import com.example.google.whererunner.sql.WorkoutDbHelper;
 
@@ -35,7 +34,7 @@ public class WorkoutRecordingService extends Service {
 
 
     // Data caches
-    private ArrayList<HeartRate> hrCache = new ArrayList<>();
+    private ArrayList<HeartRateSensorEvent> hrCache = new ArrayList<>();
     private ArrayList<Location> locationCache = new ArrayList<>();
 
     //
@@ -154,9 +153,9 @@ public class WorkoutRecordingService extends Service {
             hrReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    float val = intent.getFloatExtra(HeartRateSensorService.EXTRA_HEART_RATE, -1);
-                    long timestamp = intent.getLongExtra(HeartRateSensorService.EXTRA_TIMESTAMP, -1);
-                    hrCache.add(new HeartRate(timestamp, val));
+                    HeartRateSensorEvent hrEvent =
+                            intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+                    hrCache.add(hrEvent);
                 }
             };
         }
