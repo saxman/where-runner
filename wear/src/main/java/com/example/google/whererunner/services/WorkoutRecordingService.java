@@ -1,3 +1,27 @@
+package com.example.google.whererunner.services;
+
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.ServiceConnection;
+import android.location.Location;
+import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+
+import com.example.google.whererunner.MainActivity;
+import com.example.google.whererunner.R;
+import com.example.google.whererunner.sql.WorkoutContract;
+import com.example.google.whererunner.sql.WorkoutDbHelper;
+
+import java.util.ArrayList;
+
 /**
  * Listens for incoming local broadcast intents for starting and stopping a session
  * and all the data associated with it.
@@ -5,46 +29,148 @@
  * This service should be spun up when the app is started and should be foregrounded to ensure
  * that all data is captured and recorded.
  */
-package com.example.google.whererunner.services;
-
-import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.location.Location;
-import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
-
-import com.example.google.whererunner.sql.WorkoutContract;
-import com.example.google.whererunner.sql.WorkoutDbHelper;
-
-import java.util.ArrayList;
-
 public class WorkoutRecordingService extends Service {
 
     @SuppressWarnings("unused")
-    private static final String TAG = WorkoutRecordingService.class.getSimpleName();
+    private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
 
-    // Receivers
-    private BroadcastReceiver recordingReceiver;
-    private BroadcastReceiver hrReceiver;
-    private BroadcastReceiver locationReceiver;
+    /** Incoming action to stop services if not recording */
+    public final static String ACTION_STOP_SERVICES = "STOP_SERVICES";
 
+    /** Incoming actions to start and stop recording */
+    public final static String ACTION_START_RECORDING = "START_RECORDING";
+    public final static String ACTION_STOP_RECORDING = "STOP_RECORDING";
+
+    /** Incoming action when a UI element needs to know the recording status */
+    public final static String ACTION_REPORT_RECORDING_STATUS = "REPORT_RECORDING_STATUS";
+
+    /** Outgoing action reporting recording status */
+    public final static String ACTION_RECORDING_STATUS = "RECORDING_STATUS_REPORT";
+
+    /** Extra for recording status actions */
+    public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
+
+    private BroadcastReceiver mRecordingReceiver;
+    private BroadcastReceiver mHeartRateReceiver;
+    private BroadcastReceiver mLocationReceiver;
 
     // Data caches
     private ArrayList<HeartRateSensorEvent> hrCache = new ArrayList<>();
     private ArrayList<Location> locationCache = new ArrayList<>();
+
+    private int NOTIFICATION_ID = 1;
+    private Notification mNotification;
+    private NotificationManager mNotificationManager;
+
+    private long mStartTime, mStopTime;
+
+    private boolean mIsRecording = false;
+
+    private ServiceConnection mLocationServiceConnection;
+    private ServiceConnection mHeartRateServiceConnection;
 
     //
     // Service override methods
     //
 
     @Override
+    public void onCreate() {
+        super.onCreate();
+
+        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        CharSequence contentText = getString(R.string.notification_content_text);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
+
+        mNotification = new Notification.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setTicker(contentText)
+                .setWhen(System.currentTimeMillis())
+//                .setContentTitle(getText(R.string.local_service_label))  // the label of the entry
+                .setContentText(contentText)
+                .setContentIntent(contentIntent)
+                .build();
+
+        // Set up the recording broadcast receiver
+        mRecordingReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case ACTION_STOP_SERVICES:
+                        if (!mIsRecording) {
+                            // reply on onDestroy to clean up child service bindings
+                            stopSelf();
+                        }
+
+                        break;
+
+                    case ACTION_START_RECORDING:
+                        startForeground(NOTIFICATION_ID, mNotification);
+                        startRecordingData();
+                        mIsRecording = true;
+                        reportRecordingStatus();
+
+                        break;
+
+                    case ACTION_STOP_RECORDING:
+                        stopForeground(true);
+                        stopRecordingData();
+                        mIsRecording = false;
+                        reportRecordingStatus();
+                        break;
+
+                    case ACTION_REPORT_RECORDING_STATUS:
+                        reportRecordingStatus();
+                        break;
+                }
+            }
+        };
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(ACTION_STOP_SERVICES);
+        filter.addAction(ACTION_START_RECORDING);
+        filter.addAction(ACTION_STOP_RECORDING);
+        filter.addAction(ACTION_REPORT_RECORDING_STATUS);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingReceiver, filter);
+
+        mLocationServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {}
+        };
+        
+        mHeartRateServiceConnection = new ServiceConnection() {
+            @Override
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+
+            @Override
+            public void onServiceDisconnected(ComponentName componentName) {}
+        };
+    }
+
+    @Override
+    public void onDestroy() {
+        mNotificationManager.cancel(NOTIFICATION_ID);
+
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingReceiver);
+
+        unbindService(mLocationServiceConnection);
+        unbindService(mHeartRateServiceConnection);
+
+        super.onDestroy();
+    }
+
+    @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.v(TAG, "onStartCommand Activity Recording Service; this does nothing!");
-        return START_NOT_STICKY; // TODO: Should this be STICKY?
+        intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+        intent = new Intent(this, HeartRateSensorService.class);
+        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -53,94 +179,34 @@ public class WorkoutRecordingService extends Service {
         return null;
     }
 
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        // Set up the recording broadcast receiver listener
-        recordingReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.v(TAG, "Received ACTION_RECORDING_STATUS_CHANGED");
-                boolean isRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-                if (isRecording) {
-                    Log.v(TAG, "Received isRecording");
-                    recordingStateManager(RecordingTransition.START_RECORDING);
-                } else {
-                    Log.v(TAG, "Received not isRecording");
-                    recordingStateManager(RecordingTransition.STOP_RECORDING);
-                }
-            }
-        };
-        IntentFilter filter = new IntentFilter(LocationService.ACTION_RECORDING_STATUS_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(recordingReceiver, filter);
-    }
-
-    @Override
-    public void onDestroy() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(recordingReceiver);
-        super.onDestroy();
-    }
-
     //
     // Service implementation methods
     //
 
-    /**
-     * Manages the recording state of the service
-     *
-     * Why the enum for such just two states? Well, if we introduce pausing, etc.
-     * later on, this could get complicated, and using enums now makes it nice and readable
-     */
-    private enum RecordingTransition {START_RECORDING, STOP_RECORDING}
-    private enum RecordingState {RECORDING, NOT_RECORDING}
-    private RecordingState mRecordingState = RecordingState.NOT_RECORDING;
-    private long startTime, stopTime;
-
-    /**
-     * Update the recording state from a recording transition
-     * @param transition the transition to be applied to the current state
-     */
-    private void recordingStateManager(RecordingTransition transition) {
-        if (mRecordingState == RecordingState.RECORDING) {
-            if (transition == RecordingTransition.START_RECORDING) {
-                // Already recording, do nothing, but log a warning as the UI should
-                // not enable starting recording multiple times
-                Log.w(TAG, "Recording start requested when service already recording");
-            }
-            else if (transition == RecordingTransition.STOP_RECORDING) {
-                stopRecording();
-                mRecordingState = RecordingState.NOT_RECORDING;
-            }
-        }
-        else if (mRecordingState == RecordingState.NOT_RECORDING) {
-            if (transition == RecordingTransition.START_RECORDING) {
-                startRecording();
-                mRecordingState = RecordingState.RECORDING;
-            }
-            else if (transition == RecordingTransition.STOP_RECORDING) {
-                Log.w(TAG, "Recording stop requested when service is not recording");
-            }
-        }
+    private void reportRecordingStatus() {
+        Intent intent = new Intent(ACTION_RECORDING_STATUS);
+        intent.putExtra(EXTRA_IS_RECORDING, mIsRecording);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     /**
      * Starts recording a workout session
      */
-    private void startRecording() {
-        Log.v(TAG, "In startRecording");
-        startTime =  System.currentTimeMillis();
-        startHRRecording();
-        startGPSRecording();
+    private void startRecordingData() {
+        mStartTime =  System.currentTimeMillis();
+        startHeartRateRecording();
+        startLocationRecording();
     }
 
     /**
      * Stops recording a workout session and persists data
      */
-    private void stopRecording() {
-        Log.v(TAG, "In stopRecording");
-        stopTime = System.currentTimeMillis();
-        stopHRRecording();
-        stopGPSRecording();
+    private void stopRecordingData() {
+        mStopTime = System.currentTimeMillis();
+
+        stopHeartRateRecording();
+        stopLocationRecording();
+
         saveWorkout();
         emptyCaches();
     }
@@ -148,9 +214,9 @@ public class WorkoutRecordingService extends Service {
     /**
      * Starts listening for HR notifications and records values
      */
-    private void startHRRecording() {
-        if (hrReceiver ==null) {
-            hrReceiver = new BroadcastReceiver() {
+    private void startHeartRateRecording() {
+        if (mHeartRateReceiver == null) {
+            mHeartRateReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     HeartRateSensorEvent hrEvent =
@@ -160,23 +226,23 @@ public class WorkoutRecordingService extends Service {
             };
         }
             IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-            LocalBroadcastManager.getInstance(this).registerReceiver(hrReceiver, filter);
+            LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateReceiver, filter);
     }
 
     /**
      * Stops listening for HR notification
      */
-    private void stopHRRecording() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(hrReceiver);
+    private void stopHeartRateRecording() {
+
     }
 
     /**
      * Starts listening for GPS notifications and records values
      */
-    private void startGPSRecording() {
+    private void startLocationRecording() {
 
-        if (locationReceiver == null) {
-            locationReceiver = new BroadcastReceiver() {
+        if (mLocationReceiver == null) {
+            mLocationReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
@@ -187,28 +253,28 @@ public class WorkoutRecordingService extends Service {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(locationReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationReceiver, intentFilter);
     }
 
     /**
      * Stops listening for GPS notifications
      */
-    private void stopGPSRecording() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(locationReceiver);
+    private void stopLocationRecording() {
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationReceiver);
     }
 
     /**
      * Saves the workout session data
      */
     private void saveWorkout() {
-        Log.i(TAG, "Start time: " + new java.util.Date(this.startTime));
-        Log.i(TAG, "End time: " + new java.util.Date(this.stopTime));
-        Log.i(TAG, "Nr. HR values: " + this.hrCache.size());
-        Log.i(TAG, "Nr. location values: " + this.locationCache.size());
+        Log.i(LOG_TAG, "Start time: " + new java.util.Date(this.mStartTime));
+        Log.i(LOG_TAG, "End time: " + new java.util.Date(this.mStopTime));
+        Log.i(LOG_TAG, "Nr. HR values: " + this.hrCache.size());
+        Log.i(LOG_TAG, "Nr. location values: " + this.locationCache.size());
 
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
         // TODO: write in correct workout type
-        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, startTime, stopTime);
+        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, mStartTime, mStopTime);
         mDbHelper.writeHeartRates(hrCache);
         mDbHelper.writeLocations(locationCache);
     }
@@ -220,5 +286,4 @@ public class WorkoutRecordingService extends Service {
         this.hrCache.clear();
         this.locationCache.clear();
     }
-
 }

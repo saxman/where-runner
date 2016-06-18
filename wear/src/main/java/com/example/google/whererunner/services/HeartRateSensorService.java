@@ -51,11 +51,7 @@ public class HeartRateSensorService extends Service {
         // Ensure that the device has a HRM
         // This will also return null if BODY permissions have not been granted
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
-            mSensorListener = new HRMSensorEventListener();
-
-            mSensorManager.registerListener(mSensorListener,
-                    mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
-                    SensorManager.SENSOR_DELAY_NORMAL);
+            mSensorListener = new HeartRateSensorEventListener();
         }
         else {
             Log.v(LOG_TAG, "No heart rate sensor (or permission to access) detected");
@@ -92,13 +88,11 @@ public class HeartRateSensorService extends Service {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_NOT_STICKY;
-    }
-
-    @Override
     public IBinder onBind(Intent intent) {
-        // We don't provide binding, so return null
+        mSensorManager.registerListener(mSensorListener,
+                mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
+                SensorManager.SENSOR_DELAY_NORMAL);
+
         return null;
     }
 
@@ -106,7 +100,7 @@ public class HeartRateSensorService extends Service {
      * Sensor event listener for heart rate; fires an ACTION_HEART_RATE_CHANGED intent whenever
      * a new HR reading is received.
      */
-    private class HRMSensorEventListener implements SensorEventListener {
+    private class HeartRateSensorEventListener implements SensorEventListener {
         @Override
         public void onSensorChanged(SensorEvent event) {
             // Don't broadcast low quality readings

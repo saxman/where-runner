@@ -21,6 +21,7 @@ import android.view.ViewGroup;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.LocationService;
+import com.example.google.whererunner.services.WorkoutRecordingService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
@@ -57,6 +58,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
     private Location mInitialLocation = null;
     private Location mLastLocation = null;
+
     private boolean mIsRecording = false;
     private boolean mIsLocationFixed = false;
 
@@ -116,8 +118,14 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                             }
 
                             break;
-                        case LocationService.ACTION_RECORDING_STATUS_CHANGED:
-                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+
+                        case LocationService.ACTION_CONNECTIVITY_LOST:
+                            // We haven't received a location sample in too long, so hide the accuracy circle
+                            mIsLocationFixed = false;
+                            break;
+
+                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
                             setMapMarkerIcon();
 
                             if (!mIsRecording) {
@@ -125,14 +133,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                                 mPathLocations.clear();
                             }
 
-                            break;
-                        case LocationService.ACTION_RECORDING_STATUS:
-                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-                            setMapMarkerIcon();
-                            break;
-                        case LocationService.ACTION_CONNECTIVITY_LOST:
-                            // We haven't received a location sample in too long, so hide the accuracy circle
-                            mIsLocationFixed = false;
                             break;
                     }
 
@@ -145,12 +145,11 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
 
-        Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
+        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
     }
 

@@ -23,10 +23,9 @@ import android.view.MenuItem;
 import android.view.View;
 
 import com.example.google.whererunner.framework.WearableFragment;
-import com.example.google.whererunner.services.FusedLocationService;
-import com.example.google.whererunner.services.HeartRateSensorService;
-import com.example.google.whererunner.services.LocationService;
 import com.example.google.whererunner.services.WorkoutRecordingService;
+
+import java.util.ArrayList;
 
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
@@ -45,8 +44,7 @@ public class MainActivity extends WearableActivity implements
     private static final int ACTIVITY_TYPE_RUNNING = 0;
     private static final int ACTIVITY_TYPE_CYCLING = 1;
 
-    private static final int REQUEST_ACCESS_FINE_LOCATION = 1;
-    private static final int REQUEST_ACCESS_BODY_SENSORS = 2;
+    private static final int REQUEST_PERMISSIONS = 1;
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
@@ -100,27 +98,40 @@ public class MainActivity extends WearableActivity implements
     public void onStart() {
         super.onStart();
 
-        startLocationService();
-        startRecordingService();
+        // Check for the requisite permissions and, if met, start the recording service
+        ArrayList<String> permissions = new ArrayList<>(2);
+
+        // If not already granted, ask for fine location permission
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+
+        // If the device has a HRM, also request body sensor permission, if not already granted
+        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+
+            permissions.add(Manifest.permission.BODY_SENSORS);
+        }
+
+        // If there are permissions that haven't been granted yet, request them
+        if (permissions.size() > 0) {
+            ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
+        } else {
+            startRecordingService();
+        }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
-            case REQUEST_ACCESS_FINE_LOCATION:
+            case REQUEST_PERMISSIONS:
+                // Start the recording service as long as the location permission (first permission) has been granted
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startLocationService();
+                    startRecordingService();
+                } else {
+                    // TODO notify the user that that the app can't function w/o location permission
+                    finish();
                 }
-
-                // TODO inform the user that they really, really need to grant permission
-
-                break;
-            case REQUEST_ACCESS_BODY_SENSORS:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startHearRateSensorService();
-                }
-
-                // TODO allow the user to perpetually reject this permission
 
                 break;
         }
@@ -136,9 +147,8 @@ public class MainActivity extends WearableActivity implements
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
-                        case LocationService.ACTION_RECORDING_STATUS:
-                        case LocationService.ACTION_RECORDING_STATUS_CHANGED:
-                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
                             setRecordingButtonUiState();
                     }
                 }
@@ -146,23 +156,18 @@ public class MainActivity extends WearableActivity implements
         }
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingBroadcastReceiver, intentFilter);
 
         // Request the recording status from the location service.
-        Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
+        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
     public void onStop() {
         // Tell the location service that if can stop location updates, unless it's recording
-        Intent intent = new Intent(LocationService.ACTION_STOP_LOCATION_UPDATES);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-
-        // Tell the HR service that if can stop sampling heart rate
-        intent = new Intent(HeartRateSensorService.ACTION_STOP_SENSOR_SERVICE);
+        Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_SERVICES);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
@@ -176,11 +181,11 @@ public class MainActivity extends WearableActivity implements
             case R.id.record_button:
                 if (mIsRecording) {
                     // Tell the location service to stop recording
-                    Intent intent = new Intent(LocationService.ACTION_STOP_RECORDING);
+                    Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_RECORDING);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 } else {
                     // Tell the location service to start recording
-                    Intent intent = new Intent(LocationService.ACTION_START_RECORDING);
+                    Intent intent = new Intent(WorkoutRecordingService.ACTION_START_RECORDING);
                     LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
                 }
 
@@ -229,40 +234,6 @@ public class MainActivity extends WearableActivity implements
     //
     // Class methods
     //
-
-    private void startLocationService() {
-        // If the user hasn't granted fine location permission, request it
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, REQUEST_ACCESS_FINE_LOCATION);
-            return;
-        }
-
-        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
-            // TODO if the device has a GPS sensor, use it instead of FLP, if the user prefers to do so (settings)
-        }
-
-        // Start the location service so that child fragments can receive location and recording
-        // status updates via local broadcasts
-        Intent intent = new Intent(this, FusedLocationService.class);
-        startService(intent);
-
-        // Once we've gotten location permission, ask for hrm sensor permission if the sensor exists
-        // If these aren't asked serially in this manner, only one permission is surfaced to the user
-        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
-            startHearRateSensorService();
-        }
-    }
-
-    private void startHearRateSensorService() {
-        // If the user hasn't granted body sensor permission, request it
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BODY_SENSORS}, REQUEST_ACCESS_BODY_SENSORS);
-            return;
-        }
-
-        Intent intent = new Intent(this, HeartRateSensorService.class);
-        startService(intent);
-    }
 
     private void startRecordingService() {
         Intent intent = new Intent(this, WorkoutRecordingService.class);

@@ -14,6 +14,7 @@ import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.LocationService;
+import com.example.google.whererunner.services.WorkoutRecordingService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.TimerTask;
 
 public class WorkoutDataFragment extends WearableFragment {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutDataFragment.class.getSimpleName();
 
     private TextView mDurationTextView;
@@ -37,7 +39,7 @@ public class WorkoutDataFragment extends WearableFragment {
     private BroadcastReceiver mLocationChangedReceiver;
 
     private Timer mDurationTimer;
-    private double mStartTime;
+    private double mStartTime = 0;
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
 
@@ -65,47 +67,39 @@ public class WorkoutDataFragment extends WearableFragment {
 
                             if (mIsRecording) {
                                 Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-
                                 mPathLocations.add(location);
 
-                                Location startLocation = mPathLocations.get(0);
-                                float[] results = new float[1];
-                                Location.distanceBetween(
-                                        startLocation.getLatitude(), startLocation.getLongitude(),
-                                        location.getLatitude(), location.getLongitude(),
-                                        results);
+                                // Calculate distance between last two coordinates and add to aggregate
+                                if (mPathLocations.size() > 2) {
+                                    Location priorLocation = mPathLocations.get(mPathLocations.size() - 2);
 
-                                // TODO only use samples of sufficient accuracy
-                                mDistance = results[0];
+                                    float[] results = new float[1];
+                                    Location.distanceBetween(
+                                            priorLocation.getLatitude(), priorLocation.getLongitude(),
+                                            location.getLatitude(), location.getLongitude(),
+                                            results);
+
+                                    mDistance += results[0];
+                                }
                             }
 
                             break;
-                        case LocationService.ACTION_RECORDING_STATUS_CHANGED:
-                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
+
+                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
 
                             if (mIsRecording) {
-                                mStartTime = System.currentTimeMillis();
-                                startDurationTimer();
-                            } else {
-                                mDistance = 0;
-                                mDuration = 0;
-                                mPathLocations.clear();
-
-                                stopDurationTimer();
-                            }
-
-                            break;
-                        case LocationService.ACTION_RECORDING_STATUS:
-                            mIsRecording = intent.getBooleanExtra(LocationService.EXTRA_IS_RECORDING, false);
-
-                            if (mIsRecording) {
-                                // TODO start time should come from the location service
-                                mStartTime = System.currentTimeMillis();
-
-                                // If the timer isn't already running, start it
+                                // If recording, but no duration timer yet, the recording has been re-started
                                 if (mDurationTimer == null) {
+                                    mStartTime = System.currentTimeMillis();
+                                    mDuration = 0;
+                                    mDistance = 0;
+
                                     startDurationTimer();
                                 }
+                            } else {
+                                stopDurationTimer();
+                                mPathLocations.clear();
                             }
 
                             break;
@@ -120,11 +114,10 @@ public class WorkoutDataFragment extends WearableFragment {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS);
-        intentFilter.addAction(LocationService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
 
-        Intent intent = new Intent(LocationService.ACTION_REPORT_RECORDING_STATUS);
+        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
     }
 
@@ -139,15 +132,11 @@ public class WorkoutDataFragment extends WearableFragment {
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
-
-        // TODO
     }
 
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
-
-        // TODO
     }
 
     @Override

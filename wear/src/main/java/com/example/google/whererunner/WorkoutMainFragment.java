@@ -33,6 +33,8 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.concurrent.TimeUnit;
 
 public class WorkoutMainFragment extends WearableFragment {
+
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutMainFragment.class.getSimpleName();
 
     private static final int FRAGMENT_MAP = 0;
