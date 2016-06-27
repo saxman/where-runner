@@ -13,6 +13,8 @@ import android.os.Vibrator;
 import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.*;
+import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -208,6 +210,25 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         updateUI();
+    }
+
+    @Override
+    public void onWatchButtonPressed(int keyCode) {
+        switch (keyCode) {
+            // top button on LG Urbane LTE 2
+            case KeyEvent.KEYCODE_STEM_1:
+                Point p1 = mViewPager.getCurrentItem();
+                mViewPager.setCurrentItem(p1.y - 1, p1.x);
+                break;
+            case KeyEvent.KEYCODE_STEM_2:
+                Point p2 = mViewPager.getCurrentItem();
+                mViewPager.setCurrentItem(p2.y + 1, p2.x);
+                break;
+            case KeyEvent.KEYCODE_STEM_3:
+            case KeyEvent.KEYCODE_STEM_PRIMARY:
+                Log.d(LOG_TAG, "Watch button pressed event received, but not handled");
+                break;
+        }
     }
 
     private void updateUI() {

@@ -18,6 +18,7 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -166,13 +167,29 @@ public class MainActivity extends WearableActivity implements
 
     @Override
     public void onStop() {
-        // Tell the location service that if can stop location updates, unless it's recording
+        // Tell the location service that it can stop location updates, unless it's recording
         Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_SERVICES);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
 
         super.onStop();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_STEM_1:
+            case KeyEvent.KEYCODE_STEM_2:
+            case KeyEvent.KEYCODE_STEM_3:
+            case KeyEvent.KEYCODE_STEM_PRIMARY:
+                if (mCurrentViewPagerFragment instanceof WearableFragment) {
+                    ((WearableFragment) mCurrentViewPagerFragment).onWatchButtonPressed(keyCode);
+                }
+                return true;
+            default:
+                return super.onKeyDown(keyCode, event);
+        }
     }
 
     @Override
