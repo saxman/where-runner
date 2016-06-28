@@ -277,6 +277,11 @@ public class WorkoutRecordingService extends Service {
         mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, mStartTime, mStopTime);
         mDbHelper.writeHeartRates(hrCache);
         mDbHelper.writeLocations(locationCache);
+        // TODO: Remove the following test code for testing db reads
+        Log.i(LOG_TAG, "Nr workouts in db: " + mDbHelper.readNrWorkouts());
+        for (long startTime : mDbHelper.readLastFiveWorkouts()) {
+            Log.i(LOG_TAG, "Start time: " + new java.util.Date(startTime));
+        }
     }
 
     /**

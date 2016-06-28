@@ -2,6 +2,8 @@ package com.example.google.whererunner.sql;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
@@ -38,7 +40,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     }
 
     //
-    // Utility methods for reading/writing from/to tables
+    // Utility methods for reading from/writing to tables
     //
 
     /**
@@ -93,6 +95,55 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             db.insert(WorkoutContract.Location.TABLE_NAME, null, values);
         }
         db.endTransaction();
+    }
+
+    /**
+     * Count the number of workouts in the db
+     */
+    public long readNrWorkouts() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return DatabaseUtils.queryNumEntries(db, WorkoutContract.Workout.TABLE_NAME);
+    }
+
+    /**
+     * Read the last 5 workouts in the db
+     */
+    public ArrayList<Long> readLastFiveWorkouts() {
+        SQLiteDatabase db = getReadableDatabase();
+
+        String[] projection = {
+            WorkoutContract.Workout.COLUMN_NAME_TYPE,
+            WorkoutContract.Workout.COLUMN_NAME_START_TIME,
+            WorkoutContract.Workout.COLUMN_NAME_END_TIME,
+        };
+
+        String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
+
+        String limit = "5";
+
+        // TODO: make this a workout data type
+        ArrayList<Long> workouts = new ArrayList<>();
+
+        try (Cursor c = db.query(
+            WorkoutContract.Workout.TABLE_NAME,  // The table to query
+            projection,                          // The columns to return
+            null,                                // The columns for the WHERE clause
+            null,                                // The values for the WHERE clause
+            null,                                // don't group the rows
+            null,                                // don't filter by row groups
+            sortOrder,                           // The sort order
+            limit                                // Limit the nr of results to 5
+        )) {
+
+            while (c.moveToNext()) {
+                long startTime = c.getLong(
+                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME)
+                );
+                workouts.add(startTime);
+            }
+        }
+        return workouts;
+
     }
 
 }
