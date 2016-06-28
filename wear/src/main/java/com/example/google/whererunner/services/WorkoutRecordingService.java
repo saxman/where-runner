@@ -47,19 +47,15 @@ public class WorkoutRecordingService extends Service {
     /** Extra for recording status updates */
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
 
-    /** Outgoing action reporting a workout data update */
-    public final static String ACTION_RECORDING_DATA = "RECORDING_DATA";
-
-    /** Extra for reporting workout distance */
-    public final static String EXTRA_DISTANCE = "DISTANCE";
+    /** Outgoing action reporting that the workout data has been updated */
+    public final static String ACTION_WORKOUT_DATA_UPDATED = "WORKOUT_DATA_UPDATED";
 
     private BroadcastReceiver mRecordingReceiver;
     private BroadcastReceiver mHeartRateReceiver;
     private BroadcastReceiver mLocationReceiver;
 
-    // Data caches
-    private static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
-    private static ArrayList<Location> locationSamples = new ArrayList<>();
+    private ServiceConnection mLocationServiceConnection;
+    private ServiceConnection mHeartRateServiceConnection;
 
     private int NOTIFICATION_ID = 1;
     private Notification mNotification;
@@ -69,9 +65,8 @@ public class WorkoutRecordingService extends Service {
     public static long startTime;
     public static long stopTime;
     public static double distance;
-
-    private ServiceConnection mLocationServiceConnection;
-    private ServiceConnection mHeartRateServiceConnection;
+    public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
+    public static ArrayList<Location> locationSamples = new ArrayList<>();
 
     //
     // Service override methods
@@ -259,9 +254,7 @@ public class WorkoutRecordingService extends Service {
 
                     locationSamples.add(location);
 
-                    Intent intent2 = new Intent(ACTION_RECORDING_DATA);
-                    intent2.putExtra(EXTRA_DISTANCE, distance);
-                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(intent2);
+                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
                 }
             };
         }

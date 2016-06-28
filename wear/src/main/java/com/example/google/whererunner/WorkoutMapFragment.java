@@ -41,7 +41,6 @@ import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
-import java.util.List;
 
 public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCallback {
 
@@ -64,17 +63,23 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
     private BroadcastReceiver mLocationChangedReceiver;
 
-    private List<Location> mPathLocations = new ArrayList<>();
+    private ArrayList<Location> mPathLocations;
     private LinkedList<LatLng> mPathPolylineLatLngs = new LinkedList<>();
 
     private BitmapDescriptor mRecordingMapMarkerIcon;
     private BitmapDescriptor mDefaultMapMarkerIcon;
+    private BitmapDescriptor mDisconnectedMapMarkerIcon;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
         mIsRecording = WorkoutRecordingService.isRecording;
+        mPathLocations = WorkoutRecordingService.locationSamples;
+        if (mPathLocations.size() > 0) {
+            mLastLocation = mPathLocations.get(mPathLocations.size() - 1);
+        }
+        // TODO move last known location tracking to a service, independent to recording status, so that we don't have to (re)wait for the data on map re-load
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -111,12 +116,12 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
                         case LocationService.ACTION_LOCATION_CHANGED:
-                            Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-                            mLastLocation = location;
                             mIsLocationFixed = true;
+                            mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                            if (mIsRecording) {
-                                mPathLocations.add(location);
+                            if (!isAmbient()) {
+                                updateMapMarker();
+                                updateMapCenter();
                             }
 
                             break;
@@ -124,22 +129,28 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                         case LocationService.ACTION_CONNECTIVITY_LOST:
                             // We haven't received a location sample in too long, so hide the accuracy circle
                             mIsLocationFixed = false;
+
+                            if (!isAmbient()) {
+                                updateMapMarker();
+                            }
+
+                            break;
+
+                        case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
+                            if (!isAmbient()) {
+                                updateMapPolyline();
+                            }
+
                             break;
 
                         case WorkoutRecordingService.ACTION_RECORDING_STATUS:
                             mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-                            setMapMarkerIcon();
 
-                            if (!mIsRecording) {
-                                // Ensure that the prior location samples are cleared out
-                                mPathLocations.clear();
+                            if (!isAmbient()) {
+                                updateMapMarkerIcon();
                             }
 
                             break;
-                    }
-
-                    if (!isAmbient()) {
-                        updateUI();
                     }
                 }
             };
@@ -149,6 +160,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
 
@@ -188,6 +200,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         mRecordingMapMarkerIcon = loadDrawable(R.drawable.map_marker_recording);
         mDefaultMapMarkerIcon = loadDrawable(R.drawable.map_marker);
+        mDisconnectedMapMarkerIcon = loadDrawable(R.drawable.map_marker_disconnected);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
@@ -196,8 +209,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                         .icon(mDefaultMapMarkerIcon)
                         .anchor(0.5f, 0.5f));
 
-        setMapMarkerIcon();
-        
         mPolyline = mGoogleMap.addPolyline(new PolylineOptions()
                 .width(5)
                 .color(getActivity().getColor(R.color.highlight))
@@ -239,36 +250,37 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     // Class methods
     //
 
-    // TODO break this method into multiple UI update methods. e.g. updatePath, updateMapLocation, etc
+    /**
+     * Update all map facets, including the marker, polyline, and center
+     */
     private void updateUI() {
         // Map not ready yet. Once it is, updateUI() will be called again
         if (mGoogleMap == null) {
             return;
         }
 
-        // If we have the user's last known location, but not their precise location,
-        // re-center the map on their last know location
-        if (mInitialLocation != null && mLastLocation == null) {
-            LatLng latLng = new LatLng(mInitialLocation.getLatitude(), mInitialLocation.getLongitude());
-            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        updateMapMarker();
+        updateMapPolyline();
+        updateMapCenter();
+    }
+
+    /**
+     * Update the map marker icon, position, and accuracy circle
+     */
+    private void updateMapMarker() {
+        // Map (and marker) not ready yet. updateMapMarker() will be called again once the map is ready.
+        if (mGoogleMap == null) {
             return;
         }
 
-        // If the location service has given us the user's precise location,
-        // place a marker there and re-center the map
+        updateMapMarkerIcon();
+
         if (mLastLocation != null) {
-            // If we haven't displayed the user's current location yet, create the marker.
-            // Otherwise, move the pre-existing marker
             LatLng lastLatLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
             mMapMarker.setPosition(lastLatLng);
 
-            // If we haven't displayed the marker yet (i.e. we didn't have precise location
-            // previously, move the map to it's proper place and display the marker
             if (!mMapMarker.isVisible()) {
                 mMapMarker.setVisible(true);
-                mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
-            } else {
-                mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lastLatLng));
             }
 
             if (mIsLocationFixed) {
@@ -281,42 +293,56 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                 mAccuracyCircle.setVisible(false);
             }
         }
+    }
 
-        // If we're recording and we have new path data, update the path polyline
-        if (mIsRecording && mPathLocations.size() > mPathPolylineLatLngs.size()) {
-            // Add the new location samples from the location service to the polyline
-            for (int i = mPathPolylineLatLngs.size(); i < mPathLocations.size(); i++) {
-                Location location = mPathLocations.get(i);
-                LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-                mPathPolylineLatLngs.add(latLng);
-            }
-
-            mPolyline.setPoints(mPathPolylineLatLngs);
-
-            // If we haven't
-            if (!mPolyline.isVisible()) {
-                mPolyline.setVisible(true);
-            }
-        }
-
-        // If we're no longer recording, hide the path polyline and clear out its path data
-        if (!mIsRecording && mPolyline.isVisible()) {
-            mPolyline.setVisible(false);
-            mPathPolylineLatLngs.clear();
-            mPolyline.setPoints(mPathPolylineLatLngs);
+    private void updateMapMarkerIcon() {
+        if (mIsRecording) {
+            mMapMarker.setIcon(mRecordingMapMarkerIcon);
+        } else if (mIsLocationFixed) {
+            mMapMarker.setIcon(mDefaultMapMarkerIcon);
+        } else {
+            mMapMarker.setIcon(mDisconnectedMapMarkerIcon);
         }
     }
 
-    private void setMapMarkerIcon() {
-        // Map marker not ready yet. setMapMarkerIcon will be called again once the marker is ready.
-        if (mMapMarker == null) {
+    /**
+     * Update the map polyline with new location samples
+     */
+    private void updateMapPolyline() {
+        // Map (and polyline) not ready yet. updateMapPolyline() will be called again once the map is ready.
+        if (mGoogleMap == null) {
             return;
         }
 
-        if (mIsRecording) {
-            mMapMarker.setIcon(mRecordingMapMarkerIcon);
-        } else {
-            mMapMarker.setIcon(mDefaultMapMarkerIcon);
+        for (int i = mPathPolylineLatLngs.size(); i < mPathLocations.size(); i++) {
+            Location location = mPathLocations.get(i);
+            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            mPathPolylineLatLngs.add(latLng);
+        }
+
+        mPolyline.setPoints(mPathPolylineLatLngs);
+
+        // If the polyline is still invisible, display it
+        if (!mPolyline.isVisible()) {
+            mPolyline.setVisible(true);
+        }
+    }
+
+    /**
+     * Re-center the map at the appropriate location
+     */
+    private void updateMapCenter() {
+        // Map not ready yet. updateMapCenter() will be called again once the map is ready.
+        if (mGoogleMap == null) {
+            return;
+        }
+
+        if (mLastLocation != null) {
+            LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
+        } else if (mInitialLocation != null) {
+            LatLng latLng = new LatLng(mInitialLocation.getLatitude(), mInitialLocation.getLongitude());
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         }
     }
 

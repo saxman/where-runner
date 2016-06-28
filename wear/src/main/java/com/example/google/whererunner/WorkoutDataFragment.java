@@ -4,7 +4,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
@@ -13,11 +12,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
-import com.example.google.whererunner.services.LocationService;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -74,7 +70,7 @@ public class WorkoutDataFragment extends WearableFragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
-                        case WorkoutRecordingService.ACTION_RECORDING_DATA:
+                        case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
                             mDistance = WorkoutRecordingService.distance;
                             break;
 
@@ -100,7 +96,7 @@ public class WorkoutDataFragment extends WearableFragment {
         }
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_DATA);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
     }
