@@ -25,8 +25,6 @@ public class HeartRateSensorService extends Service {
     public static final String ACTION_HEART_RATE_CHANGED = "HEART_RATE_CHANGED";
     public static final String EXTRA_HEART_RATE = "HEART_RATE";
 
-    public static final String ACTION_STOP_SENSOR_SERVICE = "STOP_SENSOR_SERVICE";
-
     private CountDownTimer mSensorSampleTimer;
 
     private static final int HRM_UPDATE_INTERVAL_TIMEOUT_MS = 5000;
@@ -37,8 +35,6 @@ public class HeartRateSensorService extends Service {
 
     private float mHeartRateMin = Float.MAX_VALUE;
     private float mHeartRateMax = Float.MIN_VALUE;
-
-    private BroadcastReceiver mBroadcastReceiver;
 
     @Override
     public void onCreate () {
@@ -52,33 +48,14 @@ public class HeartRateSensorService extends Service {
         // This will also return null if BODY permissions have not been granted
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
             mSensorListener = new HeartRateSensorEventListener();
-        }
-        else {
+        } else {
             Log.v(LOG_TAG, "No heart rate sensor (or permission to access) detected");
         }
-
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case ACTION_STOP_SENSOR_SERVICE:
-                        mSensorManager.unregisterListener(mSensorListener);
-                        stopSelf();
-                        break;
-                }
-            }
-        };
-
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(ACTION_STOP_SENSOR_SERVICE);
-
-        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onDestroy () {
         mSensorManager.unregisterListener(mSensorListener);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
 
         if (mSensorSampleTimer != null) {
             mSensorSampleTimer.cancel();

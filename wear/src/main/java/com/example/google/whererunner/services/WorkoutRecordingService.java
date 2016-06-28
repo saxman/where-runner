@@ -91,14 +91,13 @@ public class WorkoutRecordingService extends Service {
                 .setContentIntent(contentIntent)
                 .build();
 
-        // Set up the recording broadcast receiver
         mRecordingReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
                     case ACTION_STOP_SERVICES:
                         if (!mIsRecording) {
-                            // reply on onDestroy to clean up child service bindings
+                            // child service unbinding handled in service onDestroy
                             stopSelf();
                         }
 
@@ -151,6 +150,17 @@ public class WorkoutRecordingService extends Service {
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+        intent = new Intent(this, HeartRateSensorService.class);
+        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+
+        return START_REDELIVER_INTENT;
+    }
+
+    @Override
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
 
@@ -160,17 +170,6 @@ public class WorkoutRecordingService extends Service {
         unbindService(mHeartRateServiceConnection);
 
         super.onDestroy();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-
-        intent = new Intent(this, HeartRateSensorService.class);
-        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
-
-        return START_NOT_STICKY;
     }
 
     @Override

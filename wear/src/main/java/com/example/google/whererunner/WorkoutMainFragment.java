@@ -214,16 +214,20 @@ public class WorkoutMainFragment extends WearableFragment {
 
     @Override
     public void onWatchButtonPressed(int keyCode) {
+        // TODO add support for horizontal paging?
         switch (keyCode) {
-            // top button on LG Urbane LTE 2
+            // top button on LG Watch Urbane 2nd Edition
             case KeyEvent.KEYCODE_STEM_1:
                 Point p1 = mViewPager.getCurrentItem();
                 mViewPager.setCurrentItem(p1.y - 1, p1.x);
                 break;
+
+            // bottom button on LG Watch Urbane 2nd Edition
             case KeyEvent.KEYCODE_STEM_2:
                 Point p2 = mViewPager.getCurrentItem();
                 mViewPager.setCurrentItem(p2.y + 1, p2.x);
                 break;
+
             case KeyEvent.KEYCODE_STEM_3:
             case KeyEvent.KEYCODE_STEM_PRIMARY:
                 Log.d(LOG_TAG, "Watch button pressed event received, but not handled");
