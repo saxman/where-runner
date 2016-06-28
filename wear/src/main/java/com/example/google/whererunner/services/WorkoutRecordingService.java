@@ -41,30 +41,34 @@ public class WorkoutRecordingService extends Service {
     public final static String ACTION_START_RECORDING = "START_RECORDING";
     public final static String ACTION_STOP_RECORDING = "STOP_RECORDING";
 
-    /** Incoming action when a UI element needs to know the recording status */
-    public final static String ACTION_REPORT_RECORDING_STATUS = "REPORT_RECORDING_STATUS";
-
     /** Outgoing action reporting recording status */
-    public final static String ACTION_RECORDING_STATUS = "RECORDING_STATUS_REPORT";
+    public final static String ACTION_RECORDING_STATUS = "RECORDING_STATUS";
 
-    /** Extra for recording status actions */
+    /** Extra for recording status updates */
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
+
+    /** Outgoing action reporting a workout data update */
+    public final static String ACTION_RECORDING_DATA = "RECORDING_DATA";
+
+    /** Extra for reporting workout distance */
+    public final static String EXTRA_DISTANCE = "DISTANCE";
 
     private BroadcastReceiver mRecordingReceiver;
     private BroadcastReceiver mHeartRateReceiver;
     private BroadcastReceiver mLocationReceiver;
 
     // Data caches
-    private ArrayList<HeartRateSensorEvent> hrCache = new ArrayList<>();
-    private ArrayList<Location> locationCache = new ArrayList<>();
+    private static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
+    private static ArrayList<Location> locationSamples = new ArrayList<>();
 
     private int NOTIFICATION_ID = 1;
     private Notification mNotification;
     private NotificationManager mNotificationManager;
 
-    private long mStartTime, mStopTime;
-
-    private boolean mIsRecording = false;
+    public static boolean isRecording = false;
+    public static long startTime;
+    public static long stopTime;
+    public static double distance;
 
     private ServiceConnection mLocationServiceConnection;
     private ServiceConnection mHeartRateServiceConnection;
@@ -91,14 +95,13 @@ public class WorkoutRecordingService extends Service {
                 .setContentIntent(contentIntent)
                 .build();
 
-        // Set up the recording broadcast receiver
         mRecordingReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
                     case ACTION_STOP_SERVICES:
-                        if (!mIsRecording) {
-                            // reply on onDestroy to clean up child service bindings
+                        if (!isRecording) {
+                            // child service unbinding handled in service onDestroy
                             stopSelf();
                         }
 
@@ -107,7 +110,7 @@ public class WorkoutRecordingService extends Service {
                     case ACTION_START_RECORDING:
                         startForeground(NOTIFICATION_ID, mNotification);
                         startRecordingData();
-                        mIsRecording = true;
+                        isRecording = true;
                         reportRecordingStatus();
 
                         break;
@@ -115,11 +118,7 @@ public class WorkoutRecordingService extends Service {
                     case ACTION_STOP_RECORDING:
                         stopForeground(true);
                         stopRecordingData();
-                        mIsRecording = false;
-                        reportRecordingStatus();
-                        break;
-
-                    case ACTION_REPORT_RECORDING_STATUS:
+                        isRecording = false;
                         reportRecordingStatus();
                         break;
                 }
@@ -130,7 +129,6 @@ public class WorkoutRecordingService extends Service {
         filter.addAction(ACTION_STOP_SERVICES);
         filter.addAction(ACTION_START_RECORDING);
         filter.addAction(ACTION_STOP_RECORDING);
-        filter.addAction(ACTION_REPORT_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingReceiver, filter);
 
         mLocationServiceConnection = new ServiceConnection() {
@@ -151,6 +149,17 @@ public class WorkoutRecordingService extends Service {
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+        intent = new Intent(this, HeartRateSensorService.class);
+        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+
+        return START_REDELIVER_INTENT;
+    }
+
+    @Override
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
 
@@ -159,23 +168,17 @@ public class WorkoutRecordingService extends Service {
         unbindService(mLocationServiceConnection);
         unbindService(mHeartRateServiceConnection);
 
+        // Reset static vars since these survive outside of the service lifecycle
+        distance = 0;
+        startTime = 0;
+        stopTime = 0;
+        resetSampleCollections();
+
         super.onDestroy();
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-
-        intent = new Intent(this, HeartRateSensorService.class);
-        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
-
-        return START_NOT_STICKY;
-    }
-
-    @Override
     public IBinder onBind(Intent intent) {
-        // We don't provide binding, so return null
         return null;
     }
 
@@ -185,7 +188,7 @@ public class WorkoutRecordingService extends Service {
 
     private void reportRecordingStatus() {
         Intent intent = new Intent(ACTION_RECORDING_STATUS);
-        intent.putExtra(EXTRA_IS_RECORDING, mIsRecording);
+        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
@@ -193,7 +196,9 @@ public class WorkoutRecordingService extends Service {
      * Starts recording a workout session
      */
     private void startRecordingData() {
-        mStartTime =  System.currentTimeMillis();
+        startTime =  System.currentTimeMillis();
+        distance = 0;
+
         startHeartRateRecording();
         startLocationRecording();
     }
@@ -202,13 +207,13 @@ public class WorkoutRecordingService extends Service {
      * Stops recording a workout session and persists data
      */
     private void stopRecordingData() {
-        mStopTime = System.currentTimeMillis();
+        stopTime = System.currentTimeMillis();
 
-        stopHeartRateRecording();
-        stopLocationRecording();
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationReceiver);
 
         saveWorkout();
-        emptyCaches();
+        resetSampleCollections();
     }
 
     /**
@@ -221,32 +226,42 @@ public class WorkoutRecordingService extends Service {
                 public void onReceive(Context context, Intent intent) {
                     HeartRateSensorEvent hrEvent =
                             intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-                    hrCache.add(hrEvent);
+                    heartRateSamples.add(hrEvent);
                 }
             };
         }
-            IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-            LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateReceiver, filter);
-    }
 
-    /**
-     * Stops listening for HR notification
-     */
-    private void stopHeartRateRecording() {
-
+        IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateReceiver, filter);
     }
 
     /**
      * Starts listening for GPS notifications and records values
      */
     private void startLocationRecording() {
-
         if (mLocationReceiver == null) {
             mLocationReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-                    locationCache.add(location);
+
+                    if (locationSamples.size() > 0) {
+                        Location priorLocation = locationSamples.get(locationSamples.size() - 1);
+
+                        float[] results = new float[1];
+                        Location.distanceBetween(
+                                priorLocation.getLatitude(), priorLocation.getLongitude(),
+                                location.getLatitude(), location.getLongitude(),
+                                results);
+
+                        distance += results[0];
+                    }
+
+                    locationSamples.add(location);
+
+                    Intent intent2 = new Intent(ACTION_RECORDING_DATA);
+                    intent2.putExtra(EXTRA_DISTANCE, distance);
+                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(intent2);
                 }
             };
         }
@@ -257,26 +272,14 @@ public class WorkoutRecordingService extends Service {
     }
 
     /**
-     * Stops listening for GPS notifications
-     */
-    private void stopLocationRecording() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationReceiver);
-    }
-
-    /**
      * Saves the workout session data
      */
     private void saveWorkout() {
-        Log.i(LOG_TAG, "Start time: " + new java.util.Date(this.mStartTime));
-        Log.i(LOG_TAG, "End time: " + new java.util.Date(this.mStopTime));
-        Log.i(LOG_TAG, "Nr. HR values: " + this.hrCache.size());
-        Log.i(LOG_TAG, "Nr. location values: " + this.locationCache.size());
-
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
         // TODO: write in correct workout type
-        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, mStartTime, mStopTime);
-        mDbHelper.writeHeartRates(hrCache);
-        mDbHelper.writeLocations(locationCache);
+        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, startTime, stopTime);
+        mDbHelper.writeHeartRates(heartRateSamples);
+        mDbHelper.writeLocations(locationSamples);
         // TODO: Remove the following test code for testing db reads
         Log.i(LOG_TAG, "Nr workouts in db: " + mDbHelper.readNrWorkouts());
         for (long startTime : mDbHelper.readLastFiveWorkouts()) {
@@ -287,8 +290,9 @@ public class WorkoutRecordingService extends Service {
     /**
      * Empties all the data caches
      */
-    private void emptyCaches() {
-        this.hrCache.clear();
-        this.locationCache.clear();
+    private void resetSampleCollections() {
+        heartRateSamples.clear();
+        locationSamples.clear();
     }
+
 }

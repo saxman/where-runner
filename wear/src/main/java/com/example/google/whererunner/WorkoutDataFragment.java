@@ -31,7 +31,6 @@ public class WorkoutDataFragment extends WearableFragment {
     private TextView mDistanceTextView;
 
     private boolean mIsRecording = false;
-    private List<Location> mPathLocations = new ArrayList<>();
 
     private double mDistance;
     private double mDuration;
@@ -39,7 +38,7 @@ public class WorkoutDataFragment extends WearableFragment {
     private BroadcastReceiver mLocationChangedReceiver;
 
     private Timer mDurationTimer;
-    private double mStartTime = 0;
+    private double mStartTime;
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
 
@@ -49,6 +48,19 @@ public class WorkoutDataFragment extends WearableFragment {
 
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
+
+        mIsRecording = WorkoutRecordingService.isRecording;
+        mStartTime = WorkoutRecordingService.startTime;
+        mDistance = WorkoutRecordingService.distance;
+
+        if (mIsRecording) {
+            // start the timer to update the workout duration
+            startDurationTimer();
+        } else {
+            mDuration = WorkoutRecordingService.stopTime - mStartTime;
+        }
+
+        updateUI();
 
         return view;
     }
@@ -62,44 +74,19 @@ public class WorkoutDataFragment extends WearableFragment {
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
-                        case LocationService.ACTION_LOCATION_CHANGED:
-                            // TODO don't need to listen for location changes until recording started
-
-                            if (mIsRecording) {
-                                Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-                                mPathLocations.add(location);
-
-                                // Calculate distance between last two coordinates and add to aggregate
-                                if (mPathLocations.size() > 2) {
-                                    Location priorLocation = mPathLocations.get(mPathLocations.size() - 2);
-
-                                    float[] results = new float[1];
-                                    Location.distanceBetween(
-                                            priorLocation.getLatitude(), priorLocation.getLongitude(),
-                                            location.getLatitude(), location.getLongitude(),
-                                            results);
-
-                                    mDistance += results[0];
-                                }
-                            }
-
+                        case WorkoutRecordingService.ACTION_RECORDING_DATA:
+                            mDistance = WorkoutRecordingService.distance;
                             break;
 
                         case WorkoutRecordingService.ACTION_RECORDING_STATUS:
                             mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
 
                             if (mIsRecording) {
-                                // If recording, but no duration timer yet, the recording has been re-started
-                                if (mDurationTimer == null) {
-                                    mStartTime = System.currentTimeMillis();
-                                    mDuration = 0;
-                                    mDistance = 0;
-
-                                    startDurationTimer();
-                                }
+                                // TODO should get start time from the service, perhaps as an extra?
+                                mStartTime = System.currentTimeMillis();
+                                startDurationTimer();
                             } else {
                                 stopDurationTimer();
-                                mPathLocations.clear();
                             }
 
                             break;
@@ -113,12 +100,9 @@ public class WorkoutDataFragment extends WearableFragment {
         }
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_DATA);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
-
-        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
-        LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
     }
 
     @Override

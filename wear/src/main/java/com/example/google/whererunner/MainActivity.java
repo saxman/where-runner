@@ -93,6 +93,9 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
         mWearableDrawerLayout.peekDrawer(Gravity.TOP);
         mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+
+        mIsRecording = WorkoutRecordingService.isRecording;
+        setRecordingButtonUiState();
     }
 
     @Override
@@ -159,10 +162,6 @@ public class MainActivity extends WearableActivity implements
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingBroadcastReceiver, intentFilter);
-
-        // Request the recording status from the location service.
-        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
     @Override
@@ -178,6 +177,8 @@ public class MainActivity extends WearableActivity implements
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        // TODO could be handled more gracefully by fragment(s) implementing KeyEvent.Callback
+        // Pass watch key events the current child fragment to handle
         switch (keyCode) {
             case KeyEvent.KEYCODE_STEM_1:
             case KeyEvent.KEYCODE_STEM_2:
@@ -196,19 +197,10 @@ public class MainActivity extends WearableActivity implements
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.record_button:
-                if (mIsRecording) {
-                    // Tell the location service to stop recording
-                    Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_RECORDING);
-                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-                } else {
-                    // Tell the location service to start recording
-                    Intent intent = new Intent(WorkoutRecordingService.ACTION_START_RECORDING);
-                    LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-                }
-
+                toggleRecording();
                 mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
-
                 break;
+
             case R.id.activity_type_button:
                 toggleActivityTypeUiState();
                 break;
@@ -284,6 +276,18 @@ public class MainActivity extends WearableActivity implements
 
         // Notify the nav drawer adapter that the data has changed, to have the above icon refreshed
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();
+    }
+
+    private void toggleRecording() {
+        if (mIsRecording) {
+            // Tell the location service to stop recording
+            Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_RECORDING);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        } else {
+            // Tell the location service to start recording
+            Intent intent = new Intent(WorkoutRecordingService.ACTION_START_RECORDING);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }
     }
 
     //

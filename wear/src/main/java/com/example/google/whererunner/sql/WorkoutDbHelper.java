@@ -75,6 +75,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             values.put(WorkoutContract.HeartRate.COLUMN_NAME_HEART_RATE, hrEvent.getHeartRate());
             db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
         }
+
         db.endTransaction();
     }
 
@@ -94,6 +95,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             values.put(WorkoutContract.Location.COLUMN_NAME_LNG, location.getLongitude());
             db.insert(WorkoutContract.Location.TABLE_NAME, null, values);
         }
+
         db.endTransaction();
     }
 
