@@ -35,9 +35,10 @@ public class MainActivity extends WearableActivity implements
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    private static final int NAV_DRAWER_ITEMS = 2;
+    private static final int NAV_DRAWER_ITEMS = 3;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
-    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 1;
+    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 2;
+    private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
 
     private static final int ACTION_RECORD_INDEX = 0;
     private static final int ACTION_ACTIVITY_TYPE_INDEX = 1;
@@ -302,6 +303,8 @@ public class MainActivity extends WearableActivity implements
                     return getString(R.string.recording);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getString(R.string.settings);
+                case NAV_DRAWER_FRAGMENT_HISTORY:
+                    return getString(R.string.history);
             }
 
             return null;
@@ -322,6 +325,8 @@ public class MainActivity extends WearableActivity implements
                     return getDrawable(id);
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
+                case NAV_DRAWER_FRAGMENT_HISTORY:
+                    return getDrawable(R.drawable.ic_running_white);
             }
 
             return null;
@@ -339,6 +344,11 @@ public class MainActivity extends WearableActivity implements
                     break;
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     fragment = new SettingsFragment();
+                    // Hide the action drawer since we don't need its actions in the settings page
+                    mWearableActionDrawer.setVisibility(View.GONE);
+                    break;
+                case NAV_DRAWER_FRAGMENT_HISTORY:
+                    fragment = new HistoryFragment();
                     // Hide the action drawer since we don't need its actions in the settings page
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;
