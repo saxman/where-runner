@@ -74,6 +74,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
+        mIsRecording = WorkoutRecordingService.isRecording;
+
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
@@ -148,9 +150,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
-
-        Intent intent = new Intent(WorkoutRecordingService.ACTION_REPORT_RECORDING_STATUS);
-        LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
     }
 
     @Override

@@ -352,11 +352,7 @@ public class WorkoutMainFragment extends WearableFragment {
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override
                 public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                     if (getConnectedNodesResult.getNodes().size() > 0) {
-                         mIsPhoneConnected = true;
-                     } else {
-                         mIsPhoneConnected = false;
-                     }
+                    mIsPhoneConnected = getConnectedNodesResult.getNodes().size() > 0;
 
                     if (!isAmbient()) {
                         updateUI();

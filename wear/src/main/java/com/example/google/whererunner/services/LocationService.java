@@ -42,6 +42,8 @@ public abstract class LocationService extends Service {
     public IBinder onBind(Intent intent) {
         startLocationUpdates();
 
+        // No need to return an IBinder instance since binding is only used to controls service
+        // lifecycle, and isn't used for direct access
         return null;
     }
 
@@ -88,11 +90,7 @@ public abstract class LocationService extends Service {
     protected abstract void stopLocationUpdates();
 
     protected boolean checkPermission() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // TODO (re)ask the user for permission
-            return false;
-        }
+        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 
-        return true;
     }
 }

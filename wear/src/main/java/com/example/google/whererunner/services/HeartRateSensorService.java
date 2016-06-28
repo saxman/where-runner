@@ -70,6 +70,8 @@ public class HeartRateSensorService extends Service {
                 mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
                 SensorManager.SENSOR_DELAY_NORMAL);
 
+        // No need to return an IBinder instance since binding is only used to controls service
+        // lifecycle, and isn't used for direct access
         return null;
     }
 
