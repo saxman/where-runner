@@ -25,11 +25,13 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
+    private TextView mSpeedTextView;
 
     private boolean mIsRecording = false;
 
     private double mDistance;
     private double mDuration;
+    private double mSpeed;
 
     private BroadcastReceiver mLocationChangedReceiver;
 
@@ -44,10 +46,13 @@ public class WorkoutDataFragment extends WearableFragment {
 
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
+        mSpeedTextView = (TextView) view.findViewById(R.id.speed);
 
         mIsRecording = WorkoutRecordingService.isRecording;
         mStartTime = WorkoutRecordingService.startTime;
         mDistance = WorkoutRecordingService.distance;
+        // TODO add speed to the service
+        mSpeed = 0;
 
         if (mIsRecording) {
             // start the timer to update the workout duration
@@ -154,6 +159,8 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private void updateUI() {
         mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.1f meters", mDistance));
+        // TODO render minutes + seconds
         mDurationTextView.setText(String.format(Locale.getDefault(), "%1$,.1f secs", mDuration / 1000));
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%1$,.1f m/s", mSpeed));
     }
 }
