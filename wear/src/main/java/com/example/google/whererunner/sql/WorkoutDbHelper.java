@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
 
+import com.example.google.whererunner.data.Workout;
 import com.example.google.whererunner.services.HeartRateSensorEvent;
 
 import java.util.ArrayList;
@@ -110,21 +111,21 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     /**
      * Read the last 5 workouts in the db
      */
-    public ArrayList<Long> readLastFiveWorkouts() {
+    public ArrayList<Workout> readLastFiveWorkouts() {
         SQLiteDatabase db = getReadableDatabase();
 
         String[] projection = {
+            WorkoutContract.Workout._ID,
             WorkoutContract.Workout.COLUMN_NAME_TYPE,
             WorkoutContract.Workout.COLUMN_NAME_START_TIME,
             WorkoutContract.Workout.COLUMN_NAME_END_TIME,
         };
 
         String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
-
         String limit = "5";
 
         // TODO: make this a workout data type
-        ArrayList<Long> workouts = new ArrayList<>();
+        ArrayList<Workout> workouts = new ArrayList<>();
 
         try (Cursor c = db.query(
             WorkoutContract.Workout.TABLE_NAME,  // The table to query
@@ -138,10 +139,19 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         )) {
 
             while (c.moveToNext()) {
+                long id = c.getLong(
+                        c.getColumnIndexOrThrow(WorkoutContract.Workout._ID)
+                );
+                int type = c.getInt(
+                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_TYPE)
+                );
                 long startTime = c.getLong(
                         c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME)
                 );
-                workouts.add(startTime);
+                long endTime = c.getLong(
+                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME)
+                );
+                workouts.add(new Workout(id, type, startTime, endTime));
             }
         }
         return workouts;

@@ -17,6 +17,7 @@ import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
+import com.example.google.whererunner.data.Workout;
 import com.example.google.whererunner.sql.WorkoutContract;
 import com.example.google.whererunner.sql.WorkoutDbHelper;
 
@@ -275,8 +276,11 @@ public class WorkoutRecordingService extends Service {
         mDbHelper.writeLocations(locationSamples);
         // TODO: Remove the following test code for testing db reads
         Log.i(LOG_TAG, "Nr workouts in db: " + mDbHelper.readNrWorkouts());
-        for (long startTime : mDbHelper.readLastFiveWorkouts()) {
-            Log.i(LOG_TAG, "Start time: " + new java.util.Date(startTime));
+        for (Workout workout : mDbHelper.readLastFiveWorkouts()) {
+            Log.i(LOG_TAG, "Id: " + workout.getId());
+            Log.i(LOG_TAG, "Type: " + workout.getType());
+            Log.i(LOG_TAG, "Start time: " + new java.util.Date(workout.getStartTime()));
+            Log.i(LOG_TAG, "End time: " + new java.util.Date(workout.getEndTime()));
         }
     }
 

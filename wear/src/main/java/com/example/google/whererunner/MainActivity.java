@@ -23,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.example.google.whererunner.data.WorkoutType;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 
@@ -43,8 +44,8 @@ public class MainActivity extends WearableActivity implements
     private static final int ACTION_RECORD_INDEX = 0;
     private static final int ACTION_ACTIVITY_TYPE_INDEX = 1;
 
-    private static final int ACTIVITY_TYPE_RUNNING = 0;
-    private static final int ACTIVITY_TYPE_CYCLING = 1;
+    private static final int ACTIVITY_TYPE_RUNNING = WorkoutType.RUNNING;
+    private static final int ACTIVITY_TYPE_CYCLING = WorkoutType.CYCLING;
 
     private static final int REQUEST_PERMISSIONS = 1;
 
