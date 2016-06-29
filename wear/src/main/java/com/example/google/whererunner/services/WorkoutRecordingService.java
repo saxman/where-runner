@@ -259,7 +259,8 @@ public class WorkoutRecordingService extends Service {
                     }
 
                     speed = location.getSpeed();
-                    averageSpeed = distance / (System.currentTimeMillis() - startTime) / 1000;
+                    averageSpeed = distance / ((System.currentTimeMillis() - startTime) / 1000);
+
                     locationSamples.add(location);
 
                     LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));

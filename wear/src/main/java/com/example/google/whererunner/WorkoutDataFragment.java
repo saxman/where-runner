@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -163,9 +164,9 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private void updateUI() {
         if (mDistance < 1000) {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.1f meters", mDistance));
+            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.1f meters", mDistance));
         } else {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.3f km", mDistance / 1000));
+            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.3f km", mDistance / 1000));
         }
 
         long millis = (long) mDuration;
@@ -178,9 +179,9 @@ public class WorkoutDataFragment extends WearableFragment {
         if (hours > 0) {
             mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
         } else {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds));
+            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%04.1f", minutes, millis / 1000f));
         }
 
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%1$,.1f / %1$,.1f m/s", mSpeed, mAverageSpeed));
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mSpeed, mAverageSpeed));
     }
 }
