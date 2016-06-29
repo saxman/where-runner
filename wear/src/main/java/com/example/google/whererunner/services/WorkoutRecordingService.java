@@ -281,11 +281,10 @@ public class WorkoutRecordingService extends Service {
     }
 
     /**
-     * Empties all the data caches
+     * Empties all the data sample collections
      */
     private void resetSampleCollections() {
         heartRateSamples.clear();
         locationSamples.clear();
     }
-
 }

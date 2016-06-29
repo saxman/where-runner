@@ -44,6 +44,7 @@ import java.util.LinkedList;
 
 public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCallback {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutMapFragment.class.getSimpleName();
 
     private GoogleMap mGoogleMap;
@@ -55,7 +56,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
     private GoogleApiClient mGoogleApiClient;
 
-    private Location mInitialLocation = null;
     private Location mLastLocation = null;
 
     private boolean mIsRecording = false;
@@ -76,10 +76,13 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         mIsRecording = WorkoutRecordingService.isRecording;
         mPathLocations = WorkoutRecordingService.locationSamples;
+
+        // If we have a historic location sample, use it to center the map, but don't assume we have a location fix
         if (mPathLocations.size() > 0) {
+            // TODO if the sample isn't too old, we can assume we have a location fix?
+            mIsLocationFixed = false;
             mLastLocation = mPathLocations.get(mPathLocations.size() - 1);
         }
-        // TODO move last known location tracking to a service, independent to recording status, so that we don't have to (re)wait for the data on map re-load
 
         mMapView = (MapView) view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
@@ -127,7 +130,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                             break;
 
                         case LocationService.ACTION_CONNECTIVITY_LOST:
-                            // We haven't received a location sample in too long, so hide the accuracy circle
+                            // We haven't received a location sample in too long, so update the UI
+                            // to reflect poor connectivity
                             mIsLocationFixed = false;
 
                             if (!isAmbient()) {
@@ -329,7 +333,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     }
 
     /**
-     * Re-center the map at the appropriate location
+     * Re-center the map to the appropriate location. Will animate the move if we're actively receiving location samples
      */
     private void updateMapCenter() {
         // Map not ready yet. updateMapCenter() will be called again once the map is ready.
@@ -337,12 +341,17 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             return;
         }
 
-        if (mLastLocation != null) {
+        // If we don't have a location sample, not much we can do...
+        if (mLastLocation == null) {
+            return;
+        }
+
+        if (!mIsLocationFixed) {
+            LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
+        } else {
             LatLng latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
             mGoogleMap.animateCamera(CameraUpdateFactory.newLatLng(latLng));
-        } else if (mInitialLocation != null) {
-            LatLng latLng = new LatLng(mInitialLocation.getLatitude(), mInitialLocation.getLongitude());
-            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
         }
     }
 
@@ -355,7 +364,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
 
         if (location != null) {
-            mInitialLocation = location;
+            mLastLocation = location;
+            mIsLocationFixed = false;
 
             if (!isAmbient()) {
                 updateUI();
@@ -369,6 +379,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         int width = 24;
         int height = 24;
+
         try {
             width = circle.getIntrinsicWidth();
             height = circle.getIntrinsicHeight();

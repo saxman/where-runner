@@ -19,6 +19,7 @@ import com.example.google.whererunner.services.HeartRateSensorService;
 public class HeartRateFragment extends Fragment
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = HeartRateFragment.class.getSimpleName();
 
     private BroadcastReceiver hrReceiver;
