@@ -62,6 +62,7 @@ public class WorkoutRecordingService extends Service {
     private Notification mNotification;
     private NotificationManager mNotificationManager;
 
+    // TODO could/should simplify what data is being kept/shared here and what is being calculated by the UI components. e.g. could only keep starttime and samples here
     public static boolean isRecording = false;
     public static long startTime;
     public static long stopTime;
