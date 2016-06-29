@@ -66,6 +66,8 @@ public class WorkoutRecordingService extends Service {
     public static long startTime;
     public static long stopTime;
     public static double distance;
+    public static double speed;
+    public static double averageSpeed;
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
@@ -168,6 +170,8 @@ public class WorkoutRecordingService extends Service {
         distance = 0;
         startTime = 0;
         stopTime = 0;
+        speed = 0;
+        averageSpeed = 0;
         resetSampleCollections();
 
         super.onDestroy();
@@ -253,6 +257,8 @@ public class WorkoutRecordingService extends Service {
                         distance += results[0];
                     }
 
+                    speed = location.getSpeed();
+                    averageSpeed = distance / (System.currentTimeMillis() - startTime) / 1000;
                     locationSamples.add(location);
 
                     LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
