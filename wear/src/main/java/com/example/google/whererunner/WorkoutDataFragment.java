@@ -168,7 +168,7 @@ public class WorkoutDataFragment extends WearableFragment {
             mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.3f km", mDistance / 1000));
         }
 
-        long millis = (long) mDistance;
+        long millis = (long) mDuration;
         long hours = TimeUnit.MILLISECONDS.toHours(millis);
         millis -= TimeUnit.HOURS.toMillis(hours);
         long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
