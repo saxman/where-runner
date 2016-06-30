@@ -3,6 +3,7 @@
     <string-array name="settings_list">
         <item>Map Overlays</item>
         <item>Location/GPS</item>
+        <item>Google Fit</item>
     </string-array>
 
     <string-array name="settings_map_list">
@@ -17,5 +18,9 @@
         <item>Update timeout (secs)</item>
         <item>Accuracy threshold (meters)</item>
         <item>Vibrate when signal lost</item>
+    </string-array>
+
+    <string-array name="settings_fit_list">
+        <item>Eanble Google Fit</item>
     </string-array>
 </resources>

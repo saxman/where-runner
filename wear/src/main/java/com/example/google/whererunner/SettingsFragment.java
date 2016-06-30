@@ -10,8 +10,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.google.whererunner.services.GoogleFitService;
+
 public class SettingsFragment extends Fragment {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = SettingsFragment.class.getSimpleName();
 
     private WearableListViewAdapter mListViewAdapter;
@@ -40,14 +43,18 @@ public class SettingsFragment extends Fragment {
             switch (tag) {
                 case 0:
                     listItems = getResources().getStringArray(R.array.settings_map_list);
+                    mListViewAdapter.mDataset = listItems;
+                    mListViewAdapter.notifyDataSetChanged();
                     break;
                 case 1:
                     listItems = getResources().getStringArray(R.array.settings_location_list);
+                    mListViewAdapter.mDataset = listItems;
+                    mListViewAdapter.notifyDataSetChanged();
+                    break;
+                case 2:
+                    // TODO: Ask for Google Fit permissions here
                     break;
             }
-
-            mListViewAdapter.mDataset = listItems;
-            mListViewAdapter.notifyDataSetChanged();
         }
 
         @Override
