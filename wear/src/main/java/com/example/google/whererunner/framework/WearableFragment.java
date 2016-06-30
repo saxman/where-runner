@@ -2,6 +2,7 @@ package com.example.google.whererunner.framework;
 
 import android.app.Fragment;
 import android.os.Bundle;
+import android.view.KeyEvent;
 
 /**
  * Base class for fragments embedded in WearableActivities, so that ambient mode change and UI
@@ -30,6 +31,6 @@ public abstract class WearableFragment extends Fragment {
         return mIsAmbient;
     }
 
-    public void onWatchButtonPressed(int keyCode) {
+    public void onWearableKeyEvent(KeyEvent event) {
     }
 }
