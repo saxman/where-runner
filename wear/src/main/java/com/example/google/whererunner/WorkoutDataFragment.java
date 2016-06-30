@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +18,7 @@ import com.example.google.whererunner.services.WorkoutRecordingService;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
 public class WorkoutDataFragment extends WearableFragment {
 
@@ -31,6 +33,7 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private double mDistance;
     private double mDuration;
+    private double mAverageSpeed;
     private double mSpeed;
 
     private BroadcastReceiver mLocationChangedReceiver;
@@ -51,8 +54,8 @@ public class WorkoutDataFragment extends WearableFragment {
         mIsRecording = WorkoutRecordingService.isRecording;
         mStartTime = WorkoutRecordingService.startTime;
         mDistance = WorkoutRecordingService.distance;
-        // TODO add speed to the service
-        mSpeed = 0;
+        mAverageSpeed = WorkoutRecordingService.averageSpeed;
+        mSpeed = WorkoutRecordingService.speed;
 
         if (mIsRecording) {
             // start the timer to update the workout duration
@@ -77,6 +80,8 @@ public class WorkoutDataFragment extends WearableFragment {
                     switch (intent.getAction()) {
                         case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
                             mDistance = WorkoutRecordingService.distance;
+                            mAverageSpeed = WorkoutRecordingService.averageSpeed;
+                            mSpeed = WorkoutRecordingService.speed;
                             break;
 
                         case WorkoutRecordingService.ACTION_RECORDING_STATUS:
@@ -158,9 +163,25 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     private void updateUI() {
-        mDistanceTextView.setText(String.format(Locale.getDefault(), "%1$,.1f meters", mDistance));
-        // TODO render minutes + seconds
-        mDurationTextView.setText(String.format(Locale.getDefault(), "%1$,.1f secs", mDuration / 1000));
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%1$,.1f m/s", mSpeed));
+        if (mDistance < 1000) {
+            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.1f meters", mDistance));
+        } else {
+            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.3f km", mDistance / 1000));
+        }
+
+        long millis = (long) mDuration;
+        long hours = TimeUnit.MILLISECONDS.toHours(millis);
+        millis -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+        millis -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+
+        if (hours > 0) {
+            mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
+        } else {
+            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%04.1f", minutes, millis / 1000f));
+        }
+
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mSpeed, mAverageSpeed));
     }
 }

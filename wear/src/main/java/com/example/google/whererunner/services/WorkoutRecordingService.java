@@ -62,10 +62,13 @@ public class WorkoutRecordingService extends Service {
     private Notification mNotification;
     private NotificationManager mNotificationManager;
 
+    // TODO could/should simplify what data is being kept/shared here and what is being calculated by the UI components. e.g. could only keep starttime and samples here
     public static boolean isRecording = false;
     public static long startTime;
     public static long stopTime;
     public static double distance;
+    public static double speed;
+    public static double averageSpeed;
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
@@ -168,6 +171,8 @@ public class WorkoutRecordingService extends Service {
         distance = 0;
         startTime = 0;
         stopTime = 0;
+        speed = 0;
+        averageSpeed = 0;
         resetSampleCollections();
 
         super.onDestroy();
@@ -252,6 +257,9 @@ public class WorkoutRecordingService extends Service {
 
                         distance += results[0];
                     }
+
+                    speed = location.getSpeed();
+                    averageSpeed = distance / ((System.currentTimeMillis() - startTime) / 1000);
 
                     locationSamples.add(location);
 
