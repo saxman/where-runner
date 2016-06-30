@@ -45,7 +45,6 @@ public class WorkoutMainFragment extends WearableFragment {
     private static final int FRAGMENT_GPS = 3;
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
-    private static final int PAGER_ITEMS = 3;
 
     private static final int VIBRATOR_DURATION_MS = 200;
 
@@ -53,6 +52,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
+    private int mViewPagerItems = 2;
 
     private TextClock mTextClock;
     private ViewGroup mPagerPagePips;
@@ -71,25 +71,24 @@ public class WorkoutMainFragment extends WearableFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
-        mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
-
-        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_page_pips);
-
-        mViewPager = (GridViewPager) view.findViewById(R.id.pager);
-        mViewPager.setAdapter(mViewPagerAdapter);
-        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
-
+        // Status overlays
         mTextClock = (TextClock) view.findViewById(R.id.time);
         mPhoneConnectivityImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
         mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
+        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_page_pips);
 
-        // If the device has a heart rate monitor, display its status
+        // If the device has a heart rate monitor, add the HRM view to the view pager
         if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
             mHrmConnectivityImageView.setVisibility(View.VISIBLE);
-        } else {
-            // TODO if the device doesn't have a heart rate monitor, hide the HRM fragment
+            mViewPagerItems += 1;
         }
+
+        mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
+
+        mViewPager = (GridViewPager) view.findViewById(R.id.pager);
+        mViewPager.setAdapter(mViewPagerAdapter);
+        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
         if (mGoogleApiClient == null) {
             GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
@@ -294,13 +293,13 @@ public class WorkoutMainFragment extends WearableFragment {
 
         @Override
         public int getRowCount() {
-            return PAGER_ORIENTATION == LinearLayout.VERTICAL ? PAGER_ITEMS : 1;
+            return PAGER_ORIENTATION == LinearLayout.VERTICAL ? mViewPagerItems : 1;
         }
 
         @Override
         public int getColumnCount(int i)
         {
-            return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? PAGER_ITEMS : 1;
+            return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mViewPagerItems : 1;
         }
     }
 
@@ -309,14 +308,14 @@ public class WorkoutMainFragment extends WearableFragment {
 
         public GridViewPagerChangeListener(ViewGroup parent) {
             LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            mPipImageViews = new ImageView[PAGER_ITEMS];
+            mPipImageViews = new ImageView[mViewPagerItems];
 
             int spacing = (int) getResources().getDimension(R.dimen.map_overlay_spacing);
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.setMargins(0, spacing, 0, spacing);
 
-            for (int i = 0; i < PAGER_ITEMS; i++) {
+            for (int i = 0; i < mViewPagerItems; i++) {
                 ImageView view = (ImageView) inflater.inflate(R.layout.pager_pip, null);
                 parent.addView(view, layoutParams);
                 mPipImageViews[i] = view;

@@ -4,9 +4,18 @@ import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
+
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
 public class WhereRunnerApp extends Application {
+    public static final String LOG_TAG = WhereRunnerApp.class.getSimpleName();
+
     public static final String ACTION_SETTINGS_CHANGED = "SETTINGS_CHANGED";
 
     private static final String SHARED_PREFS = "com.example.google.whererunner.SHARED_PREFS";
@@ -42,5 +51,27 @@ public class WhereRunnerApp extends Application {
 
     public static String retrieveUserPreference(String pref) {
         return sInstance.mSharedPrefs.getString(pref, "");
+    }
+
+    public static BitmapDescriptor loadDrawable(int id) {
+        Drawable circle = sInstance.getResources().getDrawable(id, null);
+
+        int width = 24;
+        int height = 24;
+
+        try {
+            width = circle.getIntrinsicWidth();
+            height = circle.getIntrinsicHeight();
+        } catch (NullPointerException e) {
+            Log.w(LOG_TAG, "Drawable must have intrinsic width and height. Using arbitrary default of 24");
+        }
+
+        Canvas canvas = new Canvas();
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(bitmap);
+        circle.setBounds(0, 0, width, height);
+        circle.draw(canvas);
+
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 }

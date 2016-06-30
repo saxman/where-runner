@@ -327,7 +327,7 @@ public class MainActivity extends WearableActivity implements
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
                     return getDrawable(R.drawable.ic_settings);
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    return getDrawable(R.drawable.ic_running_white);
+                    return getDrawable(R.drawable.ic_view_day);
             }
 
             return null;
@@ -350,7 +350,7 @@ public class MainActivity extends WearableActivity implements
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
                     fragment = new HistoryFragment();
-                    // Hide the action drawer since we don't need its actions in the settings page
+                    // Hide the action drawer since we don't need its actions in the history page
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;
             }

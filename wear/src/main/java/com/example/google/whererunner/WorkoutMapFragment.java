@@ -202,9 +202,9 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
-        mRecordingMapMarkerIcon = loadDrawable(R.drawable.map_marker_recording);
-        mDefaultMapMarkerIcon = loadDrawable(R.drawable.map_marker);
-        mDisconnectedMapMarkerIcon = loadDrawable(R.drawable.map_marker_disconnected);
+        mRecordingMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_recording);
+        mDefaultMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker);
+        mDisconnectedMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_disconnected);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
@@ -341,8 +341,10 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             return;
         }
 
-        // If we don't have a location sample, not much we can do...
+        // If we don't have a location sample, move the camera to someplace interesting
         if (mLastLocation == null) {
+            LatLng latLng = new LatLng(37.422393, -122.083964);
+            mGoogleMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
             return;
         }
 
@@ -371,29 +373,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                 updateUI();
             }
         }
-    }
-
-    // TODO move to util class? run in background thread?
-    private BitmapDescriptor loadDrawable(int id) {
-        Drawable circle = getResources().getDrawable(id, null);
-
-        int width = 24;
-        int height = 24;
-
-        try {
-            width = circle.getIntrinsicWidth();
-            height = circle.getIntrinsicHeight();
-        } catch (NullPointerException e) {
-            Log.w(LOG_TAG, "Drawable must have intrinsic width and height. Using arbitrary default of 24");
-        }
-
-        Canvas canvas = new Canvas();
-        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bitmap);
-        circle.setBounds(0, 0, width, height);
-        circle.draw(canvas);
-
-        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     private class GoogleApiClientCallbacks implements
