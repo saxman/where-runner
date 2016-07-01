@@ -83,7 +83,8 @@ public class WhereRunnerApp extends Application {
         long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
         millis -= TimeUnit.MINUTES.toMillis(minutes);
         long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+        millis -= TimeUnit.SECONDS.toMillis(seconds);
 
-        return new long[]{hours, minutes, seconds};
+        return new long[]{hours, minutes, seconds, millis};
     }
 }

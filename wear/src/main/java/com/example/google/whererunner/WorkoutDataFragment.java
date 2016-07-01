@@ -163,11 +163,9 @@ public class WorkoutDataFragment extends WearableFragment {
         mDurationTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                getActivity().runOnUiThread(new Runnable()
-                {
+                getActivity().runOnUiThread(new Runnable() {
                     @Override
-                    public void run()
-                    {
+                    public void run() {
                         mDuration = System.currentTimeMillis() - mStartTime;
 
                         if (!isAmbient()) {
@@ -198,11 +196,13 @@ public class WorkoutDataFragment extends WearableFragment {
         long hours = hms[0];
         long minutes = hms[1];
         long seconds = hms[2];
+        millis = hms[3];
 
         if (hours > 0) {
             mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
         } else {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%04.1f", minutes, millis / 1000f));
+            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
+//            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%04.1f", minutes, millis / 1000f));
         }
 
         mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mSpeed, mAverageSpeed));
