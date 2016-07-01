@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -36,7 +35,7 @@ public class WorkoutDataFragment extends WearableFragment {
     private double mAverageSpeed;
     private double mSpeed;
 
-    private BroadcastReceiver mLocationChangedReceiver;
+    private BroadcastReceiver mBroadcastReceiver;
 
     private Timer mDurationTimer;
     private double mStartTime;
@@ -73,47 +72,45 @@ public class WorkoutDataFragment extends WearableFragment {
     public void onResume() {
         super.onResume();
 
-        if (mLocationChangedReceiver == null) {
-            mLocationChangedReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (intent.getAction()) {
-                        case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
-                            mDistance = WorkoutRecordingService.distance;
-                            mAverageSpeed = WorkoutRecordingService.averageSpeed;
-                            mSpeed = WorkoutRecordingService.speed;
-                            break;
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
+                        mDistance = WorkoutRecordingService.distance;
+                        mAverageSpeed = WorkoutRecordingService.averageSpeed;
+                        mSpeed = WorkoutRecordingService.speed;
+                        break;
 
-                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
-                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                    case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                        mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
 
-                            if (mIsRecording) {
-                                // TODO should get start time from the service, perhaps as an extra?
-                                mStartTime = System.currentTimeMillis();
-                                startDurationTimer();
-                            } else {
-                                stopDurationTimer();
-                            }
+                        if (mIsRecording) {
+                            // TODO should get start time from the service, perhaps as an extra?
+                            mStartTime = System.currentTimeMillis();
+                            startDurationTimer();
+                        } else {
+                            stopDurationTimer();
+                        }
 
-                            break;
-                    }
-
-                    if (!isAmbient()) {
-                        updateUI();
-                    }
+                        break;
                 }
-            };
-        }
+
+                if (!isAmbient()) {
+                    updateUI();
+                }
+            }
+        };
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onStop() {
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
         stopDurationTimer();
 
         super.onStop();

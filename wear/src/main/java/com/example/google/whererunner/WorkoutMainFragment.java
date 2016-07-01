@@ -48,7 +48,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
     private static final int VIBRATOR_DURATION_MS = 200;
 
-    private BroadcastReceiver mLocationChangedReceiver;
+    private BroadcastReceiver mBroadcastReceiver;
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
@@ -112,7 +112,7 @@ public class WorkoutMainFragment extends WearableFragment {
     @Override
     public void onStop() {
         mGoogleApiClient.disconnect();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
 
         super.onStop();
     }
@@ -121,54 +121,52 @@ public class WorkoutMainFragment extends WearableFragment {
     public void onResume() {
         super.onResume();
 
-        if (mLocationChangedReceiver == null) {
-            mLocationChangedReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (intent.getAction()) {
-                        case LocationService.ACTION_LOCATION_CHANGED:
-                            mIsLocationServiceConnected = true;
-                            break;
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case LocationService.ACTION_LOCATION_CHANGED:
+                        mIsLocationServiceConnected = true;
+                        break;
 
-                        case LocationService.ACTION_CONNECTIVITY_LOST:
-                            // TODO UI should be updated even if in ambient mode
-                            mIsLocationServiceConnected = false;
+                    case LocationService.ACTION_CONNECTIVITY_LOST:
+                        // TODO UI should be updated even if in ambient mode
+                        mIsLocationServiceConnected = false;
 
-                            Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                            vibrator.vibrate(VIBRATOR_DURATION_MS);
+                        Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                        vibrator.vibrate(VIBRATOR_DURATION_MS);
 
-                            break;
+                        break;
 
-                        case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
-                            mIsHrmConnected = false;
-                            break;
+                    case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
+                        mIsHrmConnected = false;
+                        break;
 
-                        case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                            if (mIsHrmConnected) {
-                                // No need to update the UI if the status hasn't changed
-                                return;
-                            } else {
-                                mIsHrmConnected = true;
-                            }
+                    case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                        if (mIsHrmConnected) {
+                            // No need to update the UI if the status hasn't changed
+                            return;
+                        } else {
+                            mIsHrmConnected = true;
+                        }
 
-                            // TODO animate the heart to beat at the current rate
+                        // TODO animate the heart to beat at the current rate
 
-                            break;
-                    }
-
-                    if (!isAmbient()) {
-                        updateUI();
-                    }
+                        break;
                 }
-            };
-        }
+
+                if (!isAmbient()) {
+                    updateUI();
+                }
+            }
+        };
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
@@ -286,9 +284,6 @@ public class WorkoutMainFragment extends WearableFragment {
                     break;
                 case FRAGMENT_HEART:
                     fragment = new HeartRateFragment();
-                    break;
-                case FRAGMENT_GPS:
-                    fragment = new GpsStatusFragment();
                     break;
             }
 

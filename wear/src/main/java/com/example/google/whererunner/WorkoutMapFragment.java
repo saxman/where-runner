@@ -6,15 +6,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -30,7 +26,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
@@ -61,7 +56,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     private boolean mIsRecording = false;
     private boolean mIsLocationFixed = false;
 
-    private BroadcastReceiver mLocationChangedReceiver;
+    private BroadcastReceiver mBroadcastReceiver;
 
     private ArrayList<Location> mPathLocations;
     private LinkedList<LatLng> mPathPolylineLatLngs = new LinkedList<>();
@@ -113,59 +108,57 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         mMapView.onResume();
 
-        if (mLocationChangedReceiver == null) {
-            mLocationChangedReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (intent.getAction()) {
-                        case LocationService.ACTION_LOCATION_CHANGED:
-                            mIsLocationFixed = true;
-                            mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+        mBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                switch (intent.getAction()) {
+                    case LocationService.ACTION_LOCATION_CHANGED:
+                        mIsLocationFixed = true;
+                        mLastLocation = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                            if (!isAmbient()) {
-                                updateMapMarker();
-                                updateMapCenter();
-                            }
+                        if (!isAmbient()) {
+                            updateMapMarker();
+                            updateMapCenter();
+                        }
 
-                            break;
+                        break;
 
-                        case LocationService.ACTION_CONNECTIVITY_LOST:
-                            // We haven't received a location sample in too long, so update the UI
-                            // to reflect poor connectivity
-                            mIsLocationFixed = false;
+                    case LocationService.ACTION_CONNECTIVITY_LOST:
+                        // We haven't received a location sample in too long, so update the UI
+                        // to reflect poor connectivity
+                        mIsLocationFixed = false;
 
-                            if (!isAmbient()) {
-                                updateMapMarker();
-                            }
+                        if (!isAmbient()) {
+                            updateMapMarker();
+                        }
 
-                            break;
+                        break;
 
-                        case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
-                            if (!isAmbient()) {
-                                updateMapPolyline();
-                            }
+                    case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
+                        if (!isAmbient()) {
+                            updateMapPolyline();
+                        }
 
-                            break;
+                        break;
 
-                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
-                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                    case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                        mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
 
-                            if (!isAmbient()) {
-                                updateMapMarkerIcon();
-                            }
+                        if (!isAmbient()) {
+                            updateMapMarkerIcon();
+                        }
 
-                            break;
-                    }
+                        break;
                 }
-            };
-        }
+            }
+        };
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mLocationChangedReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
@@ -189,7 +182,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     @Override
     public void onStop() {
         mGoogleApiClient.disconnect();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mLocationChangedReceiver);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
 
         super.onStop();
     }

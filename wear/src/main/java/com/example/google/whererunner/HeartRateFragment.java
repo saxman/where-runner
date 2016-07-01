@@ -22,7 +22,7 @@ public class HeartRateFragment extends Fragment
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HeartRateFragment.class.getSimpleName();
 
-    private BroadcastReceiver hrReceiver;
+    private BroadcastReceiver mBroadcastReceiver;
 
     private TextView mHrMaxText;
     private TextView mHrInstantaneousText;
@@ -47,7 +47,7 @@ public class HeartRateFragment extends Fragment
     public void onStart() {
         super.onStart();
 
-        hrReceiver = new BroadcastReceiver() {
+        mBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
@@ -84,12 +84,12 @@ public class HeartRateFragment extends Fragment
         IntentFilter filter = new IntentFilter();
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(hrReceiver, filter);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, filter);
     }
 
     @Override
     public void onStop() {
-        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(hrReceiver);
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mBroadcastReceiver);
 
         super.onStop();
     }
