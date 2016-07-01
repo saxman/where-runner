@@ -307,7 +307,7 @@ public class WorkoutMainFragment extends WearableFragment {
             LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             mPipImageViews = new ImageView[mViewPagerItems];
 
-            int spacing = (int) getResources().getDimension(R.dimen.map_overlay_spacing);
+            int spacing = (int) getResources().getDimension(R.dimen.pager_pip_spacing);
             LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             layoutParams.setMargins(0, spacing, 0, spacing);
