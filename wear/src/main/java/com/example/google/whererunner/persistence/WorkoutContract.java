@@ -1,4 +1,4 @@
-package com.example.google.whererunner.sql;
+package com.example.google.whererunner.persistence;
 
 import android.provider.BaseColumns;
 

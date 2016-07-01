@@ -1,7 +1,6 @@
 package com.example.google.whererunner;
 
 import android.content.Context;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.app.Fragment;
 import android.support.wearable.view.WearableListView;
@@ -12,8 +11,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.google.whererunner.data.Workout;
-import com.example.google.whererunner.sql.WorkoutDbHelper;
+import com.example.google.whererunner.model.Workout;
+import com.example.google.whererunner.persistence.WorkoutDbHelper;
 
 import java.util.ArrayList;
 

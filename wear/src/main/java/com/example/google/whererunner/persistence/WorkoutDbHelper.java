@@ -1,4 +1,4 @@
-package com.example.google.whererunner.sql;
+package com.example.google.whererunner.persistence;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
 
-import com.example.google.whererunner.data.Workout;
+import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.services.HeartRateSensorEvent;
 
 import java.util.ArrayList;

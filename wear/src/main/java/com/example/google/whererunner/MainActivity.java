@@ -23,7 +23,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.example.google.whererunner.data.WorkoutType;
+import com.example.google.whererunner.model.WorkoutType;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 

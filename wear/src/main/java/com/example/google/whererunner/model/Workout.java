@@ -1,4 +1,4 @@
-package com.example.google.whererunner.data;
+package com.example.google.whererunner.model;
 
 
 public class Workout {

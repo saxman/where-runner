@@ -17,9 +17,9 @@ import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
-import com.example.google.whererunner.data.Workout;
-import com.example.google.whererunner.sql.WorkoutContract;
-import com.example.google.whererunner.sql.WorkoutDbHelper;
+import com.example.google.whererunner.model.Workout;
+import com.example.google.whererunner.persistence.WorkoutContract;
+import com.example.google.whererunner.persistence.WorkoutDbHelper;
 
 import java.util.ArrayList;
 

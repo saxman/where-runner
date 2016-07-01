@@ -4,13 +4,10 @@ import android.app.Fragment;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.wearable.view.WearableListView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-
-import com.example.google.whererunner.services.GoogleFitService;
 
 public class SettingsFragment extends Fragment {
 
@@ -42,16 +39,6 @@ public class SettingsFragment extends Fragment {
 
             switch (tag) {
                 case 0:
-                    listItems = getResources().getStringArray(R.array.settings_map_list);
-                    mListViewAdapter.mDataset = listItems;
-                    mListViewAdapter.notifyDataSetChanged();
-                    break;
-                case 1:
-                    listItems = getResources().getStringArray(R.array.settings_location_list);
-                    mListViewAdapter.mDataset = listItems;
-                    mListViewAdapter.notifyDataSetChanged();
-                    break;
-                case 2:
                     // TODO: Ask for Google Fit permissions here
                     break;
             }
