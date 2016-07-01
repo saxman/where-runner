@@ -64,12 +64,13 @@ public class MainActivity extends WearableActivity implements
     private int mActivityType = ACTIVITY_TYPE_RUNNING;
 
     @Override
-    public void onCreate(Bundle savedState) {
-        super.onCreate(savedState);
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         setAmbientEnabled();
 
+        // TODO refactor to use savedInstanceState
         FragmentManager fragmentManager = getFragmentManager();
         mCurrentViewPagerFragment = new WorkoutMainFragment();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
@@ -352,7 +353,7 @@ public class MainActivity extends WearableActivity implements
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    fragment = new HistoryFragment();
+                    fragment = new HistoryMainFragment();
                     // Hide the action drawer since we don't need its actions in the history page
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;

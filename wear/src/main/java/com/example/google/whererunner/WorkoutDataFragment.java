@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 
 import java.util.Locale;
@@ -42,6 +43,36 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
 
+    public static final String EXTRA_START_TIME = "START_TIME";
+    public static final String EXTRA_DISTANCE = "DISTANCE";
+    public static final String EXTRA_SPEED = "SPEED";
+    public static final String EXTRA_AVERAGE_SPEED = "AVERAGE_SPEED";
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        mStartTime = WorkoutRecordingService.startTime;
+        mDistance = WorkoutRecordingService.distance;
+        mSpeed = WorkoutRecordingService.speed;
+        mAverageSpeed = WorkoutRecordingService.averageSpeed;
+    }
+
+    // TODO migrate to instancing in containing activity/fragment
+    public static final WorkoutDataFragment newInstance(Workout workout)
+    {
+        Bundle bundle = new Bundle(4);
+        bundle.putDouble(EXTRA_START_TIME, workout.getStartTime());
+        bundle.putDouble(EXTRA_DISTANCE, workout.getStartTime());
+        bundle.putDouble(EXTRA_SPEED, workout.getStartTime());
+        bundle.putDouble(EXTRA_AVERAGE_SPEED, workout.getStartTime());
+
+        WorkoutDataFragment fragment = new WorkoutDataFragment();
+        fragment.setArguments(bundle);
+
+        return fragment;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_data, container, false);
@@ -51,10 +82,6 @@ public class WorkoutDataFragment extends WearableFragment {
         mSpeedTextView = (TextView) view.findViewById(R.id.speed);
 
         mIsRecording = WorkoutRecordingService.isRecording;
-        mStartTime = WorkoutRecordingService.startTime;
-        mDistance = WorkoutRecordingService.distance;
-        mAverageSpeed = WorkoutRecordingService.averageSpeed;
-        mSpeed = WorkoutRecordingService.speed;
 
         if (mIsRecording) {
             // start the timer to update the workout duration
@@ -167,11 +194,10 @@ public class WorkoutDataFragment extends WearableFragment {
         }
 
         long millis = (long) mDuration;
-        long hours = TimeUnit.MILLISECONDS.toHours(millis);
-        millis -= TimeUnit.HOURS.toMillis(hours);
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
-        millis -= TimeUnit.MINUTES.toMillis(minutes);
-        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+        long[] hms = WhereRunnerApp.millisToHoursMinsSecs(millis);
+        long hours = hms[0];
+        long minutes = hms[1];
+        long seconds = hms[2];
 
         if (hours > 0) {
             mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));

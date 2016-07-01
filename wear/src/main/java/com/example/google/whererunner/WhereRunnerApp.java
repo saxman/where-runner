@@ -13,6 +13,8 @@ import android.util.Log;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
+import java.util.concurrent.TimeUnit;
+
 public class WhereRunnerApp extends Application {
     public static final String LOG_TAG = WhereRunnerApp.class.getSimpleName();
 
@@ -73,5 +75,15 @@ public class WhereRunnerApp extends Application {
         circle.draw(canvas);
 
         return BitmapDescriptorFactory.fromBitmap(bitmap);
+    }
+
+    public static long[] millisToHoursMinsSecs(long millis) {
+        long hours = TimeUnit.MILLISECONDS.toHours(millis);
+        millis -= TimeUnit.HOURS.toMillis(hours);
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(millis);
+        millis -= TimeUnit.MINUTES.toMillis(minutes);
+        long seconds = TimeUnit.MILLISECONDS.toSeconds(millis);
+
+        return new long[]{hours, minutes, seconds};
     }
 }

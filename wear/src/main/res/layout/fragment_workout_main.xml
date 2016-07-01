@@ -67,12 +67,6 @@
 
     </RelativeLayout>
 
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/pager_page_pips"
-        android:layout_gravity="center_vertical|right"
-        android:orientation="vertical"
-        android:layout_marginRight="@dimen/map_overlay_margin" />
+    <include layout="@layout/pager_pips"/>
 
 </FrameLayout>

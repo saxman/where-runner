@@ -42,7 +42,6 @@ public class WorkoutMainFragment extends WearableFragment {
     private static final int FRAGMENT_MAP = 0;
     private static final int FRAGMENT_DATA = 1;
     private static final int FRAGMENT_HEART = 2;
-    private static final int FRAGMENT_GPS = 3;
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
 
@@ -76,7 +75,7 @@ public class WorkoutMainFragment extends WearableFragment {
         mPhoneConnectivityImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
         mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
-        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_page_pips);
+        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_pips);
 
         // If the device has a heart rate monitor, add the HRM view to the view pager
         if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
@@ -296,8 +295,7 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         @Override
-        public int getColumnCount(int i)
-        {
+        public int getColumnCount(int i) {
             return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mViewPagerItems : 1;
         }
     }
@@ -319,6 +317,10 @@ public class WorkoutMainFragment extends WearableFragment {
                 parent.addView(view, layoutParams);
                 mPipImageViews[i] = view;
             }
+
+            if (mPipImageViews.length > 0) {
+                mPipImageViews[0].setImageResource(R.drawable.ic_pager_pip_selected);
+            }
         }
 
         @Override
@@ -327,9 +329,9 @@ public class WorkoutMainFragment extends WearableFragment {
 
             for (int j = 0; j < mPipImageViews.length; j++) {
                 if (i != j) {
-                    mPipImageViews[j].setImageResource(R.drawable.ic_more_circle);
+                    mPipImageViews[j].setImageResource(R.drawable.ic_pager_pip);
                 } else {
-                    mPipImageViews[j].setImageResource(R.drawable.ic_more_circle_opaque);
+                    mPipImageViews[j].setImageResource(R.drawable.ic_pager_pip_selected);
                 }
             }
         }
