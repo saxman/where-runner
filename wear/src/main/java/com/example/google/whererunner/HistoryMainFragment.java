@@ -37,7 +37,7 @@ public class HistoryMainFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_history, container, false);
+        View view = inflater.inflate(R.layout.fragment_history_main, container, false);
 
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(getContext());
         mWorkouts = mDbHelper.readLastFiveWorkouts();

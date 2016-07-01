@@ -17,6 +17,8 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
+import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -70,7 +72,6 @@ public class MainActivity extends WearableActivity implements
 
         setAmbientEnabled();
 
-        // TODO refactor to use savedInstanceState
         FragmentManager fragmentManager = getFragmentManager();
         mCurrentViewPagerFragment = new WorkoutMainFragment();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();

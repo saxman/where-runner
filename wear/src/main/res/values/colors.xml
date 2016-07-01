@@ -19,6 +19,7 @@
 
     <!-- Subtle tinting for the map to darken and for theme color matching -->
     <item name="map_tint" type="color">#22000626</item>
+
     <item name="location_accuracy_circle" type="color">#220000FF</item>
 
     <!-- Material Design Indigo 500 palette for wearables -->

@@ -21,4 +21,6 @@
 
     <dimen name="drawer_peek_padding_top">0dp</dimen>
     <dimen name="drawer_peek_padding_bottom">0dp</dimen>
+
+    <dimen name="workout_data_top_margin">20dp</dimen>
 </resources>

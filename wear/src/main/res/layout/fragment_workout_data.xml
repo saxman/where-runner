@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/root_container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
+    android:orientation="vertical"
     tools:context=".WorkoutDataFragment">
 
     <TextView
@@ -12,49 +13,39 @@
         style="@style/text_small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center"
+        android:layout_marginTop="@dimen/workout_data_top_margin"
         android:text="TOTAL DISTANCE" />
 
     <TextView
         android:id="@+id/distance"
         style="@style/text_header"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/distance_title"
-        android:gravity="center" />
-
-    <TextView
-        android:id="@+id/duration_title"
-        style="@style/text_small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/distance"
-        android:gravity="center"
-        android:text="ELAPSED TIME" />
-
-    <TextView
-        android:id="@+id/duration"
-        style="@style/text_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/duration_title"
-        android:gravity="center" />
+        android:layout_height="wrap_content" />
 
     <TextView
         android:id="@+id/speed_title"
         style="@style/text_small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/duration"
-        android:gravity="center"
         android:text="SPEED (CURR/AVG)" />
 
     <TextView
         android:id="@+id/speed"
         style="@style/text_header"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/speed_title"
-        android:gravity="center" />
+        android:layout_height="wrap_content" />
 
-</RelativeLayout>
+    <TextView
+        android:id="@+id/duration_title"
+        style="@style/text_small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="ELAPSED TIME" />
+
+    <TextView
+        android:id="@+id/duration"
+        style="@style/text_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
