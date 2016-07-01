@@ -2,6 +2,7 @@ package com.example.google.whererunner;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.wearable.view.WearableListView;
 import android.view.LayoutInflater;
@@ -40,6 +41,7 @@ public class SettingsFragment extends Fragment {
             switch (tag) {
                 case 0:
                     // TODO: Ask for Google Fit permissions here
+                    startActivity(new Intent(getContext(), GmsCorePermissionsActivity.class));
                     break;
             }
         }
