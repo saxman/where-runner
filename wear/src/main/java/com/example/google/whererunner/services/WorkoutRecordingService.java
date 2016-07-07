@@ -165,7 +165,7 @@ public class WorkoutRecordingService extends Service {
         unbindService(mHeartRateServiceConnection);
 
         // Reset static vars since these survive outside of the service lifecycle
-        workout = null;
+        workout = new Workout();
         resetSampleCollections();
 
         super.onDestroy();
@@ -249,7 +249,7 @@ public class WorkoutRecordingService extends Service {
                                 location.getLatitude(), location.getLongitude(),
                                 results);
 
-                        workout.addDistance(results[0]);
+                        workout.setDistance(workout.getDistance() + results[0]);
                     }
 
                     locationSamples.add(location);

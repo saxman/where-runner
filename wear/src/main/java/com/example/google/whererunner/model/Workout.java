@@ -4,7 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Workout implements Parcelable {
-
     private int type;
     private long id;
     private long startTime;
@@ -82,17 +81,8 @@ public class Workout implements Parcelable {
         this.distance = distance;
     }
 
-    public void setSpeedAverage(double speedAverage) {
-        this.speedAverage = speedAverage;
-    }
-
     public void setSpeedMax(double speedMax) {
         this.speedMax = speedMax;
-    }
-
-    public void addDistance(double distance) {
-        this.distance += distance;
-        speedAverage = distance / ((System.currentTimeMillis() - startTime) / 1000);
     }
 
     public void setSpeedCurrent(double speed) {
