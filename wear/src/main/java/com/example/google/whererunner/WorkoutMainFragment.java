@@ -209,7 +209,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
     @Override
     public void onWearableKeyEvent(KeyEvent event) {
-        // TODO add support for horizontal paging?
         switch (event.getKeyCode()) {
             // top button on LG Watch Urbane 2nd Edition
             case KeyEvent.KEYCODE_STEM_1:

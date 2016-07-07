@@ -290,10 +290,12 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     }
 
     private void updateMapMarkerIcon() {
-        if (WorkoutRecordingService.isRecording) {
-            mMapMarker.setIcon(mRecordingMapMarkerIcon);
-        } else if (mIsLocationFixed) {
-            mMapMarker.setIcon(mDefaultMapMarkerIcon);
+        if (mIsLocationFixed) {
+            if (WorkoutRecordingService.isRecording) {
+                mMapMarker.setIcon(mRecordingMapMarkerIcon);
+            } else {
+                mMapMarker.setIcon(mDefaultMapMarkerIcon);
+            }
         } else {
             mMapMarker.setIcon(mDisconnectedMapMarkerIcon);
         }
