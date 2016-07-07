@@ -47,15 +47,17 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
     /**
      * Writes a workout to the db
      */
-    public long writeWorkout(WorkoutContract.WorkoutType type, long startTime, long endTime) {
+    public long writeWorkout(Workout workout) {
         // Gets the data repository in write mode
         SQLiteDatabase db = getWritableDatabase();
 
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
-        values.put(WorkoutContract.Workout.COLUMN_NAME_TYPE, type.getValue());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_START_TIME, startTime);
-        values.put(WorkoutContract.Workout.COLUMN_NAME_END_TIME, endTime);
+        values.put(WorkoutContract.Workout.COLUMN_NAME_TYPE, workout.getType());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_START_TIME, workout.getStartTime());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_END_TIME, workout.getEndTime());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_DISTANCE, workout.getDistance());
 
         // Insert the new row, returning the primary key value of the new row
         return db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
@@ -119,6 +121,8 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             WorkoutContract.Workout.COLUMN_NAME_TYPE,
             WorkoutContract.Workout.COLUMN_NAME_START_TIME,
             WorkoutContract.Workout.COLUMN_NAME_END_TIME,
+            WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX,
+            WorkoutContract.Workout.COLUMN_NAME_DISTANCE
         };
 
         String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
@@ -137,21 +141,21 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             sortOrder,                           // The sort order
             limit                                // Limit the nr of results to 5
         )) {
-
             while (c.moveToNext()) {
-                long id = c.getLong(
-                        c.getColumnIndexOrThrow(WorkoutContract.Workout._ID)
-                );
-                int type = c.getInt(
-                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_TYPE)
-                );
-                long startTime = c.getLong(
-                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME)
-                );
-                long endTime = c.getLong(
-                        c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME)
-                );
-                workouts.add(new Workout(id, type, startTime, endTime));
+                long id = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout._ID));
+                int type = c.getInt(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_TYPE));
+                long startTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME));
+                long endTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME));
+                double distance = c.getDouble(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_DISTANCE));
+                double speedMax = c.getDouble(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX));
+
+                Workout workout = new Workout(id, type);
+                workout.setStartTime(startTime);
+                workout.setEndTime(endTime);
+                workout.setDistance(distance);
+                workout.setSpeedMax(speedMax);
+
+                workouts.add(workout);
             }
         }
         return workouts;

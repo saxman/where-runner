@@ -10,7 +10,6 @@ import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.model.Workout;
 
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 public class HistoryDataFragment extends WearableFragment {
 
@@ -99,6 +98,6 @@ public class HistoryDataFragment extends WearableFragment {
             mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
         }
 
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mWorkout.getAverageSpeed(), mWorkout.getMaxSpeed()));
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mWorkout.getSpeedAverage(), mWorkout.getSpeedMax()));
     }
 }

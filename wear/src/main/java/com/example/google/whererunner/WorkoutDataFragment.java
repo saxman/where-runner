@@ -18,7 +18,6 @@ import com.example.google.whererunner.services.WorkoutRecordingService;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 public class WorkoutDataFragment extends WearableFragment {
 
@@ -29,33 +28,22 @@ public class WorkoutDataFragment extends WearableFragment {
     private TextView mDistanceTextView;
     private TextView mSpeedTextView;
 
-    private boolean mIsRecording = false;
-
-    private double mDistance;
     private double mDuration;
-    private double mAverageSpeed;
-    private double mSpeed;
 
     private BroadcastReceiver mBroadcastReceiver;
 
     private Timer mDurationTimer;
-    private double mStartTime;
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
 
     public static final String EXTRA_START_TIME = "START_TIME";
     public static final String EXTRA_DISTANCE = "DISTANCE";
-    public static final String EXTRA_SPEED = "SPEED";
-    public static final String EXTRA_AVERAGE_SPEED = "AVERAGE_SPEED";
+    public static final String EXTRA_SPEED_CURRENT = "SPEED_CURRENT";
+    public static final String EXTRA_SPEED_AVERAGE = "SPEED_AVERAGE";
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        mStartTime = WorkoutRecordingService.startTime;
-        mDistance = WorkoutRecordingService.distance;
-        mSpeed = WorkoutRecordingService.speed;
-        mAverageSpeed = WorkoutRecordingService.averageSpeed;
     }
 
     // TODO migrate to instancing in containing activity/fragment
@@ -64,8 +52,8 @@ public class WorkoutDataFragment extends WearableFragment {
         Bundle bundle = new Bundle(4);
         bundle.putDouble(EXTRA_START_TIME, workout.getStartTime());
         bundle.putDouble(EXTRA_DISTANCE, workout.getStartTime());
-        bundle.putDouble(EXTRA_SPEED, workout.getStartTime());
-        bundle.putDouble(EXTRA_AVERAGE_SPEED, workout.getStartTime());
+        bundle.putDouble(EXTRA_SPEED_CURRENT, workout.getStartTime());
+        bundle.putDouble(EXTRA_SPEED_AVERAGE, workout.getStartTime());
 
         WorkoutDataFragment fragment = new WorkoutDataFragment();
         fragment.setArguments(bundle);
@@ -81,13 +69,10 @@ public class WorkoutDataFragment extends WearableFragment {
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
         mSpeedTextView = (TextView) view.findViewById(R.id.speed);
 
-        mIsRecording = WorkoutRecordingService.isRecording;
-
-        if (mIsRecording) {
-            // start the timer to update the workout duration
+        if (WorkoutRecordingService.isRecording) {
             startDurationTimer();
         } else {
-            mDuration = WorkoutRecordingService.stopTime - mStartTime;
+            mDuration = WorkoutRecordingService.workout.getEndTime() - WorkoutRecordingService.workout.getStartTime();
         }
 
         updateUI();
@@ -104,17 +89,11 @@ public class WorkoutDataFragment extends WearableFragment {
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
                     case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
-                        mDistance = WorkoutRecordingService.distance;
-                        mAverageSpeed = WorkoutRecordingService.averageSpeed;
-                        mSpeed = WorkoutRecordingService.speed;
+                        // noop... just update the UI
                         break;
 
                     case WorkoutRecordingService.ACTION_RECORDING_STATUS:
-                        mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-
-                        if (mIsRecording) {
-                            // TODO should get start time from the service, perhaps as an extra?
-                            mStartTime = System.currentTimeMillis();
+                        if (WorkoutRecordingService.isRecording) {
                             startDurationTimer();
                         } else {
                             stopDurationTimer();
@@ -166,7 +145,7 @@ public class WorkoutDataFragment extends WearableFragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mDuration = System.currentTimeMillis() - mStartTime;
+                        mDuration = System.currentTimeMillis() - WorkoutRecordingService.workout.getStartTime();
 
                         if (!isAmbient()) {
                             updateUI();
@@ -185,10 +164,14 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     private void updateUI() {
-        if (mDistance < 1000) {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.1f meters", mDistance));
+        if (WorkoutRecordingService.workout.getDistance() < 1000) {
+            mDistanceTextView.setText(
+                    String.format(Locale.getDefault(), "%.1f meters",
+                            WorkoutRecordingService.workout.getDistance()));
         } else {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.3f km", mDistance / 1000));
+            mDistanceTextView.setText(
+                    String.format(Locale.getDefault(), "%.3f km",
+                            WorkoutRecordingService.workout.getDistance() / 1000));
         }
 
         long millis = (long) mDuration;
@@ -199,12 +182,18 @@ public class WorkoutDataFragment extends WearableFragment {
         millis = hms[3];
 
         if (hours > 0) {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
+            mDurationTextView.setText(
+                    String.format(Locale.getDefault(), "%d:%02d:%02d",
+                            hours, minutes, seconds));
         } else {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
-//            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%04.1f", minutes, millis / 1000f));
+            mDurationTextView.setText(
+                    String.format(Locale.getDefault(), "%02d:%02d.%1d",
+                            minutes, seconds, millis / 100));
         }
 
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mSpeed, mAverageSpeed));
+        mSpeedTextView.setText(
+                String.format(Locale.getDefault(), "%.1f / %.1f m/s",
+                        WorkoutRecordingService.workout.getSpeedCurrent(),
+                        WorkoutRecordingService.workout.getSpeedAverage()));
     }
 }

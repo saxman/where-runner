@@ -18,7 +18,6 @@ import android.util.Log;
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
 import com.example.google.whererunner.model.Workout;
-import com.example.google.whererunner.persistence.WorkoutContract;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
 
 import java.util.ArrayList;
@@ -64,11 +63,9 @@ public class WorkoutRecordingService extends Service {
 
     // TODO could/should simplify what data is being kept/shared here and what is being calculated by the UI components. e.g. could only keep starttime and samples here
     public static boolean isRecording = false;
-    public static long startTime;
-    public static long stopTime;
-    public static double distance;
-    public static double speed;
-    public static double averageSpeed;
+
+    public static Workout workout = new Workout();
+
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
@@ -168,11 +165,7 @@ public class WorkoutRecordingService extends Service {
         unbindService(mHeartRateServiceConnection);
 
         // Reset static vars since these survive outside of the service lifecycle
-        distance = 0;
-        startTime = 0;
-        stopTime = 0;
-        speed = 0;
-        averageSpeed = 0;
+        workout = null;
         resetSampleCollections();
 
         super.onDestroy();
@@ -197,8 +190,7 @@ public class WorkoutRecordingService extends Service {
      * Starts recording a workout session
      */
     private void startRecordingData() {
-        startTime =  System.currentTimeMillis();
-        distance = 0;
+        workout = new Workout(System.currentTimeMillis());
 
         startHeartRateRecording();
         startLocationRecording();
@@ -208,7 +200,7 @@ public class WorkoutRecordingService extends Service {
      * Stops recording a workout session and persists data
      */
     private void stopRecordingData() {
-        stopTime = System.currentTimeMillis();
+        workout.setEndTime(System.currentTimeMillis());
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationReceiver);
@@ -246,6 +238,8 @@ public class WorkoutRecordingService extends Service {
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
+                    workout.setSpeedCurrent(location.getSpeed());
+
                     if (locationSamples.size() > 0) {
                         Location priorLocation = locationSamples.get(locationSamples.size() - 1);
 
@@ -255,11 +249,8 @@ public class WorkoutRecordingService extends Service {
                                 location.getLatitude(), location.getLongitude(),
                                 results);
 
-                        distance += results[0];
+                        workout.addDistance(results[0]);
                     }
-
-                    speed = location.getSpeed();
-                    averageSpeed = distance / ((System.currentTimeMillis() - startTime) / 1000);
 
                     locationSamples.add(location);
 
@@ -279,7 +270,7 @@ public class WorkoutRecordingService extends Service {
     private void saveWorkout() {
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
         // TODO: write in correct workout type
-        mDbHelper.writeWorkout(WorkoutContract.WorkoutType.RUNNING, startTime, stopTime);
+        mDbHelper.writeWorkout(workout);
         mDbHelper.writeHeartRates(heartRateSamples);
         mDbHelper.writeLocations(locationSamples);
         // TODO: Remove the following test code for testing db reads

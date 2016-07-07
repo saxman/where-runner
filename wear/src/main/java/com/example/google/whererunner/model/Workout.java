@@ -10,14 +10,19 @@ public class Workout implements Parcelable {
     private long startTime;
     private long endTime;
     private double distance;
-    private double averageSpeed;
-    private double maxSpeed;
+    private double speedAverage;
+    private double speedMax;
+    private double speedCurrent;
 
-    public Workout(long id, int type, long startTime, long endTime) {
+    public Workout() {}
+
+    public Workout(long id, int type) {
         this.id = id;
         this.type = type;
+    }
+
+    public Workout(long startTime) {
         this.startTime = startTime;
-        this.endTime = endTime;
     }
 
     // Private since only used by Parcelable.Creator
@@ -27,8 +32,9 @@ public class Workout implements Parcelable {
         startTime = parcel.readLong();
         endTime = parcel.readLong();
         distance = parcel.readDouble();
-        averageSpeed = parcel.readDouble();
-        maxSpeed = parcel.readDouble();
+        speedAverage = parcel.readDouble();
+        speedMax = parcel.readDouble();
+        speedCurrent = parcel.readDouble();
     }
 
     public int getType() {
@@ -51,12 +57,54 @@ public class Workout implements Parcelable {
         return distance;
     }
 
-    public double getAverageSpeed() {
-        return averageSpeed;
+    public double getSpeedAverage() {
+        long time = endTime == 0 ? System.currentTimeMillis() : endTime;
+        return distance / (time / 1000);
     }
 
-    public double getMaxSpeed() {
-        return maxSpeed;
+    public double getSpeedMax() {
+        return speedMax;
+    }
+
+    public double getSpeedCurrent() {
+        return speedCurrent;
+    }
+
+    public void setType(int type) {
+        this.type = type;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    public void setDistance(double distance) {
+        this.distance = distance;
+    }
+
+    public void setSpeedAverage(double speedAverage) {
+        this.speedAverage = speedAverage;
+    }
+
+    public void setSpeedMax(double speedMax) {
+        this.speedMax = speedMax;
+    }
+
+    public void addDistance(double distance) {
+        this.distance += distance;
+        speedAverage = distance / ((System.currentTimeMillis() - startTime) / 1000);
+    }
+
+    public void setSpeedCurrent(double speed) {
+        speedCurrent = speed;
+
+        if (speedCurrent > speedMax) {
+            speedMax = speedCurrent;
+        }
+    }
+
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
     }
 
     @Override
@@ -71,12 +119,12 @@ public class Workout implements Parcelable {
         parcel.writeLong(startTime);
         parcel.writeLong(endTime);
         parcel.writeDouble(distance);
-        parcel.writeDouble(averageSpeed);
-        parcel.writeDouble(maxSpeed);
+        parcel.writeDouble(speedAverage);
+        parcel.writeDouble(speedMax);
+        parcel.writeDouble(speedCurrent);
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {
-
         @Override
         public Workout createFromParcel(Parcel in) {
             return new Workout(in);
