@@ -34,7 +34,6 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 
 public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCallback {
@@ -53,12 +52,10 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
     private Location mLastLocation = null;
 
-    private boolean mIsRecording = false;
     private boolean mIsLocationFixed = false;
 
     private BroadcastReceiver mBroadcastReceiver;
 
-    private ArrayList<Location> mPathLocations;
     private LinkedList<LatLng> mPathPolylineLatLngs = new LinkedList<>();
 
     private BitmapDescriptor mRecordingMapMarkerIcon;
@@ -69,14 +66,11 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
-        mIsRecording = WorkoutRecordingService.isRecording;
-        mPathLocations = WorkoutRecordingService.locationSamples;
-
         // If we have a historic location sample, use it to center the map, but don't assume we have a location fix
-        if (mPathLocations.size() > 0) {
+        if (WorkoutRecordingService.locationSamples.size() > 0) {
             // TODO if the sample isn't too old, we can assume we have a location fix?
             mIsLocationFixed = false;
-            mLastLocation = mPathLocations.get(mPathLocations.size() - 1);
+            mLastLocation = WorkoutRecordingService.locationSamples.get(WorkoutRecordingService.locationSamples.size() - 1);
         }
 
         mMapView = (MapView) view.findViewById(R.id.map);
@@ -124,8 +118,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                         break;
 
                     case LocationService.ACTION_CONNECTIVITY_LOST:
-                        // We haven't received a location sample in too long, so update the UI
-                        // to reflect poor connectivity
+                        // If we haven't received a location sample in too long, update the UI to reflect poor connectivity
                         mIsLocationFixed = false;
 
                         if (!isAmbient()) {
@@ -141,11 +134,15 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
                         break;
 
-                    case WorkoutRecordingService.ACTION_RECORDING_STATUS:
-                        mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                    case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                        if (WorkoutRecordingService.isRecording) {
+                            mPathPolylineLatLngs.clear();
+                            mPolyline.setPoints(mPathPolylineLatLngs);
+                        }
 
                         if (!isAmbient()) {
                             updateMapMarkerIcon();
+                            updateMapPolyline();
                         }
 
                         break;
@@ -156,7 +153,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
@@ -293,7 +290,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     }
 
     private void updateMapMarkerIcon() {
-        if (mIsRecording) {
+        if (WorkoutRecordingService.isRecording) {
             mMapMarker.setIcon(mRecordingMapMarkerIcon);
         } else if (mIsLocationFixed) {
             mMapMarker.setIcon(mDefaultMapMarkerIcon);
@@ -311,8 +308,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             return;
         }
 
-        for (int i = mPathPolylineLatLngs.size(); i < mPathLocations.size(); i++) {
-            Location location = mPathLocations.get(i);
+        for (int i = mPathPolylineLatLngs.size(); i < WorkoutRecordingService.locationSamples.size(); i++) {
+            Location location = WorkoutRecordingService.locationSamples.get(i);
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             mPathPolylineLatLngs.add(latLng);
         }

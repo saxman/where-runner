@@ -88,7 +88,7 @@ public class WorkoutDataFragment extends WearableFragment {
                         // noop... just update the UI
                         break;
 
-                    case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                    case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
                         if (WorkoutRecordingService.isRecording) {
                             startDurationTimer();
                         } else {
@@ -106,7 +106,7 @@ public class WorkoutDataFragment extends WearableFragment {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 

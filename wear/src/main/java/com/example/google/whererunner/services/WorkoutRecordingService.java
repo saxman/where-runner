@@ -13,7 +13,6 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
@@ -42,7 +41,7 @@ public class WorkoutRecordingService extends Service {
     public final static String ACTION_STOP_RECORDING = "STOP_RECORDING";
 
     /** Outgoing action reporting recording status */
-    public final static String ACTION_RECORDING_STATUS = "RECORDING_STATUS";
+    public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS";
 
     /** Extra for recording status updates */
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
@@ -181,7 +180,7 @@ public class WorkoutRecordingService extends Service {
     //
 
     private void reportRecordingStatus() {
-        Intent intent = new Intent(ACTION_RECORDING_STATUS);
+        Intent intent = new Intent(ACTION_RECORDING_STATUS_CHANGED);
         intent.putExtra(EXTRA_IS_RECORDING, isRecording);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }

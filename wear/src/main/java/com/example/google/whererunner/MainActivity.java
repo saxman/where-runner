@@ -17,8 +17,6 @@ import android.support.wearable.activity.WearableActivity;
 import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
-import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
@@ -155,7 +153,7 @@ public class MainActivity extends WearableActivity implements
                 @Override
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
-                        case WorkoutRecordingService.ACTION_RECORDING_STATUS:
+                        case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
                             mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
                             setRecordingButtonUiState();
                     }
@@ -164,7 +162,7 @@ public class MainActivity extends WearableActivity implements
         }
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
         LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingBroadcastReceiver, intentFilter);
     }
 
