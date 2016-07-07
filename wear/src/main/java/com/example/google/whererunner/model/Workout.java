@@ -1,6 +1,5 @@
 package com.example.google.whererunner.model;
 
-
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -12,6 +11,7 @@ public class Workout implements Parcelable {
     private long endTime;
     private double distance;
     private double averageSpeed;
+    private double maxSpeed;
 
     public Workout(long id, int type, long startTime, long endTime) {
         this.id = id;
@@ -28,6 +28,7 @@ public class Workout implements Parcelable {
         endTime = parcel.readLong();
         distance = parcel.readDouble();
         averageSpeed = parcel.readDouble();
+        maxSpeed = parcel.readDouble();
     }
 
     public int getType() {
@@ -54,6 +55,10 @@ public class Workout implements Parcelable {
         return averageSpeed;
     }
 
+    public double getMaxSpeed() {
+        return maxSpeed;
+    }
+
     @Override
     public int describeContents() {
         return 0;
@@ -67,6 +72,7 @@ public class Workout implements Parcelable {
         parcel.writeLong(endTime);
         parcel.writeDouble(distance);
         parcel.writeDouble(averageSpeed);
+        parcel.writeDouble(maxSpeed);
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {

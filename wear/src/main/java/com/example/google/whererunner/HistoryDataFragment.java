@@ -45,7 +45,12 @@ public class HistoryDataFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        return inflater.inflate(R.layout.fragment_workout_data, container, false);
+        View view = inflater.inflate(R.layout.fragment_workout_data, container, false);
+
+        TextView textView = (TextView) view.findViewById(R.id.speed_title);
+        textView.setText(R.string.speed_average_max);
+
+        return view;
     }
 
     @Override
@@ -70,7 +75,9 @@ public class HistoryDataFragment extends WearableFragment {
     }
 
     @Override
-    public void onUpdateAmbient() {}
+    public void onUpdateAmbient() {
+        updateUI();
+    }
 
     private void updateUI() {
         if (mWorkout.getDistance() < 1000) {
@@ -92,6 +99,6 @@ public class HistoryDataFragment extends WearableFragment {
             mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
         }
 
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f", mWorkout.getAverageSpeed()));
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mWorkout.getAverageSpeed(), mWorkout.getMaxSpeed()));
     }
 }

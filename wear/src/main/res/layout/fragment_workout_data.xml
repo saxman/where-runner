@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/workout_data_top_margin"
-        android:text="TOTAL DISTANCE" />
+        android:text="@string/distance_total" />
 
     <TextView
         android:id="@+id/distance"
@@ -27,7 +27,7 @@
         style="@style/text_small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="SPEED (CURR/AVG)" />
+        android:text="@string/speed_current_average" />
 
     <TextView
         android:id="@+id/speed"
@@ -40,7 +40,7 @@
         style="@style/text_small"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ELAPSED TIME" />
+        android:text="@string/time_elapsed" />
 
     <TextView
         android:id="@+id/duration"

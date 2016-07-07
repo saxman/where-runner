@@ -18,4 +18,9 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="nr_workouts">Nr. of Workouts:</string>
+
+    <string name="distance_total">TOTAL DISTANCE</string>
+    <string name="speed_current_average">SPEED (CURR/AVG)</string>
+    <string name="speed_average_max">SPEED (AVG/MAX)</string>
+    <string name="time_elapsed">ELAPSED TIME</string>
 </resources>
