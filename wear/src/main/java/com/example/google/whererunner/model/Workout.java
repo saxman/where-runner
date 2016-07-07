@@ -109,9 +109,11 @@ public class Workout implements Parcelable {
         parcel.writeLong(startTime);
         parcel.writeLong(endTime);
         parcel.writeDouble(distance);
-        parcel.writeDouble(speedAverage);
-        parcel.writeDouble(speedMax);
-        parcel.writeDouble(speedCurrent);
+
+        // call accessors for speed since these may be calculated by accessor
+        parcel.writeDouble(getSpeedAverage());
+        parcel.writeDouble(getSpeedMax());
+        parcel.writeDouble(getSpeedCurrent());
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {

@@ -269,18 +269,9 @@ public class WorkoutRecordingService extends Service {
      */
     private void saveWorkout() {
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
-        // TODO: write in correct workout type
         mDbHelper.writeWorkout(workout);
         mDbHelper.writeHeartRates(heartRateSamples);
         mDbHelper.writeLocations(locationSamples);
-        // TODO: Remove the following test code for testing db reads
-        Log.i(LOG_TAG, "Nr workouts in db: " + mDbHelper.readNrWorkouts());
-        for (Workout workout : mDbHelper.readLastFiveWorkouts()) {
-            Log.i(LOG_TAG, "Id: " + workout.getId());
-            Log.i(LOG_TAG, "Type: " + workout.getType());
-            Log.i(LOG_TAG, "Start time: " + new java.util.Date(workout.getStartTime()));
-            Log.i(LOG_TAG, "End time: " + new java.util.Date(workout.getEndTime()));
-        }
     }
 
     /**

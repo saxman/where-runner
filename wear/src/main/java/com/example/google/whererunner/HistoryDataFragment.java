@@ -49,6 +49,12 @@ public class HistoryDataFragment extends WearableFragment {
         TextView textView = (TextView) view.findViewById(R.id.speed_title);
         textView.setText(R.string.speed_average_max);
 
+        // TODO remove (somehow...). rather convoluted way to have different top margin
+        View view2 = view.findViewById(R.id.distance_title);
+        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view2.getLayoutParams();
+        params.setMargins(0, 0, 0, 0);
+        view2.setLayoutParams(params);
+
         return view;
     }
 
@@ -80,9 +86,11 @@ public class HistoryDataFragment extends WearableFragment {
 
     private void updateUI() {
         if (mWorkout.getDistance() < 1000) {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.1f meters", mWorkout.getDistance()));
+            mDistanceTextView.setText(
+                    String.format(Locale.getDefault(), "%.1f m", mWorkout.getDistance()));
         } else {
-            mDistanceTextView.setText(String.format(Locale.getDefault(), "%.3f km", mWorkout.getDistance() / 1000));
+            mDistanceTextView.setText(
+                    String.format(Locale.getDefault(), "%.2f km", mWorkout.getDistance() / 1000));
         }
 
         long millis = mWorkout.getEndTime() - mWorkout.getStartTime();
@@ -93,11 +101,16 @@ public class HistoryDataFragment extends WearableFragment {
         millis = hms[3];
 
         if (hours > 0) {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
+            mDurationTextView.setText(
+                    String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
         } else {
-            mDurationTextView.setText(String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
+            mDurationTextView.setText(
+                    String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
         }
 
-        mSpeedTextView.setText(String.format(Locale.getDefault(), "%.1f / %.1f m/s", mWorkout.getSpeedAverage(), mWorkout.getSpeedMax()));
+        mSpeedTextView.setText(
+                String.format(Locale.getDefault(), "%.1f / %.1f",
+                        mWorkout.getSpeedAverage() * 3600 / 1000,
+                        mWorkout.getSpeedMax() * 3600 / 1000));
     }
 }

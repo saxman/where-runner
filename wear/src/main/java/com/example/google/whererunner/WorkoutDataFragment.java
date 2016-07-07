@@ -28,8 +28,6 @@ public class WorkoutDataFragment extends WearableFragment {
     private TextView mDistanceTextView;
     private TextView mSpeedTextView;
 
-    private double mDuration;
-
     private BroadcastReceiver mBroadcastReceiver;
 
     private Timer mDurationTimer;
@@ -71,8 +69,6 @@ public class WorkoutDataFragment extends WearableFragment {
 
         if (WorkoutRecordingService.isRecording) {
             startDurationTimer();
-        } else {
-            mDuration = WorkoutRecordingService.workout.getEndTime() - WorkoutRecordingService.workout.getStartTime();
         }
 
         updateUI();
@@ -145,8 +141,6 @@ public class WorkoutDataFragment extends WearableFragment {
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        mDuration = System.currentTimeMillis() - WorkoutRecordingService.workout.getStartTime();
-
                         if (!isAmbient()) {
                             updateUI();
                         }
@@ -166,15 +160,21 @@ public class WorkoutDataFragment extends WearableFragment {
     private void updateUI() {
         if (WorkoutRecordingService.workout.getDistance() < 1000) {
             mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.1f meters",
+                    String.format(Locale.getDefault(), "%.1f m",
                             WorkoutRecordingService.workout.getDistance()));
         } else {
             mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.3f km",
+                    String.format(Locale.getDefault(), "%.2f km",
                             WorkoutRecordingService.workout.getDistance() / 1000));
         }
 
-        long millis = (long) mDuration;
+        long millis = 0;
+        if (WorkoutRecordingService.isRecording) {
+            millis = System.currentTimeMillis() - WorkoutRecordingService.workout.getStartTime();
+        } else if (WorkoutRecordingService.workout.getEndTime() != 0) {
+            millis = WorkoutRecordingService.workout.getEndTime() - WorkoutRecordingService.workout.getStartTime();
+        }
+
         long[] hms = WhereRunnerApp.millisToHoursMinsSecs(millis);
         long hours = hms[0];
         long minutes = hms[1];
@@ -192,8 +192,8 @@ public class WorkoutDataFragment extends WearableFragment {
         }
 
         mSpeedTextView.setText(
-                String.format(Locale.getDefault(), "%.1f / %.1f m/s",
-                        WorkoutRecordingService.workout.getSpeedCurrent(),
-                        WorkoutRecordingService.workout.getSpeedAverage()));
+                String.format(Locale.getDefault(), "%.1f / %.1f",
+                        WorkoutRecordingService.workout.getSpeedCurrent() * 3600 / 1000,
+                        WorkoutRecordingService.workout.getSpeedAverage() * 3600 / 1000));
     }
 }

@@ -59,8 +59,11 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
         values.put(WorkoutContract.Workout.COLUMN_NAME_DISTANCE, workout.getDistance());
 
-        // Insert the new row, returning the primary key value of the new row
-        return db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
+        long id = db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
+
+        db.close();
+
+        return id;
     }
 
     /**
@@ -80,6 +83,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         }
 
         db.endTransaction();
+        db.close();
     }
 
     /**
@@ -100,14 +104,7 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         }
 
         db.endTransaction();
-    }
-
-    /**
-     * Count the number of workouts in the db
-     */
-    public long readNrWorkouts() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        return DatabaseUtils.queryNumEntries(db, WorkoutContract.Workout.TABLE_NAME);
+        db.close();
     }
 
     /**
@@ -128,7 +125,6 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
         String limit = "5";
 
-        // TODO: make this a workout data type
         ArrayList<Workout> workouts = new ArrayList<>();
 
         try (Cursor c = db.query(
@@ -157,9 +153,12 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
 
                 workouts.add(workout);
             }
+
+            c.close();
+        } finally {
+            db.close();
         }
+
         return workouts;
-
     }
-
 }
