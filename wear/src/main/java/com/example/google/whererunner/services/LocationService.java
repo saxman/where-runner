@@ -17,15 +17,18 @@ public abstract class LocationService extends Service {
 
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
     public final static String EXTRA_LOCATION = "LOCATION";
-    public final static String ACTION_CONNECTIVITY_LOST = "CONNECTIVITY_LOST";
+
+    public final static String ACTION_CONNECTIVITY_CHANGED = "ACTION_CONNECTIVITY_CHANGED";
+    public final static String EXTRA_IS_LOCATION_UPDATING = "IS_LOCATION_UPDATING";
 
     protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
     private static final int LOCATION_UPDATE_INTERVAL_TIMEOUT_MS = 10000;
     private static final int LOCATION_ACCURACY_MAX_METERS = 25;
 
-    protected boolean mIsLocationUpdating = false;
-
     private CountDownTimer mLocationSampleTimer;
+
+    public static Location lastKnownLocation;
+    public static boolean isLocationUpdating = false;
 
     @Override
     public void onDestroy() {
@@ -64,11 +67,21 @@ public abstract class LocationService extends Service {
             return;
         }
 
-        Intent intent = new Intent()
-                .setAction(ACTION_LOCATION_CHANGED)
+        lastKnownLocation = location;
+
+        Intent intent = new Intent(ACTION_LOCATION_CHANGED)
                 .putExtra(EXTRA_LOCATION, location);
 
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+
+        if (!isLocationUpdating) {
+            isLocationUpdating = true;
+
+            intent = new Intent(ACTION_CONNECTIVITY_CHANGED)
+                    .putExtra(EXTRA_IS_LOCATION_UPDATING, true);
+
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        }
 
         // Reset (cancel) pre-existing timer
         if (mLocationSampleTimer != null) {
@@ -80,7 +93,11 @@ public abstract class LocationService extends Service {
             public void onTick(long millisUntilFinished) {}
 
             public void onFinish() {
-                Intent intent = new Intent(ACTION_CONNECTIVITY_LOST);
+                isLocationUpdating = false;
+
+                Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED)
+                        .putExtra(EXTRA_IS_LOCATION_UPDATING, false);
+
                 LocalBroadcastManager.getInstance(LocationService.this).sendBroadcast(intent);
             }
         }.start();
@@ -91,6 +108,5 @@ public abstract class LocationService extends Service {
 
     protected boolean checkPermission() {
         return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-
     }
 }

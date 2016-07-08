@@ -25,7 +25,6 @@ import android.widget.TextClock;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
-import com.example.google.whererunner.services.WorkoutRecordingService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -125,16 +124,14 @@ public class WorkoutMainFragment extends WearableFragment {
             @Override
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
-                    case LocationService.ACTION_LOCATION_CHANGED:
-                        mIsLocationServiceConnected = true;
-                        break;
-
-                    case LocationService.ACTION_CONNECTIVITY_LOST:
+                    case LocationService.ACTION_CONNECTIVITY_CHANGED:
                         // TODO UI should be updated even if in ambient mode
-                        mIsLocationServiceConnected = false;
+                        mIsLocationServiceConnected = intent.getBooleanExtra(LocationService.EXTRA_IS_LOCATION_UPDATING, false);
 
-                        Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                        vibrator.vibrate(VIBRATOR_DURATION_MS);
+                        if (!mIsLocationServiceConnected) {
+                            Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                            vibrator.vibrate(VIBRATOR_DURATION_MS);
+                        }
 
                         break;
 
@@ -160,8 +157,7 @@ public class WorkoutMainFragment extends WearableFragment {
         };
 
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_LOST);
+        intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);

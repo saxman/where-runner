@@ -58,14 +58,13 @@ public class FusedLocationService extends LocationService {
 
         if (checkPermission()) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, mLocationListener);
-            mIsLocationUpdating = true;
         }
     }
 
     protected void stopLocationUpdates() {
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, mLocationListener);
-            mIsLocationUpdating = false;
+            isLocationUpdating = false;
         }
     }
 

@@ -36,7 +36,6 @@ public class GpsLocationService extends LocationService {
         if (checkPermission()) {
             mLocationManager.addGpsStatusListener(mGpsStatusListener);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, LOCATION_UPDATE_INTERVAL_MS, GPS_MIN_DISTANCE, mLocationListener);
-            mIsLocationUpdating = true;
         }
     }
 
@@ -45,7 +44,7 @@ public class GpsLocationService extends LocationService {
         if (checkPermission()) {
             mLocationManager.removeUpdates(mLocationListener);
             mLocationManager.removeGpsStatusListener(mGpsStatusListener);
-            mIsLocationUpdating = false;
+            isLocationUpdating = false;
         }
     }
 
