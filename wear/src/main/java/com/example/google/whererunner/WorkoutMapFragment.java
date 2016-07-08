@@ -332,7 +332,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
      * Update the map polyline with new location samples
      */
     private void updateMapPolyline() {
-        if (mPolyline == null || mPathLatLngs.size() == 0 ||  mPathLatLngs.size() == WorkoutRecordingService.locationSamples.size()) {
+        if (mPolyline == null || mPathLatLngs.size() == WorkoutRecordingService.locationSamples.size()) {
             return;
         }
 
