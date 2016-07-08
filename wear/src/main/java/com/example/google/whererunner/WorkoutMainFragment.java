@@ -125,7 +125,6 @@ public class WorkoutMainFragment extends WearableFragment {
             public void onReceive(Context context, Intent intent) {
                 switch (intent.getAction()) {
                     case LocationService.ACTION_CONNECTIVITY_CHANGED:
-                        // TODO UI should be updated even if in ambient mode
                         mIsLocationServiceConnected = intent.getBooleanExtra(LocationService.EXTRA_IS_LOCATION_UPDATING, false);
 
                         if (!mIsLocationServiceConnected) {
