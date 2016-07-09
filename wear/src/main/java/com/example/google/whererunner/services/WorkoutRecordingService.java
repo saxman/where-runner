@@ -1,5 +1,6 @@
 package com.example.google.whererunner.services;
 
+import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -28,7 +29,7 @@ import java.util.ArrayList;
  * This service should be spun up when the app is started and should be foregrounded to ensure
  * that all data is captured and recorded.
  */
-public class WorkoutRecordingService extends Service {
+public class WorkoutRecordingService extends IntentService {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
@@ -60,13 +61,14 @@ public class WorkoutRecordingService extends Service {
     private Notification mNotification;
     private NotificationManager mNotificationManager;
 
-    // TODO could/should simplify what data is being kept/shared here and what is being calculated by the UI components. e.g. could only keep starttime and samples here
     public static boolean isRecording = false;
-
     public static Workout workout = new Workout();
-
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
+
+    public WorkoutRecordingService() {
+        super("WorkoutRecordingService");
+    }
 
     //
     // Service override methods
@@ -144,17 +146,6 @@ public class WorkoutRecordingService extends Service {
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-
-        intent = new Intent(this, HeartRateSensorService.class);
-        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
-
-        return START_REDELIVER_INTENT;
-    }
-
-    @Override
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
 
@@ -169,6 +160,20 @@ public class WorkoutRecordingService extends Service {
 
         super.onDestroy();
     }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+        intent = new Intent(this, HeartRateSensorService.class);
+        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+
+        return START_REDELIVER_INTENT;
+    }
+
+    @Override
+    protected void onHandleIntent(Intent intent) {}
 
     @Override
     public IBinder onBind(Intent intent) {

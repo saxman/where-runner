@@ -1,6 +1,7 @@
 package com.example.google.whererunner;
 
 import android.os.Bundle;
+import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,6 +10,9 @@ import android.widget.TextView;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.model.Workout;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Locale;
 
 public class HistoryDataFragment extends WearableFragment {
@@ -18,6 +22,7 @@ public class HistoryDataFragment extends WearableFragment {
 
     public static final String EXTRA_WORKOUT = "WORKOUT";
 
+    private TextView mDateTimeTextView;
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
     private TextView mSpeedTextView;
@@ -44,29 +49,16 @@ public class HistoryDataFragment extends WearableFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_workout_data, container, false);
+        final View view = inflater.inflate(R.layout.fragment_history_data, container, false);
 
-        TextView textView = (TextView) view.findViewById(R.id.speed_title);
-        textView.setText(R.string.speed_average_max);
-
-        // TODO remove (somehow...). rather convoluted way to have different top margin
-        View view2 = view.findViewById(R.id.distance_title);
-        ViewGroup.MarginLayoutParams params = (ViewGroup.MarginLayoutParams) view2.getLayoutParams();
-        params.setMargins(0, 0, 0, 0);
-        view2.setLayoutParams(params);
-
-        return view;
-    }
-
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
+        mDateTimeTextView = (TextView) view.findViewById(R.id.date_time);
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
         mSpeedTextView = (TextView) view.findViewById(R.id.speed);
 
         updateUI();
+
+        return view;
     }
 
     @Override
@@ -80,11 +72,14 @@ public class HistoryDataFragment extends WearableFragment {
     }
 
     @Override
-    public void onUpdateAmbient() {
-        updateUI();
-    }
+    public void onUpdateAmbient() {}
 
     private void updateUI() {
+        String date = DateUtils.formatDateTime(getActivity(), mWorkout.getStartTime(),
+                DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NUMERIC_DATE | DateUtils.FORMAT_SHOW_TIME);
+
+        mDateTimeTextView.setText(date);
+
         if (mWorkout.getDistance() < 1000) {
             mDistanceTextView.setText(
                     String.format(Locale.getDefault(), "%.1f m", mWorkout.getDistance()));
