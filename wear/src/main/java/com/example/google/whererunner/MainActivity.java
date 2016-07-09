@@ -23,11 +23,14 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.model.WorkoutType;
 import com.example.google.whererunner.framework.WearableFragment;
+import com.example.google.whererunner.persistence.WorkoutDbHelper;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
@@ -352,7 +355,11 @@ public class MainActivity extends WearableActivity implements
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    fragment = new HistoryMainFragment();
+                    WorkoutDbHelper dbHelper = new WorkoutDbHelper(MainActivity.this);
+                    ArrayList<Workout> workouts = dbHelper.readLastFiveWorkouts();
+
+                    fragment = HistoryMainFragment.newInstance(workouts);
+
                     // Hide the action drawer since we don't need its actions in the history page
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;

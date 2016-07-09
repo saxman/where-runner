@@ -20,11 +20,14 @@ import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class HistoryMainFragment extends WearableFragment {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HistoryMainFragment.class.getSimpleName();
+
+    public static final String EXTRA_WORKOUTS = "WORKOUTS";
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
 
@@ -35,12 +38,32 @@ public class HistoryMainFragment extends WearableFragment {
 
     private ArrayList<Workout> mWorkouts;
 
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mWorkouts = getArguments().getParcelableArrayList(EXTRA_WORKOUTS);
+    }
+
+    public static HistoryMainFragment newInstance(ArrayList<Workout> workouts)
+    {
+        HistoryMainFragment fragment = new HistoryMainFragment();
+
+        Bundle bundle = new Bundle(1);
+        bundle.putParcelableArrayList(EXTRA_WORKOUTS, workouts);
+
+        fragment.setArguments(bundle);
+
+        return fragment;
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_history_main, container, false);
+        if (mWorkouts.size() == 0) {
+            return inflater.inflate(R.layout.fragment_history_empty, container, false);
+        }
 
-        WorkoutDbHelper mDbHelper = new WorkoutDbHelper(getContext());
-        mWorkouts = mDbHelper.readLastFiveWorkouts();
+        final View view = inflater.inflate(R.layout.fragment_history_main, container, false);
 
         mViewPagerItems = mWorkouts.size();
 
