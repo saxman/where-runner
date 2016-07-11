@@ -1,6 +1,5 @@
 package com.example.google.whererunner.services;
 
-import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -14,6 +13,7 @@ import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * This service should be spun up when the app is started and should be foregrounded to ensure
  * that all data is captured and recorded.
  */
-public class WorkoutRecordingService extends IntentService {
+public class WorkoutRecordingService extends Service {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
@@ -66,9 +66,11 @@ public class WorkoutRecordingService extends IntentService {
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
+    /*
     public WorkoutRecordingService() {
         super("WorkoutRecordingService");
     }
+    */
 
     //
     // Service override methods
@@ -147,6 +149,7 @@ public class WorkoutRecordingService extends IntentService {
 
     @Override
     public void onDestroy() {
+        Log.d(LOG_TAG, "Destroying WorkoutRecordingService");
         mNotificationManager.cancel(NOTIFICATION_ID);
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingReceiver);
@@ -172,8 +175,12 @@ public class WorkoutRecordingService extends IntentService {
         return START_REDELIVER_INTENT;
     }
 
+    /*
     @Override
-    protected void onHandleIntent(Intent intent) {}
+    protected void onHandleIntent(Intent intent) {
+        Log.d(LOG_TAG, "In onHandleIntent() for WorkoutRecordingService");
+    }
+    */
 
     @Override
     public IBinder onBind(Intent intent) {

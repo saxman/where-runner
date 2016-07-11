@@ -34,11 +34,14 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".services.GpsLocationService" />
-        <service android:name=".services.FusedLocationService" />
-        <service android:name=".services.HeartRateSensorService" />
-        <service android:name=".services.WorkoutRecordingService" />
-        <service android:name=".services.GoogleFitService" />
+        <service android:name=".services.GpsLocationService"
+            android:exported="false" />
+        <service android:name=".services.FusedLocationService"
+            android:exported="false" />
+        <service android:name=".services.HeartRateSensorService"
+            android:exported="false" />
+        <service android:name=".services.WorkoutRecordingService"
+            android:exported="false" />
 
     </application>
 
