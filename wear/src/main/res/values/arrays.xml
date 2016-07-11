@@ -2,7 +2,7 @@
 <resources>
     <string-array name="settings_list">
         <!-- TODO add support for tweaking UI and location settings -->
-        <item>Google Fit</item>
+        <!-- <item>Google Fit</item> -->
         <!--<item>Map accuracy circle</item>-->
         <!--<item>Phone connectivity</item>-->
         <!--<item>Location connectivity</item>-->

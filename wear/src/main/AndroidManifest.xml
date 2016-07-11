@@ -34,10 +34,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".GmsCorePermissionsActivity"
-            android:label="@string/app_name" />
-
         <service android:name=".services.GpsLocationService" />
         <service android:name=".services.FusedLocationService" />
         <service android:name=".services.HeartRateSensorService" />
