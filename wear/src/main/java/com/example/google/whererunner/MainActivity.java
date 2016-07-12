@@ -62,8 +62,6 @@ public class MainActivity extends WearableActivity implements
 
     private BroadcastReceiver mRecordingBroadcastReceiver;
 
-    private boolean mIsRecording = false;
-
     private int mActivityType = ACTIVITY_TYPE_RUNNING;
 
     @Override
@@ -78,7 +76,6 @@ public class MainActivity extends WearableActivity implements
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
-
         WearableNavigationDrawer wearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
         wearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
 
@@ -99,8 +96,7 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout.peekDrawer(Gravity.TOP);
         mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
 
-        mIsRecording = WorkoutRecordingService.isRecording;
-        setRecordingButtonUiState();
+        setRecordingButtonUiState(WorkoutRecordingService.isRecording);
     }
 
     @Override
@@ -157,8 +153,8 @@ public class MainActivity extends WearableActivity implements
                 public void onReceive(Context context, Intent intent) {
                     switch (intent.getAction()) {
                         case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                            mIsRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-                            setRecordingButtonUiState();
+                            boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                            setRecordingButtonUiState(isRecording);
                     }
                 }
             };
@@ -257,10 +253,10 @@ public class MainActivity extends WearableActivity implements
         startService(intent);
     }
 
-    private void setRecordingButtonUiState() {
+    private void setRecordingButtonUiState(boolean isRecording) {
         MenuItem menuItem = mMenu.getItem(ACTION_RECORD_INDEX);
 
-        if (mIsRecording) {
+        if (isRecording) {
             menuItem.setIcon(getDrawable(R.drawable.ic_stop));
             menuItem.setTitle(getString(R.string.stop_recording));
         } else {
@@ -287,7 +283,7 @@ public class MainActivity extends WearableActivity implements
     }
 
     private void toggleRecording() {
-        if (mIsRecording) {
+        if (WorkoutRecordingService.isRecording) {
             // Tell the location service to stop recording
             Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_RECORDING);
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
