@@ -7,5 +7,5 @@
     android:layout_height="wrap_content"
     android:layout_gravity="center"
     android:gravity="center"
-    android:text="NOTHING TO SEE HERE... YET!"
-    tools:context=".HistoryEmptyFragment" />
+    android:text="@string/history_no_data"
+    tools:context=".HistoryMainFragment" />

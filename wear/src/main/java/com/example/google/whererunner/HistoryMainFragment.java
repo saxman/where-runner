@@ -93,6 +93,10 @@ public class HistoryMainFragment extends WearableFragment {
 
     @Override
     public void onWearableKeyEvent(KeyEvent event) {
+        if (mViewPager == null) {
+            return;
+        }
+
         // TODO add support for horizontal paging?
         switch (event.getKeyCode()) {
             // top button on LG Watch Urbane 2nd Edition
@@ -144,6 +148,11 @@ public class HistoryMainFragment extends WearableFragment {
         private ImageView[] mPipImageViews;
 
         public GridViewPagerChangeListener(ViewGroup parent) {
+            // No need to render pips unless we have more than one item
+            if (mViewPagerItems <= 1) {
+                return;
+            }
+
             LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             mPipImageViews = new ImageView[mViewPagerItems];
 

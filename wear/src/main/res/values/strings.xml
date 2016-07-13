@@ -23,4 +23,6 @@
     <string name="speed_current_average">SPEED (CURR/AVG)</string>
     <string name="speed_average_max">SPEED (AVG/MAX)</string>
     <string name="time_elapsed">ELAPSED TIME</string>
+
+    <string name="history_no_data">No Data</string>
 </resources>
