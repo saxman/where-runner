@@ -30,7 +30,4 @@ public abstract class WearableFragment extends Fragment {
     public boolean isAmbient() {
         return mIsAmbient;
     }
-
-    public void onWearableKeyEvent(KeyEvent event) {
-    }
 }

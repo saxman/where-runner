@@ -10,7 +10,11 @@
     <android.support.wearable.view.GridViewPager
         android:id="@+id/pager"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:focusableInTouchMode="true">
+
+        <requestFocus/>
+    </android.support.wearable.view.GridViewPager>
 
     <TextClock
         style="@style/map_overlay"

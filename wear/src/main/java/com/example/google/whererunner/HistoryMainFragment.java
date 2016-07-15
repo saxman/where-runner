@@ -75,6 +75,40 @@ public class HistoryMainFragment extends WearableFragment {
         mViewPager.setAdapter(mViewPagerAdapter);
         mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
+        mViewPager.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
+                    return false;
+                }
+
+                switch (keyEvent.getKeyCode()) {
+                    // top button on LG Watch Urbane 2nd Edition
+                    case KeyEvent.KEYCODE_STEM_1:
+                    case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                        Point p1 = mViewPager.getCurrentItem();
+                        mViewPager.setCurrentItem(p1.y - 1, p1.x);
+                        return true;
+
+                    // bottom button on LG Watch Urbane 2nd Edition
+                    case KeyEvent.KEYCODE_STEM_2:
+                    case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                        Point p2 = mViewPager.getCurrentItem();
+                        mViewPager.setCurrentItem(p2.y + 1, p2.x);
+                        return true;
+
+                    case KeyEvent.KEYCODE_STEM_3:
+                    case KeyEvent.KEYCODE_STEM_PRIMARY:
+                    case KeyEvent.KEYCODE_NAVIGATE_IN:
+                    case KeyEvent.KEYCODE_NAVIGATE_OUT:
+                        Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + keyEvent.getKeyCode());
+                        break;
+                }
+
+                return false;
+            }
+        });
+
         return view;
     }
 
@@ -91,36 +125,36 @@ public class HistoryMainFragment extends WearableFragment {
     @Override
     public void onUpdateAmbient() {}
 
-    @Override
-    public void onWearableKeyEvent(KeyEvent event) {
-        if (mViewPager == null) {
-            return;
-        }
-
-        // TODO add support for horizontal paging?
-        switch (event.getKeyCode()) {
-            // top button on LG Watch Urbane 2nd Edition
-            case KeyEvent.KEYCODE_STEM_1:
-            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-                Point p1 = mViewPager.getCurrentItem();
-                mViewPager.setCurrentItem(p1.y - 1, p1.x);
-                break;
-
-            // bottom button on LG Watch Urbane 2nd Edition
-            case KeyEvent.KEYCODE_STEM_2:
-            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-                Point p2 = mViewPager.getCurrentItem();
-                mViewPager.setCurrentItem(p2.y + 1, p2.x);
-                break;
-
-            case KeyEvent.KEYCODE_STEM_3:
-            case KeyEvent.KEYCODE_STEM_PRIMARY:
-            case KeyEvent.KEYCODE_NAVIGATE_IN:
-            case KeyEvent.KEYCODE_NAVIGATE_OUT:
-                Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + event.getKeyCode());
-                break;
-        }
-    }
+//    @Override
+//    public void onWearableKeyEvent(KeyEvent event) {
+//        if (mViewPager == null) {
+//            return;
+//        }
+//
+//        // TODO add support for horizontal paging?
+//        switch (event.getKeyCode()) {
+//            // top button on LG Watch Urbane 2nd Edition
+//            case KeyEvent.KEYCODE_STEM_1:
+//            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+//                Point p1 = mViewPager.getCurrentItem();
+//                mViewPager.setCurrentItem(p1.y - 1, p1.x);
+//                break;
+//
+//            // bottom button on LG Watch Urbane 2nd Edition
+//            case KeyEvent.KEYCODE_STEM_2:
+//            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+//                Point p2 = mViewPager.getCurrentItem();
+//                mViewPager.setCurrentItem(p2.y + 1, p2.x);
+//                break;
+//
+//            case KeyEvent.KEYCODE_STEM_3:
+//            case KeyEvent.KEYCODE_STEM_PRIMARY:
+//            case KeyEvent.KEYCODE_NAVIGATE_IN:
+//            case KeyEvent.KEYCODE_NAVIGATE_OUT:
+//                Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + event.getKeyCode());
+//                break;
+//        }
+//    }
 
     private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
         public MyFragmentGridPagerAdapter(FragmentManager fm) {

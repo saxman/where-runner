@@ -89,6 +89,52 @@ public class WorkoutMainFragment extends WearableFragment {
         mViewPager.setAdapter(mViewPagerAdapter);
         mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
+        mViewPager.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
+                    return false;
+                }
+
+                switch (keyEvent.getKeyCode()) {
+                    // top button on LG Watch Urbane 2nd Edition
+                    case KeyEvent.KEYCODE_STEM_1:
+                    case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                        Point p1 = mViewPager.getCurrentItem();
+
+                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                            mViewPager.setCurrentItem(p1.y - 1, p1.x);
+                        } else {
+                            mViewPager.setCurrentItem(p1.y, p1.x - 1);
+                        }
+
+                        return true;
+
+                    // bottom button on LG Watch Urbane 2nd Edition
+                    case KeyEvent.KEYCODE_STEM_2:
+                    case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                        Point p2 = mViewPager.getCurrentItem();
+
+                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                            mViewPager.setCurrentItem(p2.y + 1, p2.x);
+                        } else {
+                            mViewPager.setCurrentItem(p2.y, p2.x + 1);
+                        }
+
+                        return true;
+
+                    case KeyEvent.KEYCODE_STEM_3:
+                    case KeyEvent.KEYCODE_STEM_PRIMARY:
+                    case KeyEvent.KEYCODE_NAVIGATE_IN:
+                    case KeyEvent.KEYCODE_NAVIGATE_OUT:
+                        Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + keyEvent.getKeyCode());
+                        break;
+                }
+
+                return false;
+            }
+        });
+
         if (mGoogleApiClient == null) {
             GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
 
@@ -200,44 +246,6 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         updateUI();
-    }
-
-    @Override
-    public void onWearableKeyEvent(KeyEvent event) {
-        switch (event.getKeyCode()) {
-            // top button on LG Watch Urbane 2nd Edition
-            case KeyEvent.KEYCODE_STEM_1:
-            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-                Point p1 = mViewPager.getCurrentItem();
-
-                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                    mViewPager.setCurrentItem(p1.y - 1, p1.x);
-                } else {
-                    mViewPager.setCurrentItem(p1.y, p1.x - 1);
-                }
-
-                break;
-
-            // bottom button on LG Watch Urbane 2nd Edition
-            case KeyEvent.KEYCODE_STEM_2:
-            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-                Point p2 = mViewPager.getCurrentItem();
-
-                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                    mViewPager.setCurrentItem(p2.y + 1, p2.x);
-                } else {
-                    mViewPager.setCurrentItem(p2.y, p2.x + 1);
-                }
-
-                break;
-
-            case KeyEvent.KEYCODE_STEM_3:
-            case KeyEvent.KEYCODE_STEM_PRIMARY:
-            case KeyEvent.KEYCODE_NAVIGATE_IN:
-            case KeyEvent.KEYCODE_NAVIGATE_OUT:
-                Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + event.getKeyCode());
-                break;
-        }
     }
 
     private void updateUI() {

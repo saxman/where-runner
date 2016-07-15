@@ -177,27 +177,6 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event) {
-        // Pass watch key events the current child fragment to handle
-        switch (event.getKeyCode()) {
-            case KeyEvent.KEYCODE_STEM_1:
-            case KeyEvent.KEYCODE_STEM_2:
-            case KeyEvent.KEYCODE_STEM_3:
-            case KeyEvent.KEYCODE_STEM_PRIMARY:
-            case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-            case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-            case KeyEvent.KEYCODE_NAVIGATE_IN:
-            case KeyEvent.KEYCODE_NAVIGATE_OUT:
-                if (mCurrentViewPagerFragment instanceof WearableFragment) {
-                    ((WearableFragment) mCurrentViewPagerFragment).onWearableKeyEvent(event);
-                }
-                return true;
-            default:
-                return super.onKeyDown(event.getKeyCode(), event);
-        }
-    }
-
-    @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.record_button:
