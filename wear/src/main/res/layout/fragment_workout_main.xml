@@ -71,6 +71,6 @@
 
     </RelativeLayout>
 
-    <include layout="@layout/pager_pips"/>
+    <include layout="@layout/dot_page_indicator" />
 
 </FrameLayout>

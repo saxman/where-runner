@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--xmlns:whererunner="http://schemas.android.com/apk/res/com.example.google.whererunner"-->
+<com.example.google.whererunner.framework.VerticalDotsPageIndicator
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:whererunner="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/page_indicator"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical|right"
+    android:layout_marginRight="@dimen/map_overlay_margin"
+    android:orientation="vertical"
+    android:gravity="center"
+    whererunner:dotSpacing="@dimen/dot_page_indicator_spacing"
+    whererunner:dotDrawable="@drawable/ic_dot_page_indicator"
+    whererunner:dotDrawableCurrent="@drawable/ic_dot_page_indicator_current" />

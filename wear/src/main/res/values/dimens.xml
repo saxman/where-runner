@@ -10,8 +10,8 @@
     <!-- Spacing between map overlay items. Visual spacing will be 2x this amount. -->
     <dimen name="map_overlay_spacing">2dp</dimen>
 
-    <!-- Spacing between pager pips. Visual spacing will be 2x this amount. -->
-    <dimen name="pager_pip_spacing">1dp</dimen>
+    <!-- Spacing between page indicator dots, implemented as a margin. Visual spacing will be 2x this amount. -->
+    <dimen name="dot_page_indicator_spacing">1dp</dimen>
 
     <dimen name="map_marker_size">13dp</dimen>
 

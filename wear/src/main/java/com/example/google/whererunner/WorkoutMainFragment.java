@@ -22,6 +22,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
 
+import com.example.google.whererunner.framework.VerticalDotsPageIndicator;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.LocationService;
@@ -54,7 +55,6 @@ public class WorkoutMainFragment extends WearableFragment {
     private int mViewPagerItems = 2;
 
     private TextClock mTextClock;
-    private ViewGroup mPagerPagePips;
 
     private ImageView mPhoneConnectivityImageView;
     private ImageView mGpsConnectivityImageView;
@@ -75,7 +75,6 @@ public class WorkoutMainFragment extends WearableFragment {
         mPhoneConnectivityImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
         mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
-        mPagerPagePips = (ViewGroup) view.findViewById(R.id.pager_pips);
 
         // If the device has a heart rate monitor, add the HRM view to the view pager
         if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
@@ -87,7 +86,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPager.setAdapter(mViewPagerAdapter);
-        mViewPager.setOnPageChangeListener(new GridViewPagerChangeListener(mPagerPagePips));
 
         mViewPager.setOnKeyListener(new View.OnKeyListener() {
             @Override
@@ -134,6 +132,9 @@ public class WorkoutMainFragment extends WearableFragment {
                 return false;
             }
         });
+
+        VerticalDotsPageIndicator dotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
+        dotsPageIndicator.setPager(mViewPager);
 
         if (mGoogleApiClient == null) {
             GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
@@ -215,8 +216,6 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setFormat12Hour("h:mm");
         mTextClock.setFormat24Hour("H:mm");
 
-        mPagerPagePips.setVisibility(View.INVISIBLE);
-
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
             ((WearableFragment) fragment).onEnterAmbient(ambientDetails);
@@ -229,8 +228,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm:ss");
         mTextClock.setFormat24Hour("H:mm:ss");
-
-        mPagerPagePips.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -311,49 +308,6 @@ public class WorkoutMainFragment extends WearableFragment {
         public int getColumnCount(int i) {
             return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mViewPagerItems : 1;
         }
-    }
-
-    private class GridViewPagerChangeListener implements GridViewPager.OnPageChangeListener {
-        private ImageView[] mPipImageViews;
-
-        public GridViewPagerChangeListener(ViewGroup parent) {
-            LayoutInflater inflater = (LayoutInflater)getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            mPipImageViews = new ImageView[mViewPagerItems];
-
-            int spacing = (int) getResources().getDimension(R.dimen.pager_pip_spacing);
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-            layoutParams.setMargins(0, spacing, 0, spacing);
-
-            for (int i = 0; i < mViewPagerItems; i++) {
-                ImageView view = (ImageView) inflater.inflate(R.layout.pager_pip, null);
-                parent.addView(view, layoutParams);
-                mPipImageViews[i] = view;
-            }
-
-            if (mPipImageViews.length > 0) {
-                mPipImageViews[0].setImageResource(R.drawable.ic_pager_pip_selected);
-            }
-        }
-
-        @Override
-        public void onPageSelected(int row, int col) {
-            int i = PAGER_ORIENTATION == LinearLayout.VERTICAL ? row : col;
-
-            for (int j = 0; j < mPipImageViews.length; j++) {
-                if (i != j) {
-                    mPipImageViews[j].setImageResource(R.drawable.ic_pager_pip);
-                } else {
-                    mPipImageViews[j].setImageResource(R.drawable.ic_pager_pip_selected);
-                }
-            }
-        }
-
-        @Override
-        public void onPageScrolled(int i, int i1, float v, float v1, int i2, int i3) {}
-
-        @Override
-        public void onPageScrollStateChanged(int i) {}
     }
 
     private class GoogleApiClientCallbacks implements

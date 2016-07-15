@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="VerticalDotsPageIndicator">
+        <attr name="dotSpacing" format="dimension" />
+        <attr name="dotDrawable" format="reference" />
+        <attr name="dotDrawableCurrent" format="reference" />
+    </declare-styleable>
+</resources>
