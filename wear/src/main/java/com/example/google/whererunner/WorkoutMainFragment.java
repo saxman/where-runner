@@ -310,7 +310,7 @@ public class WorkoutMainFragment extends WearableFragment {
                     fragment = new WorkoutDataFragment();
                     break;
                 case FRAGMENT_HEART:
-                    fragment = new HeartRateFragment();
+                    fragment = new WorkoutHeartRateFragment();
                     break;
             }
 

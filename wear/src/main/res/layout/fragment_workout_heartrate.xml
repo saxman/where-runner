@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/root_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    tools:context=".WorkoutHeartRateFragment">
+
+    <TextView
+        android:id="@+id/hr_title"
+        style="@style/text_normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/workout_data_top_margin"
+        android:text="@string/heart_rate" />
+
+    <TextView
+        android:id="@+id/hr_average_title"
+        style="@style/text_small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hr_average" />
+
+    <TextView
+        android:id="@+id/hr_average"
+        style="@style/text_normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hrm_no_data" />
+
+    <TextView
+        android:id="@+id/hr_current_title"
+        style="@style/text_small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hr_current" />
+
+    <TextView
+        android:id="@+id/hr_current"
+        style="@style/text_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hrm_no_data" />
+
+    <TextView
+        android:id="@+id/hr_min_max_title"
+        style="@style/text_small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hr_min_max" />
+
+    <TextView
+        android:id="@+id/hr_min_max"
+        style="@style/text_normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hrm_no_data" />
+
+</LinearLayout>

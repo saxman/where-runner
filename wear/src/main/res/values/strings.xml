@@ -24,5 +24,10 @@
     <string name="speed_average_max">SPEED (AVG/MAX)</string>
     <string name="time_elapsed">ELAPSED TIME</string>
 
+    <string name="heart_rate">HEART RATE</string>
+    <string name="hr_min_max">MIN/MAX</string>
+    <string name="hr_current">CURRENT</string>
+    <string name="hr_average">AVERAGE</string>
+
     <string name="history_no_data">No Data</string>
 </resources>

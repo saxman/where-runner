@@ -66,12 +66,6 @@ public class WorkoutRecordingService extends Service {
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
-    /*
-    public WorkoutRecordingService() {
-        super("WorkoutRecordingService");
-    }
-    */
-
     //
     // Service override methods
     //
@@ -175,13 +169,6 @@ public class WorkoutRecordingService extends Service {
         return START_REDELIVER_INTENT;
     }
 
-    /*
-    @Override
-    protected void onHandleIntent(Intent intent) {
-        Log.d(LOG_TAG, "In onHandleIntent() for WorkoutRecordingService");
-    }
-    */
-
     @Override
     public IBinder onBind(Intent intent) {
         return null;
@@ -230,6 +217,7 @@ public class WorkoutRecordingService extends Service {
                 public void onReceive(Context context, Intent intent) {
                     HeartRateSensorEvent hrEvent =
                             intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+                    workout.setCurrentHeartRate(hrEvent.getHeartRate());
                     heartRateSamples.add(hrEvent);
                 }
             };
@@ -249,7 +237,7 @@ public class WorkoutRecordingService extends Service {
                 public void onReceive(Context context, Intent intent) {
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                    workout.setSpeedCurrent(location.getSpeed());
+                    workout.setCurrentSpeed(location.getSpeed());
 
                     if (locationSamples.size() > 0) {
                         Location priorLocation = locationSamples.get(locationSamples.size() - 1);

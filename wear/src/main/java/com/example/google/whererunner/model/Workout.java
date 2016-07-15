@@ -9,9 +9,13 @@ public class Workout implements Parcelable {
     private long startTime;
     private long endTime;
     private double distance;
-    private double speedAverage;
     private double speedMax;
     private double speedCurrent;
+    private double heartRateAverage;
+    private double heartRateMin;
+    private double heartRateMax;
+    private double heartRateCurrent;
+
 
     public Workout() {}
 
@@ -31,9 +35,12 @@ public class Workout implements Parcelable {
         startTime = parcel.readLong();
         endTime = parcel.readLong();
         distance = parcel.readDouble();
-        speedAverage = parcel.readDouble();
         speedMax = parcel.readDouble();
         speedCurrent = parcel.readDouble();
+        heartRateAverage = parcel.readDouble();
+        heartRateMin = parcel.readDouble();
+        heartRateMax = parcel.readDouble();
+        heartRateCurrent = parcel.readDouble();
     }
 
     public int getType() {
@@ -69,6 +76,22 @@ public class Workout implements Parcelable {
         return speedCurrent;
     }
 
+    public double getHeartRateMin() {
+        return heartRateMin;
+    }
+
+    public double getHeartRateMax() {
+        return heartRateMax;
+    }
+
+    public double getHeartRateCurrent() {
+        return heartRateCurrent;
+    }
+
+    public double getHeartRateAverage() {
+        return heartRateAverage;
+    }
+
     public void setType(int type) {
         this.type = type;
     }
@@ -81,15 +104,27 @@ public class Workout implements Parcelable {
         this.distance = distance;
     }
 
-    public void setSpeedMax(double speedMax) {
-        this.speedMax = speedMax;
+    public void setSpeedMax(double speed) {
+        speedMax = speed;
     }
 
-    public void setSpeedCurrent(double speed) {
+    public void setCurrentSpeed(double speed) {
         speedCurrent = speed;
 
         if (speedCurrent > speedMax) {
             speedMax = speedCurrent;
+        }
+    }
+
+    public void setCurrentHeartRate(double heartRate) {
+        heartRateCurrent = heartRate;
+
+        if (heartRateCurrent > heartRateMax) {
+            heartRateMax = heartRateCurrent;
+        }
+
+        if (heartRateCurrent < heartRateMin) {
+            heartRateMin = heartRateCurrent;
         }
     }
 
@@ -110,10 +145,13 @@ public class Workout implements Parcelable {
         parcel.writeLong(endTime);
         parcel.writeDouble(distance);
 
-        // call accessors for speed since these may be calculated by accessor
-        parcel.writeDouble(getSpeedAverage());
-        parcel.writeDouble(getSpeedMax());
-        parcel.writeDouble(getSpeedCurrent());
+        parcel.writeDouble(speedMax);
+        parcel.writeDouble(speedCurrent);
+
+        parcel.writeDouble(heartRateAverage);
+        parcel.writeDouble(heartRateMin);
+        parcel.writeDouble(heartRateMax);
+        parcel.writeDouble(heartRateCurrent);
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {
