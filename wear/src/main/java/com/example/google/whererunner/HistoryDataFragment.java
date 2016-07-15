@@ -1,5 +1,6 @@
 package com.example.google.whererunner;
 
+import android.app.Fragment;
 import android.os.Bundle;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
@@ -15,7 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-public class HistoryDataFragment extends WearableFragment {
+public class HistoryDataFragment extends Fragment {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HistoryDataFragment.class.getSimpleName();
@@ -60,19 +61,6 @@ public class HistoryDataFragment extends WearableFragment {
 
         return view;
     }
-
-    @Override
-    public void onEnterAmbient(Bundle ambientDetails) {
-        super.onEnterAmbient(ambientDetails);
-    }
-
-    @Override
-    public void onExitAmbient() {
-        super.onExitAmbient();
-    }
-
-    @Override
-    public void onUpdateAmbient() {}
 
     private void updateUI() {
         String date = DateUtils.formatDateTime(getActivity(), mWorkout.getStartTime(),

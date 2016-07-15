@@ -65,7 +65,7 @@ public class VerticalDotsPageIndicator extends LinearLayout {
         }
 
         if (mPipImageViews.length > 0) {
-            mPipImageViews[0].setImageResource(R.drawable.ic_dot_page_indicator_current);
+            mPipImageViews[0].setImageResource(R.drawable.ic_page_indicator_dot_current);
         }
 
         invalidate();

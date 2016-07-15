@@ -22,7 +22,7 @@ import com.example.google.whererunner.model.Workout;
 
 import java.util.ArrayList;
 
-public class HistoryMainFragment extends WearableFragment {
+public class HistoryMainFragment extends Fragment {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HistoryMainFragment.class.getSimpleName();
@@ -107,19 +107,6 @@ public class HistoryMainFragment extends WearableFragment {
 
         return view;
     }
-
-    @Override
-    public void onEnterAmbient(Bundle ambientDetails) {
-        super.onEnterAmbient(ambientDetails);
-    }
-
-    @Override
-    public void onExitAmbient() {
-        super.onExitAmbient();
-    }
-
-    @Override
-    public void onUpdateAmbient() {}
 
     private class WorkoutGridPagerAdapter extends FragmentGridPagerAdapter {
         public WorkoutGridPagerAdapter(FragmentManager fm) {

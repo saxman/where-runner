@@ -11,5 +11,5 @@
     android:orientation="vertical"
     android:gravity="center"
     whererunner:dotSpacing="@dimen/dot_page_indicator_spacing"
-    whererunner:dotDrawable="@drawable/ic_dot_page_indicator"
-    whererunner:dotDrawableCurrent="@drawable/ic_dot_page_indicator_current" />
+    whererunner:dotDrawable="@drawable/ic_page_indicator_dot"
+    whererunner:dotDrawableCurrent="@drawable/ic_page_indicator_dot_current" />
