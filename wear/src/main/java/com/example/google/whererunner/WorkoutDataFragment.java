@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
@@ -15,6 +16,7 @@ import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.services.WorkoutRecordingService;
 
+import java.util.LinkedList;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -27,6 +29,8 @@ public class WorkoutDataFragment extends WearableFragment {
     private TextView mDurationTextView;
     private TextView mDistanceTextView;
     private TextView mSpeedTextView;
+
+    private LinkedList<TextView> mTextViews = new LinkedList<>();
 
     private BroadcastReceiver mBroadcastReceiver;
 
@@ -66,6 +70,13 @@ public class WorkoutDataFragment extends WearableFragment {
         mDistanceTextView = (TextView) view.findViewById(R.id.distance);
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
         mSpeedTextView = (TextView) view.findViewById(R.id.speed);
+
+        mTextViews.add(mDistanceTextView);
+        mTextViews.add(mDurationTextView);
+        mTextViews.add(mSpeedTextView);
+        mTextViews.add((TextView) view.findViewById(R.id.distance_title));
+        mTextViews.add((TextView) view.findViewById(R.id.duration_title));
+        mTextViews.add((TextView) view.findViewById(R.id.speed_title));
 
         if (WorkoutRecordingService.isRecording) {
             startDurationTimer();
@@ -121,11 +132,21 @@ public class WorkoutDataFragment extends WearableFragment {
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
+
+        for (TextView view : mTextViews) {
+            view.getPaint().setAntiAlias(false);
+            view.setTextColor(Color.WHITE);
+        }
     }
 
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
+
+        for (TextView view : mTextViews) {
+            view.getPaint().setAntiAlias(true);
+            view.setTextColor(getResources().getColor(R.color.text_primary, null));
+        }
     }
 
     @Override

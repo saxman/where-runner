@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Vibrator;
@@ -55,6 +56,7 @@ public class WorkoutMainFragment extends WearableFragment {
     private int mViewPagerItems = 2;
 
     private TextClock mTextClock;
+    private VerticalDotsPageIndicator mDotsPageIndicator;
 
     private ImageView mPhoneConnectivityImageView;
     private ImageView mGpsConnectivityImageView;
@@ -95,7 +97,6 @@ public class WorkoutMainFragment extends WearableFragment {
                 }
 
                 switch (keyEvent.getKeyCode()) {
-                    // top button on LG Watch Urbane 2nd Edition
                     case KeyEvent.KEYCODE_STEM_1:
                     case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
                         Point p1 = mViewPager.getCurrentItem();
@@ -108,7 +109,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
                         return true;
 
-                    // bottom button on LG Watch Urbane 2nd Edition
                     case KeyEvent.KEYCODE_STEM_2:
                     case KeyEvent.KEYCODE_NAVIGATE_NEXT:
                         Point p2 = mViewPager.getCurrentItem();
@@ -133,8 +133,8 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
-        VerticalDotsPageIndicator dotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
-        dotsPageIndicator.setPager(mViewPager);
+        mDotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
+        mDotsPageIndicator.setPager(mViewPager);
 
         if (mGoogleApiClient == null) {
             GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
@@ -215,6 +215,16 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm");
         mTextClock.setFormat24Hour("H:mm");
+        mTextClock.setTextColor(Color.WHITE);
+        mTextClock.setBackgroundResource(R.drawable.bg_map_overlay_ambient);
+        mTextClock.getPaint().setAntiAlias(false);
+
+        mDotsPageIndicator.setVisibility(View.INVISIBLE);
+
+        // TODO instead of just hiding the status indicator, create b&w modes for them
+        mPhoneConnectivityImageView.setVisibility(View.INVISIBLE);
+        mGpsConnectivityImageView.setVisibility(View.INVISIBLE);
+        mHrmConnectivityImageView.setVisibility(View.INVISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -228,6 +238,15 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm:ss");
         mTextClock.setFormat24Hour("H:mm:ss");
+        mTextClock.setBackgroundResource(R.drawable.bg_map_overlay);
+        mTextClock.setTextColor(getResources().getColor(R.color.text_dark, null));
+        mTextClock.getPaint().setAntiAlias(true);
+
+        mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+        mGpsConnectivityImageView.setVisibility(View.VISIBLE);
+        mHrmConnectivityImageView.setVisibility(View.VISIBLE);
+
+        mDotsPageIndicator.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -253,7 +272,6 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         if (mIsPhoneConnected) {
-            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
             mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_connected);
         } else {
             mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_disconnected);
@@ -314,7 +332,7 @@ public class WorkoutMainFragment extends WearableFragment {
             GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
         @Override
-        public void onConnected(@NonNull Bundle connectionHint) {
+        public void onConnected(Bundle connectionHint) {
             // Get the initial connectivity state of the phone
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override

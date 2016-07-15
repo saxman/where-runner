@@ -76,18 +76,28 @@ public class HistoryMainFragment extends Fragment {
                 }
 
                 switch (keyEvent.getKeyCode()) {
-                    // top button on LG Watch Urbane 2nd Edition
                     case KeyEvent.KEYCODE_STEM_1:
                     case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
                         Point p1 = mViewPager.getCurrentItem();
-                        mViewPager.setCurrentItem(p1.y - 1, p1.x);
+
+                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                            mViewPager.setCurrentItem(p1.y - 1, p1.x);
+                        } else {
+                            mViewPager.setCurrentItem(p1.y, p1.x - 1);
+                        }
+
                         return true;
 
-                    // bottom button on LG Watch Urbane 2nd Edition
                     case KeyEvent.KEYCODE_STEM_2:
                     case KeyEvent.KEYCODE_NAVIGATE_NEXT:
                         Point p2 = mViewPager.getCurrentItem();
-                        mViewPager.setCurrentItem(p2.y + 1, p2.x);
+
+                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                            mViewPager.setCurrentItem(p2.y + 1, p2.x);
+                        } else {
+                            mViewPager.setCurrentItem(p2.y, p2.x + 1);
+                        }
+
                         return true;
 
                     case KeyEvent.KEYCODE_STEM_3:

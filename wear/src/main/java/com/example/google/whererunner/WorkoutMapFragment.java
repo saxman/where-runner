@@ -61,6 +61,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     private BitmapDescriptor mRecordingMapMarkerIcon;
     private BitmapDescriptor mDefaultMapMarkerIcon;
     private BitmapDescriptor mDisconnectedMapMarkerIcon;
+    private BitmapDescriptor mAmbientMapMarkerIcon;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -207,6 +208,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         mRecordingMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_recording);
         mDefaultMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker);
         mDisconnectedMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_disconnected);
+        mAmbientMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_ambient);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
@@ -236,12 +238,15 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     @Override
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
+
         mMapView.onEnterAmbient(ambientDetails);
+        updateMapMarkerIcon();
     }
 
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
+
         mMapView.onExitAmbient();
         updateUI();
     }
@@ -313,11 +318,13 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     }
 
     private void updateMapMarkerIcon() {
-        if (mAccuracyCircle == null) {
+        if (mMapMarker == null) {
             return;
         }
 
-        if (LocationService.isLocationUpdating) {
+        if (isAmbient()) {
+            mMapMarker.setIcon(mAmbientMapMarkerIcon);
+        } else if (LocationService.isLocationUpdating) {
             if (WorkoutRecordingService.isRecording) {
                 mMapMarker.setIcon(mRecordingMapMarkerIcon);
             } else {
