@@ -122,21 +122,17 @@ public class WorkoutHeartRateFragment extends WearableFragment
     }
 
     private void updateUI() {
-        double min = 0, max = 0, average = 0, current = 0;
-
         if (WorkoutRecordingService.isRecording) {
-            min = WorkoutRecordingService.workout.getHeartRateMin();
-            max = WorkoutRecordingService.workout.getHeartRateMax();
-            average = WorkoutRecordingService.workout.getHeartRateAverage();
-            current = WorkoutRecordingService.workout.getHeartRateCurrent();
-        } else if (mHrSensorEvent != null) {
-            min = mHrSensorEvent.getMinHeartRate();
-            max = mHrSensorEvent.getMaxHeartRate();
-            current = mHrSensorEvent.getHeartRate();
-        }
+            double min = WorkoutRecordingService.workout.getHeartRateMin();
+            double max = WorkoutRecordingService.workout.getHeartRateMax();
+            double average = WorkoutRecordingService.workout.getHeartRateAverage();
+            double current = WorkoutRecordingService.workout.getHeartRateCurrent();
 
-        mHrCurrentText.setText(String.valueOf(current));
-        mHrAverageText.setText(String.valueOf(average));
-        mHrMinMaxText.setText(String.format(Locale.getDefault(), "%.1f / %.1f", min, max));
+            mHrCurrentText.setText(String.valueOf(current));
+            mHrAverageText.setText(String.valueOf(average));
+            mHrMinMaxText.setText(String.format(Locale.getDefault(), "%.1f / %.1f", min, max));
+        } else if (mHrSensorEvent != null) {
+            mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));
+        }
     }
 }

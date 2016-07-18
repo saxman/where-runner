@@ -102,13 +102,8 @@ public class HeartRateSensorService extends Service {
             }.start();
 
             // Get the last sample; however, there appears to only ever be one value...
-            float val = event.values[event.values.length - 1];
-
-            mHeartRateMin = (val < mHeartRateMin) ? val : mHeartRateMin;
-            mHeartRateMax = (val > mHeartRateMax) ? val : mHeartRateMax;
-
-            HeartRateSensorEvent evt = new HeartRateSensorEvent(val,
-                    mHeartRateMin, mHeartRateMax, event.timestamp);
+            float value = event.values[event.values.length - 1];
+            HeartRateSensorEvent evt = new HeartRateSensorEvent(value, event.timestamp, event.accuracy);
 
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
             intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, evt);
