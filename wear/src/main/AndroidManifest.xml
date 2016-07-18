@@ -32,14 +32,24 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="vnd.google.fitness.TRACK" />
+                <data android:mimeType="vnd.google.fitness.activity/biking"/>
+                <data android:mimeType="vnd.google.fitness.activity/running"/>
+                <data android:mimeType="vnd.google.fitness.activity/other"/>
+            </intent-filter>
         </activity>
 
         <service android:name=".services.GpsLocationService"
             android:exported="false" />
+
         <service android:name=".services.FusedLocationService"
             android:exported="false" />
+
         <service android:name=".services.HeartRateSensorService"
             android:exported="false" />
+
         <service android:name=".services.WorkoutRecordingService"
             android:exported="false" />
 

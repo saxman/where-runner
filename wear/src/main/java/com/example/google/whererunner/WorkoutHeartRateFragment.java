@@ -1,6 +1,5 @@
 package com.example.google.whererunner;
 
-import android.app.Fragment;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,8 +17,6 @@ import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.services.HeartRateSensorEvent;
 import com.example.google.whererunner.services.HeartRateSensorService;
 import com.example.google.whererunner.services.WorkoutRecordingService;
-
-import org.w3c.dom.Text;
 
 import java.util.LinkedList;
 import java.util.Locale;
@@ -39,6 +36,12 @@ public class WorkoutHeartRateFragment extends WearableFragment
     private LinkedList<TextView> mTextViews = new LinkedList<>();
 
     private HeartRateSensorEvent mHrSensorEvent;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mHrSensorEvent = HeartRateSensorService.lastHeartRateSensorEvent;
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

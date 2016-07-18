@@ -33,8 +33,7 @@ public class HeartRateSensorService extends Service {
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-    private float mHeartRateMin = Float.MAX_VALUE;
-    private float mHeartRateMax = Float.MIN_VALUE;
+    public static  HeartRateSensorEvent lastHeartRateSensorEvent;
 
     @Override
     public void onCreate () {
@@ -103,10 +102,11 @@ public class HeartRateSensorService extends Service {
 
             // Get the last sample; however, there appears to only ever be one value...
             float value = event.values[event.values.length - 1];
-            HeartRateSensorEvent evt = new HeartRateSensorEvent(value, event.timestamp, event.accuracy);
+            HeartRateSensorEvent hrEvent = new HeartRateSensorEvent(value, event.timestamp, event.accuracy);
+            lastHeartRateSensorEvent = hrEvent;
 
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, evt);
+            intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, hrEvent);
 
             LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
         }
