@@ -14,21 +14,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/workout_data_top_margin"
+        android:layout_marginBottom="2dp"
         android:text="@string/heart_rate" />
-
-    <TextView
-        android:id="@+id/hr_average_title"
-        style="@style/text_small"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hr_average" />
-
-    <TextView
-        android:id="@+id/hr_average"
-        style="@style/text_normal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hrm_no_data" />
 
     <TextView
         android:id="@+id/hr_current_title"
@@ -40,6 +27,20 @@
     <TextView
         android:id="@+id/hr_current"
         style="@style/text_header"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hrm_no_data" />
+
+    <TextView
+        android:id="@+id/hr_average_title"
+        style="@style/text_small"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hr_average" />
+
+    <TextView
+        android:id="@+id/hr_average"
+        style="@style/text_normal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/hrm_no_data" />

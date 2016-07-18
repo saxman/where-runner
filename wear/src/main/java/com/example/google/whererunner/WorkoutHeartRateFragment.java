@@ -56,6 +56,8 @@ public class WorkoutHeartRateFragment extends WearableFragment
         mTextViews.add((TextView) view.findViewById(R.id.hr_average_title));
         mTextViews.add((TextView) view.findViewById(R.id.hr_current_title));
 
+        updateUI();
+
         return view;
     }
 
