@@ -4,18 +4,21 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public class Workout implements Parcelable {
-    private int type;
     private long id;
+
     private long startTime;
     private long endTime;
+
+    private int type;
     private double distance;
+
     private double speedMax;
     private double speedCurrent;
+
     private double heartRateAverage;
     private double heartRateMin;
     private double heartRateMax;
     private double heartRateCurrent;
-
 
     public Workout() {}
 

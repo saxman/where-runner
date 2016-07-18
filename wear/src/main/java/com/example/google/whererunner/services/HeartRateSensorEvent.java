@@ -12,6 +12,13 @@ public class HeartRateSensorEvent implements Parcelable {
     private long timestamp;
     private int accuracy;
 
+    // Private since only used by Parcelable.Creator
+    private HeartRateSensorEvent(Parcel in) {
+        heartRate = in.readFloat();
+        timestamp = in.readLong();
+        accuracy = in.readInt();
+    }
+
     public float getHeartRate() {
         return heartRate;
     }
@@ -37,13 +44,6 @@ public class HeartRateSensorEvent implements Parcelable {
         out.writeInt(accuracy);
     }
 
-    // Private so that only the `CREATOR` field can access.
-    private HeartRateSensorEvent(Parcel in) {
-        heartRate = in.readFloat();
-        timestamp = in.readLong();
-        accuracy = in.readInt();
-    }
-
     @Override
     public int describeContents() {
         return 0;
@@ -51,7 +51,7 @@ public class HeartRateSensorEvent implements Parcelable {
 
     public static final Parcelable.Creator<HeartRateSensorEvent> CREATOR
             = new Parcelable.Creator<HeartRateSensorEvent>() {
-        
+
         @Override
         public HeartRateSensorEvent createFromParcel(Parcel in) {
             return new HeartRateSensorEvent(in);
