@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -19,6 +20,7 @@ import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
 import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
 
@@ -33,6 +35,9 @@ public class WorkoutRecordingService extends Service {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
+
+    // Firebase Analytics
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     /** Incoming action to stop services if not recording */
     public final static String ACTION_STOP_SERVICES = "STOP_SERVICES";
@@ -73,6 +78,9 @@ public class WorkoutRecordingService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+
+        // Obtain the Firebase Analytics instance
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 
@@ -192,6 +200,9 @@ public class WorkoutRecordingService extends Service {
 
         startHeartRateRecording();
         startLocationRecording();
+
+        // Log in Firebase
+        fbLogStartWorkout();
     }
 
     /**
@@ -205,6 +216,9 @@ public class WorkoutRecordingService extends Service {
 
         saveWorkout();
         resetSampleCollections();
+
+        // Log in Firebase
+        fbLogStopWorkout();
     }
 
     /**
@@ -279,5 +293,21 @@ public class WorkoutRecordingService extends Service {
     private void resetSampleCollections() {
         heartRateSamples.clear();
         locationSamples.clear();
+    }
+
+    /* FIREBASE METHODS */
+
+    /**
+     * Logs a user starting a workout
+     */
+    private void fbLogStartWorkout() {
+        mFirebaseAnalytics.logEvent("workout_start", new Bundle());
+    }
+
+    /**
+     * Logs a user stopping a workout
+     */
+    private void fbLogStopWorkout() {
+        mFirebaseAnalytics.logEvent("workout_stop", new Bundle());
     }
 }
