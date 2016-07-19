@@ -18,7 +18,6 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 import android.view.Gravity;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -28,9 +27,9 @@ import com.example.google.whererunner.model.WorkoutType;
 import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
 import com.example.google.whererunner.services.WorkoutRecordingService;
+import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
@@ -38,6 +37,9 @@ public class MainActivity extends WearableActivity implements
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
+
+    // Firebase Analytics
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     private static final int NAV_DRAWER_ITEMS = 3;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
@@ -97,6 +99,9 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
 
         setRecordingButtonUiState(WorkoutRecordingService.isRecording);
+
+        // Initialize Firebase Analytics
+        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
     }
 
     @Override
