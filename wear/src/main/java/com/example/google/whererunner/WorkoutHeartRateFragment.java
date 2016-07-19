@@ -1,5 +1,7 @@
 package com.example.google.whererunner;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -20,12 +22,15 @@ import com.example.google.whererunner.services.WorkoutRecordingService;
 
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 public class WorkoutHeartRateFragment extends WearableFragment
         implements ActivityCompat.OnRequestPermissionsResultCallback {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutHeartRateFragment.class.getSimpleName();
+
+    private static final long HR_SAMPLE_DELAY_THRESHOLD_MS = 10000;
 
     private BroadcastReceiver mBroadcastReceiver;
 
@@ -40,7 +45,14 @@ public class WorkoutHeartRateFragment extends WearableFragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        mHrSensorEvent = HeartRateSensorService.lastHeartRateSensorEvent;
+
+        // Don't both using the last HR sample if it's too old
+        if (HeartRateSensorService.lastHeartRateSensorEvent != null) {
+            long delta = System.currentTimeMillis() - HeartRateSensorService.lastHeartRateSensorEvent.getTimestamp();
+            if (delta < HR_SAMPLE_DELAY_THRESHOLD_MS) {
+                mHrSensorEvent = HeartRateSensorService.lastHeartRateSensorEvent;
+            }
+        }
     }
 
     @Override
@@ -126,16 +138,15 @@ public class WorkoutHeartRateFragment extends WearableFragment
 
     private void updateUI() {
         if (WorkoutRecordingService.isRecording) {
-            double min = WorkoutRecordingService.workout.getHeartRateMin();
-            double max = WorkoutRecordingService.workout.getHeartRateMax();
-            double average = WorkoutRecordingService.workout.getHeartRateAverage();
-            double current = WorkoutRecordingService.workout.getHeartRateCurrent();
-
-            mHrCurrentText.setText(String.valueOf(current));
-            mHrAverageText.setText(String.valueOf(average));
-            mHrMinMaxText.setText(String.format(Locale.getDefault(), "%.1f / %.1f", min, max));
+            mHrCurrentText.setText(String.valueOf(WorkoutRecordingService.workout.getHeartRateCurrent()));
+            mHrAverageText.setText(String.valueOf(WorkoutRecordingService.workout.getHeartRateAverage()));
+            mHrMinMaxText.setText(String.format(Locale.getDefault(),"%.1f / %.1f",
+                    WorkoutRecordingService.workout.getHeartRateMin(),
+                    WorkoutRecordingService.workout.getHeartRateMax()));
         } else if (mHrSensorEvent != null) {
             mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));
+        } else {
+            mHrCurrentText.setText(getString(R.string.hrm_no_data));
         }
     }
 }

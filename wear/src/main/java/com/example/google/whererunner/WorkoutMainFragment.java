@@ -69,6 +69,21 @@ public class WorkoutMainFragment extends WearableFragment {
     private GoogleApiClient mGoogleApiClient;
 
     @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        if (mGoogleApiClient == null) {
+            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
+
+            mGoogleApiClient = new GoogleApiClient.Builder(getContext())
+                    .addConnectionCallbacks(callbacks)
+                    .addOnConnectionFailedListener(callbacks)
+                    .addApi(Wearable.API)
+                    .build();
+        }
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
@@ -136,15 +151,7 @@ public class WorkoutMainFragment extends WearableFragment {
         mDotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
         mDotsPageIndicator.setPager(mViewPager);
 
-        if (mGoogleApiClient == null) {
-            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
-
-            mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                    .addConnectionCallbacks(callbacks)
-                    .addOnConnectionFailedListener(callbacks)
-                    .addApi(Wearable.API)
-                    .build();
-        }
+        updateUI();
 
         return view;
     }
@@ -336,14 +343,18 @@ public class WorkoutMainFragment extends WearableFragment {
             // Get the initial connectivity state of the phone
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override
-                public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
-                    mIsPhoneConnected = getConnectedNodesResult.getNodes().size() > 0;
+                public void onResult(@NonNull NodeApi.GetConnectedNodesResult result) {
+                    mIsPhoneConnected = result.getNodes().size() > 0;
 
                     if (!isAmbient()) {
+                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
+                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+                        }
+
                         updateUI();
                     }
                 }
-            }, 1000, TimeUnit.MILLISECONDS);
+            }, 10000, TimeUnit.MILLISECONDS);
 
             // Get updates on the connectivity state of the phone
             // TODO use non-deprecated API
@@ -353,6 +364,10 @@ public class WorkoutMainFragment extends WearableFragment {
                     mIsPhoneConnected = true;
 
                     if (!isAmbient()) {
+                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
+                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+                        }
+
                         updateUI();
                     }
                 }
@@ -362,6 +377,10 @@ public class WorkoutMainFragment extends WearableFragment {
                     mIsPhoneConnected = false;
 
                     if (!isAmbient()) {
+                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
+                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+                        }
+
                         updateUI();
                     }
                 }

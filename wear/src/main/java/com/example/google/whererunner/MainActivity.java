@@ -1,8 +1,10 @@
 package com.example.google.whererunner;
 
 import android.Manifest;
+import android.app.AlarmManager;
 import android.app.Fragment;
 import android.app.FragmentManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,6 +33,7 @@ import com.example.google.whererunner.services.WorkoutRecordingService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends WearableActivity implements
         ActivityCompat.OnRequestPermissionsResultCallback,
@@ -64,12 +67,26 @@ public class MainActivity extends WearableActivity implements
 
     private int mActivityType = ACTIVITY_TYPE_RUNNING;
 
+    private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
+
+    private AlarmManager mAmbientStateAlarmManager;
+    private PendingIntent mAmbientStatePendingIntent;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         setAmbientEnabled();
+
+        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
+
+        mAmbientStatePendingIntent = PendingIntent.getActivity(
+                getApplicationContext(),
+                0 /* requestCode */,
+                ambientStateIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         FragmentManager fragmentManager = getFragmentManager();
         mCurrentViewPagerFragment = new WorkoutMainFragment();
@@ -177,6 +194,19 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
+    public void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+
+        setIntent(intent);
+
+        if (mCurrentViewPagerFragment instanceof WearableFragment) {
+            ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
+        }
+
+        scheduleAmbientUpdate();
+    }
+
+    @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
             case R.id.record_button:
@@ -203,6 +233,8 @@ public class MainActivity extends WearableActivity implements
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
         }
+
+        scheduleAmbientUpdate();
     }
 
     @Override
@@ -212,6 +244,8 @@ public class MainActivity extends WearableActivity implements
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
         }
+
+        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
     }
 
     @Override
@@ -226,6 +260,17 @@ public class MainActivity extends WearableActivity implements
     //
     // Class methods
     //
+
+    private void scheduleAmbientUpdate() {
+        long timeMs = System.currentTimeMillis();
+        long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
+        long triggerTimeMs = timeMs + delayMs;
+
+        mAmbientStateAlarmManager.setExact(
+                AlarmManager.RTC_WAKEUP,
+                triggerTimeMs,
+                mAmbientStatePendingIntent);
+    }
 
     private void startRecordingService() {
         Intent intent = new Intent(this, WorkoutRecordingService.class);
