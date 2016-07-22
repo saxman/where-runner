@@ -311,7 +311,6 @@ public class MainActivity extends WearableActivity implements
     private void startRecordingService() {
         Intent intent = new Intent(this, WorkoutRecordingService.class);
         bindService(intent, mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-        startService(intent);
     }
 
     private void setRecordingButtonUiState(boolean isRecording) {
@@ -414,7 +413,7 @@ public class MainActivity extends WearableActivity implements
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
                     fragment = new WorkoutMainFragment();
-                    // Ensure the action drawer is visible, since other nav drawer pages could have hidden it
+                    // Ensure the action drawer is visible, since it could have been hidden for other nav drawer pages
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
                     break;
                 case NAV_DRAWER_FRAGMENT_SETTINGS:

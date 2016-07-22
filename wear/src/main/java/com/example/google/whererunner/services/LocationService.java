@@ -42,7 +42,6 @@ public abstract class LocationService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(LOG_TAG, "onDestroy()");
         stopLocationUpdates();
 
         if (mLocationSampleTimer != null) {

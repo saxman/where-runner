@@ -121,33 +121,19 @@ public class WorkoutRecordingService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startHeartRateService();
-        startLocationService();
-
         return START_STICKY;
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        startHeartRateService();
+        startLocationService();
+
         return mServiceBinder;
     }
 
     @Override
-    public boolean onUnbind(Intent intent) {
-        super.onUnbind(intent);
-
-        // If we're not recording a workout, stop the service when the parent activity unbinds.
-        // Cleaning up of child services is handled in onDestroy()
-        if (!isRecording) {
-            stopSelf();
-        }
-
-        return true;
-    }
-
-    @Override
     public void onDestroy() {
-        Log.d(LOG_TAG, "onDestroy()");
         mNotificationManager.cancel(NOTIFICATION_ID);
 
         stopLocationService();
@@ -294,52 +280,63 @@ public class WorkoutRecordingService extends Service {
     //
 
     public void startRecordingWorkout() {
-        Log.d(LOG_TAG, "Starting workout recording");
-
-        isRecording = true;
+        Intent intent = new Intent(this, WorkoutRecordingService.class);
+        startService(intent);
         startForeground(NOTIFICATION_ID, mNotification);
+
         startRecordingData();
         reportRecordingStatus();
+
+        isRecording = true;
     }
 
     public void stopRecordingWorkout() {
-        Log.d(LOG_TAG, "Stopping workout recording");
-
-        isRecording = false;
-        stopForeground(true);
         stopRecordingData();
         reportRecordingStatus();
+
+        stopForeground(true);
+        stopSelf();
+
+        isRecording = false;
     }
 
     public boolean isRecordingWorkout() {
         return isRecording;
     }
 
+    /**
+     * Start the heart rate service, which reads and broadcasts heart rate samples from the corresponding sensor.
+     */
     public void startHeartRateService() {
-        Log.d(LOG_TAG, "Starting heart rate service");
         Intent intent = new Intent(this, HeartRateSensorService.class);
         bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
+    /**
+     * Stop the heart rate service, which will stop reading and broadcasting samples from the corresponding sensor.
+     */
     public void stopHeartRateService() {
-        Log.d(LOG_TAG, "Stopping heart rate service");
-        unbindService(mHeartRateServiceConnection);
+        // Only unbind if the service hasn't previously been unbound
+        if (HeartRateSensorService.isActive) {
+            unbindService(mHeartRateServiceConnection);
+        }
     }
 
+    /**
+     * @return true if the heart rate sensor is on. false if it is off
+     */
     public boolean isHeartRateSensorOn() {
         return HeartRateSensorService.isActive;
     }
 
     // Private for now as there's no use-case for toggling sensor state
     private void startLocationService() {
-        Log.d(LOG_TAG, "Starting location service");
         Intent intent = new Intent(this, FusedLocationService.class);
         bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
     // Private for now as there's no use-case for toggling sensor state
     private void stopLocationService() {
-        Log.d(LOG_TAG, "Stopping location service");
         unbindService(mLocationServiceConnection);
     }
 
