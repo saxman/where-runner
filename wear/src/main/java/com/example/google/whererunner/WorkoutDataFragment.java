@@ -49,8 +49,7 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     // TODO migrate to instancing in containing activity/fragment
-    public static final WorkoutDataFragment newInstance(Workout workout)
-    {
+    public static final WorkoutDataFragment newInstance(Workout workout) {
         Bundle bundle = new Bundle(4);
         bundle.putDouble(EXTRA_START_TIME, workout.getStartTime());
         bundle.putDouble(EXTRA_DISTANCE, workout.getStartTime());
@@ -159,6 +158,12 @@ public class WorkoutDataFragment extends WearableFragment {
         mDurationTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                // Do nothing if the user pressed the record button before this fragment
+                // has been attached to an activity
+                if (getActivity() == null) {
+                    return;
+                }
+
                 getActivity().runOnUiThread(new Runnable() {
                     @Override
                     public void run() {

@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
+import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -36,16 +37,6 @@ public class WorkoutRecordingService extends Service {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
 
-    // Firebase Analytics
-    private FirebaseAnalytics mFirebaseAnalytics;
-
-    /** Incoming action to stop services if not recording */
-    public final static String ACTION_STOP_SERVICES = "STOP_SERVICES";
-
-    /** Incoming actions to start and stop recording */
-    public final static String ACTION_START_RECORDING = "START_RECORDING";
-    public final static String ACTION_STOP_RECORDING = "STOP_RECORDING";
-
     /** Outgoing action reporting recording status */
     public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS";
 
@@ -55,12 +46,17 @@ public class WorkoutRecordingService extends Service {
     /** Outgoing action reporting that the workout data has been updated */
     public final static String ACTION_WORKOUT_DATA_UPDATED = "WORKOUT_DATA_UPDATED";
 
-    private BroadcastReceiver mRecordingReceiver;
-    private BroadcastReceiver mHeartRateReceiver;
-    private BroadcastReceiver mLocationReceiver;
+    private FirebaseAnalytics mFirebaseAnalytics;
 
+    private BroadcastReceiver mHeartRateReceiver;
     private ServiceConnection mLocationServiceConnection;
+    private boolean mIsLocationServiceConnected = false;
+
+    private BroadcastReceiver mLocationReceiver;
     private ServiceConnection mHeartRateServiceConnection;
+    private boolean mIsHeartRateServiceConnected = false;
+
+    private WorkoutRecordingServiceBinder mServiceBinder = new WorkoutRecordingServiceBinder();
 
     private int NOTIFICATION_ID = 1;
     private Notification mNotification;
@@ -72,14 +68,13 @@ public class WorkoutRecordingService extends Service {
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
     //
-    // Service override methods
+    // Service class methods
     //
 
     @Override
     public void onCreate() {
         super.onCreate();
 
-        // Obtain the Firebase Analytics instance
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
         mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
@@ -91,73 +86,72 @@ public class WorkoutRecordingService extends Service {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setTicker(contentText)
                 .setWhen(System.currentTimeMillis())
-//                .setContentTitle(getText(R.string.local_service_label))  // the label of the entry
                 .setContentText(contentText)
                 .setContentIntent(contentIntent)
                 .build();
 
-        mRecordingReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case ACTION_STOP_SERVICES:
-                        if (!isRecording) {
-                            // child service unbinding handled in service onDestroy
-                            stopSelf();
-                        }
-
-                        break;
-
-                    case ACTION_START_RECORDING:
-                        startForeground(NOTIFICATION_ID, mNotification);
-                        startRecordingData();
-                        isRecording = true;
-                        reportRecordingStatus();
-
-                        break;
-
-                    case ACTION_STOP_RECORDING:
-                        stopForeground(true);
-                        stopRecordingData();
-                        isRecording = false;
-                        reportRecordingStatus();
-                        break;
-                }
-            }
-        };
-
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(ACTION_STOP_SERVICES);
-        filter.addAction(ACTION_START_RECORDING);
-        filter.addAction(ACTION_STOP_RECORDING);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingReceiver, filter);
-
         mLocationServiceConnection = new ServiceConnection() {
             @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                Log.d(LOG_TAG, "Location service started");
+                mIsLocationServiceConnected = true;
+            }
 
             @Override
-            public void onServiceDisconnected(ComponentName componentName) {}
+            public void onServiceDisconnected(ComponentName componentName) {
+                Log.w(LOG_TAG, "Location service disconnected");
+                mIsLocationServiceConnected = false;
+            }
         };
         
         mHeartRateServiceConnection = new ServiceConnection() {
             @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+                Log.d(LOG_TAG, "Heart rate service started");
+                mIsHeartRateServiceConnected = true;
+            }
 
             @Override
-            public void onServiceDisconnected(ComponentName componentName) {}
+            public void onServiceDisconnected(ComponentName componentName) {
+                Log.w(LOG_TAG, "Heart rate service disconnected");
+                mIsHeartRateServiceConnected = false;
+            }
         };
     }
 
     @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        startHeartRateService();
+        startLocationService();
+
+        return START_STICKY;
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        return mServiceBinder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        super.onUnbind(intent);
+
+        // If we're not recording a workout, stop the service when the parent activity unbinds.
+        // Cleaning up of child services is handled in onDestroy()
+        if (!isRecording) {
+            stopSelf();
+        }
+
+        return true;
+    }
+
+    @Override
     public void onDestroy() {
-        Log.d(LOG_TAG, "Destroying WorkoutRecordingService");
+        Log.d(LOG_TAG, "onDestroy()");
         mNotificationManager.cancel(NOTIFICATION_ID);
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingReceiver);
-
-        unbindService(mLocationServiceConnection);
-        unbindService(mHeartRateServiceConnection);
+        stopLocationService();
+        stopHeartRateService();
 
         // Reset static vars since these survive outside of the service lifecycle
         workout = new Workout();
@@ -166,24 +160,8 @@ public class WorkoutRecordingService extends Service {
         super.onDestroy();
     }
 
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-
-        intent = new Intent(this, HeartRateSensorService.class);
-        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
-
-        return START_REDELIVER_INTENT;
-    }
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
     //
-    // Service implementation methods
+    // Private class methods
     //
 
     private void reportRecordingStatus() {
@@ -309,5 +287,69 @@ public class WorkoutRecordingService extends Service {
      */
     private void fbLogStopWorkout() {
         mFirebaseAnalytics.logEvent("workout_stop", new Bundle());
+    }
+
+    //
+    // Public service methods
+    //
+
+    public void startRecordingWorkout() {
+        Log.d(LOG_TAG, "Starting workout recording");
+
+        isRecording = true;
+        startForeground(NOTIFICATION_ID, mNotification);
+        startRecordingData();
+        reportRecordingStatus();
+    }
+
+    public void stopRecordingWorkout() {
+        Log.d(LOG_TAG, "Stopping workout recording");
+
+        isRecording = false;
+        stopForeground(true);
+        stopRecordingData();
+        reportRecordingStatus();
+    }
+
+    public boolean isRecordingWorkout() {
+        return isRecording;
+    }
+
+    public void startHeartRateService() {
+        Log.d(LOG_TAG, "Starting heart rate service");
+        Intent intent = new Intent(this, HeartRateSensorService.class);
+        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    public void stopHeartRateService() {
+        Log.d(LOG_TAG, "Stopping heart rate service");
+        unbindService(mHeartRateServiceConnection);
+    }
+
+    public boolean isHeartRateSensorOn() {
+        return HeartRateSensorService.isActive;
+    }
+
+    // Private for now as there's no use-case for toggling sensor state
+    private void startLocationService() {
+        Log.d(LOG_TAG, "Starting location service");
+        Intent intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    // Private for now as there's no use-case for toggling sensor state
+    private void stopLocationService() {
+        Log.d(LOG_TAG, "Stopping location service");
+        unbindService(mLocationServiceConnection);
+    }
+
+    //
+    // Public inner classes
+    //
+
+    public class WorkoutRecordingServiceBinder extends Binder {
+        public WorkoutRecordingService getService() {
+            return WorkoutRecordingService.this;
+        }
     }
 }

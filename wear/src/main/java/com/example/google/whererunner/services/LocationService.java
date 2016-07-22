@@ -9,6 +9,7 @@ import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 public abstract class LocationService extends Service {
 
@@ -30,13 +31,25 @@ public abstract class LocationService extends Service {
     public static Location lastKnownLocation;
     public static boolean isLocationUpdating = false;
 
+    public static boolean isActive = false;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        isActive = true;
+    }
+
     @Override
     public void onDestroy() {
+        Log.d(LOG_TAG, "onDestroy()");
         stopLocationUpdates();
 
         if (mLocationSampleTimer != null) {
             mLocationSampleTimer.cancel();
         }
+
+        isActive = false;
 
         super.onDestroy();
     }

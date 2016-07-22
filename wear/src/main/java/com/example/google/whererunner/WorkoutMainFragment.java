@@ -287,9 +287,9 @@ public class WorkoutMainFragment extends WearableFragment {
         // TODO can set image tint instead of changing icon
         // TODO determine how this vector image is scale and make it larger
         if (mIsHrmConnected) {
-            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_red_12);
+            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_red);
         } else {
-            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_12);
+            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart);
         }
     }
 

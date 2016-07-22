@@ -14,6 +14,9 @@
 
     <string name="notification_content_text">Where Runner?!</string>
 
+    <string name="hrm_turn_on">Turn HRM ON</string>
+    <string name="hrm_turn_off">Turn HRM OFF</string>
+
     <string name="hrm_no_data">- -</string>
 
     <!-- TODO: Remove or change this placeholder text -->

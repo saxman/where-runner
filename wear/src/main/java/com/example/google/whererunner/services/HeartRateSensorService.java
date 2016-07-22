@@ -1,11 +1,8 @@
 package com.example.google.whererunner.services;
 
 import android.app.Service;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.Intent;
 
-import android.content.IntentFilter;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -28,27 +25,29 @@ public class HeartRateSensorService extends Service {
     private CountDownTimer mSensorSampleTimer;
 
     private static final int HRM_UPDATE_INTERVAL_TIMEOUT_MS = 5000;
-    private static final int HRM_ACCURACY_LOW = 0;
+    private static final int HRM_ACCURACY_THRESHOLD = 0;
 
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-    public static  HeartRateSensorEvent lastHeartRateSensorEvent;
+    public static HeartRateSensorEvent lastHeartRateSensorEvent;
+
+    public static boolean isActive = false;
 
     @Override
     public void onCreate () {
         super.onCreate();
 
-        // We just need to wire up the sensor manager one time; putting this in onStartCommand
-        // would mean that we could end up with multiple listeners being created?
+        isActive = true;
+
         mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
 
-        // Ensure that the device has a HRM
-        // This will also return null if BODY permissions have not been granted
+        // Ensure that the device has a HRM.
+        // This will also return null if BODY_SENSOR permission has not been granted.
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
             mSensorListener = new HeartRateSensorEventListener();
         } else {
-            Log.v(LOG_TAG, "No heart rate sensor (or permission to access) detected");
+            Log.w(LOG_TAG, "No heart rate sensor detected, or permission not grated to access it");
         }
     }
 
@@ -59,6 +58,8 @@ public class HeartRateSensorService extends Service {
         if (mSensorSampleTimer != null) {
             mSensorSampleTimer.cancel();
         }
+
+        isActive = false;
 
         super.onDestroy();
     }
@@ -82,7 +83,7 @@ public class HeartRateSensorService extends Service {
         @Override
         public void onSensorChanged(SensorEvent event) {
             // Don't broadcast low quality readings
-            if (event.accuracy == HRM_ACCURACY_LOW) {
+            if (event.accuracy == HRM_ACCURACY_THRESHOLD) {
                 return;
             }
 

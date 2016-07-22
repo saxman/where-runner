@@ -6,12 +6,15 @@ import android.app.Fragment;
 import android.app.FragmentManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
@@ -48,11 +51,12 @@ public class MainActivity extends WearableActivity implements
 
     private static final int NAV_DRAWER_ITEMS = 3;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
-    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 2;
     private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
+    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 2;
 
-    private static final int ACTION_RECORD_INDEX = 0;
-    private static final int ACTION_ACTIVITY_TYPE_INDEX = 1;
+    private static final int ACTION_TOGGLE_RECORDING = 0;
+    private static final int ACTION_TOGGLE_ACTIVITY_TYPE = 1;
+    private static final int ACTION_TOGGLE_HEART_RATE = 2;
 
     private static final int ACTIVITY_TYPE_RUNNING = WorkoutType.RUNNING;
     private static final int ACTIVITY_TYPE_CYCLING = WorkoutType.CYCLING;
@@ -75,6 +79,19 @@ public class MainActivity extends WearableActivity implements
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
+
+
+    private WorkoutRecordingService mWorkoutRecordingService;
+
+    private ServiceConnection mWorkoutRecordingServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mWorkoutRecordingService = null;
+        }
+    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -112,6 +129,11 @@ public class MainActivity extends WearableActivity implements
 
         mMenu = mWearableActionDrawer.getMenu();
         mWearableActionDrawer.setOnMenuItemClickListener(this);
+
+        if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
+            MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+            menuItem.setVisible(true);
+        }
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
         mWearableDrawerLayout.peekDrawer(Gravity.TOP);
@@ -191,15 +213,18 @@ public class MainActivity extends WearableActivity implements
 
     @Override
     public void onStop() {
-        // Tell the location service that it can stop location updates, unless it's recording
-        Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_SERVICES);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
+        unbindService(mWorkoutRecordingServiceConnection);
 
         super.onStop();
     }
 
+    /**
+     * Called by the AlarmManager that is active while the app is in ambient mode, to update the UI
+     * at a more frequent rate than is standard for ambient mode.
+     *
+     * @param intent
+     */
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
@@ -216,13 +241,17 @@ public class MainActivity extends WearableActivity implements
     @Override
     public boolean onMenuItemClick(MenuItem menuItem) {
         switch (menuItem.getItemId()) {
-            case R.id.record_button:
-                toggleRecording();
+            case R.id.record_menu_item:
+                toggleWorkoutRecording();
                 mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
                 break;
 
-            case R.id.activity_type_button:
-                toggleActivityTypeUiState();
+            case R.id.activity_type_menu_item:
+                toggleWorkoutActivityType();
+                break;
+
+            case R.id.heart_rate_menu_item:
+                toggleHearRateSensor();
                 break;
         }
 
@@ -281,11 +310,12 @@ public class MainActivity extends WearableActivity implements
 
     private void startRecordingService() {
         Intent intent = new Intent(this, WorkoutRecordingService.class);
+        bindService(intent, mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
         startService(intent);
     }
 
     private void setRecordingButtonUiState(boolean isRecording) {
-        MenuItem menuItem = mMenu.getItem(ACTION_RECORD_INDEX);
+        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_RECORDING);
 
         if (isRecording) {
             menuItem.setIcon(getDrawable(R.drawable.ic_stop));
@@ -296,8 +326,8 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
-    private void toggleActivityTypeUiState() {
-        MenuItem menuItem = mMenu.getItem(ACTION_ACTIVITY_TYPE_INDEX);
+    private void toggleWorkoutActivityType() {
+        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_ACTIVITY_TYPE);
 
         if (mActivityType == ACTIVITY_TYPE_CYCLING) {
             menuItem.setIcon(getDrawable(R.drawable.ic_running));
@@ -313,16 +343,27 @@ public class MainActivity extends WearableActivity implements
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
-    private void toggleRecording() {
-        if (WorkoutRecordingService.isRecording) {
-            // Tell the location service to stop recording
-            Intent intent = new Intent(WorkoutRecordingService.ACTION_STOP_RECORDING);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    private void toggleWorkoutRecording() {
+        if (mWorkoutRecordingService.isRecordingWorkout()) {
+            mWorkoutRecordingService.stopRecordingWorkout();
         } else {
-            // Tell the location service to start recording
-            Intent intent = new Intent(WorkoutRecordingService.ACTION_START_RECORDING);
-            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+            mWorkoutRecordingService.startRecordingWorkout();
         }
+    }
+
+    private void toggleHearRateSensor() {
+        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+
+        if (mWorkoutRecordingService.isHeartRateSensorOn()) {
+            mWorkoutRecordingService.stopHeartRateService();
+            menuItem.setTitle(getString(R.string.hrm_turn_on));
+        } else {
+            mWorkoutRecordingService.startHeartRateService();
+            menuItem.setTitle(getString(R.string.hrm_turn_off));
+        }
+
+        // Notify the nav drawer adapter that the data has changed, to have the above icon refreshed
+        mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
     //

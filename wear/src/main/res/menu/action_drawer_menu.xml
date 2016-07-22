@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <item android:id="@+id/record_button"
+    <item android:id="@+id/record_menu_item"
         android:icon="@drawable/ic_record"
         android:title="@string/record" />
 
-    <item android:id="@+id/activity_type_button"
+    <item android:id="@+id/activity_type_menu_item"
         android:icon="@drawable/ic_running"
         android:title="@string/activity_type" />
+
+    <item android:id="@+id/heart_rate_menu_item"
+        android:icon="@drawable/ic_heart"
+        android:title="@string/hrm_turn_off"
+        android:visible="false" />
 </menu>
