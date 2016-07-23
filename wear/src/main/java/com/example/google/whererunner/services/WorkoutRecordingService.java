@@ -14,6 +14,8 @@ import android.location.Location;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
@@ -24,6 +26,7 @@ import com.example.google.whererunner.persistence.WorkoutDbHelper;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
+import java.util.Locale;
 
 /**
  * Listens for incoming local broadcast intents for starting and stopping a session
@@ -49,18 +52,16 @@ public class WorkoutRecordingService extends Service {
     private FirebaseAnalytics mFirebaseAnalytics;
 
     private BroadcastReceiver mHeartRateReceiver;
-    private ServiceConnection mLocationServiceConnection;
-    private boolean mIsLocationServiceConnected = false;
+    private ServiceConnection mLocationServiceConnection = new MyServiceConnection();
 
     private BroadcastReceiver mLocationReceiver;
-    private ServiceConnection mHeartRateServiceConnection;
-    private boolean mIsHeartRateServiceConnected = false;
+    private ServiceConnection mHeartRateServiceConnection = new MyServiceConnection();
 
     private WorkoutRecordingServiceBinder mServiceBinder = new WorkoutRecordingServiceBinder();
 
     private int NOTIFICATION_ID = 1;
-    private Notification mNotification;
-    private NotificationManager mNotificationManager;
+    private NotificationManagerCompat mNotificationManager;
+    private NotificationCompat.Builder mNotificationBuilder;
 
     public static boolean isRecording = false;
     public static Workout workout = new Workout();
@@ -77,46 +78,12 @@ public class WorkoutRecordingService extends Service {
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
-        mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        CharSequence contentText = getString(R.string.notification_content_text);
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
-
-        mNotification = new Notification.Builder(this)
+        mNotificationManager = NotificationManagerCompat.from(this);
+        mNotificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
-                .setTicker(contentText)
-                .setWhen(System.currentTimeMillis())
-                .setContentText(contentText)
-                .setContentIntent(contentIntent)
-                .build();
-
-        mLocationServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                Log.d(LOG_TAG, "Location service started");
-                mIsLocationServiceConnected = true;
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-                Log.w(LOG_TAG, "Location service disconnected");
-                mIsLocationServiceConnected = false;
-            }
-        };
-        
-        mHeartRateServiceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                Log.d(LOG_TAG, "Heart rate service started");
-                mIsHeartRateServiceConnected = true;
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-                Log.w(LOG_TAG, "Heart rate service disconnected");
-                mIsHeartRateServiceConnected = false;
-            }
-        };
+                .setContentTitle(getString(R.string.app_name))
+                .setContentIntent(
+                        PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
     }
 
     @Override
@@ -130,6 +97,19 @@ public class WorkoutRecordingService extends Service {
         startLocationService();
 
         return mServiceBinder;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        super.onUnbind(intent);
+        // Allow re-binding. Otherwise, the service will remain running if it is bound, started, unbound,
+        // re-bound (attempted; will fail), stopped, and unbound (attempted; will fail since not re-bound).
+        return true;
     }
 
     @Override
@@ -231,6 +211,20 @@ public class WorkoutRecordingService extends Service {
 
                     locationSamples.add(location);
 
+                    // TODO move distance/time string formatting to utility class
+                    // TODO update notification every second, not only when data is received
+
+                    String text;
+
+                    if (workout.getDistance() < 1000) {
+                        text = String.format(Locale.getDefault(), "%.1f m", WorkoutRecordingService.workout.getDistance());
+                    } else {
+                        text = String.format(Locale.getDefault(), "%.2f km", WorkoutRecordingService.workout.getDistance() / 1000);
+                    }
+
+                    mNotificationBuilder.setContentText(String.format(Locale.getDefault(), text, workout.getDistance()));
+                    mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
+
                     LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
                 }
             };
@@ -282,7 +276,7 @@ public class WorkoutRecordingService extends Service {
     public void startRecordingWorkout() {
         Intent intent = new Intent(this, WorkoutRecordingService.class);
         startService(intent);
-        startForeground(NOTIFICATION_ID, mNotification);
+        startForeground(NOTIFICATION_ID, mNotificationBuilder.build());
 
         startRecordingData();
         reportRecordingStatus();
@@ -341,7 +335,7 @@ public class WorkoutRecordingService extends Service {
     }
 
     //
-    // Public inner classes
+    // Inner classes
     //
 
     public class WorkoutRecordingServiceBinder extends Binder {
@@ -349,4 +343,12 @@ public class WorkoutRecordingService extends Service {
             return WorkoutRecordingService.this;
         }
     }
+
+    private class MyServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {}
+    };
 }

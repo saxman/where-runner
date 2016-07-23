@@ -12,8 +12,6 @@
     <string name="activity_running">Running</string>
     <string name="activity_cycling">Cycling</string>
 
-    <string name="notification_content_text">Where Runner?!</string>
-
     <string name="hrm_turn_on">Turn HRM ON</string>
     <string name="hrm_turn_off">Turn HRM OFF</string>
 
