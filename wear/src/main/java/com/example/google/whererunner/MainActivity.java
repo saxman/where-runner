@@ -86,6 +86,13 @@ public class MainActivity extends WearableActivity implements
     private ServiceConnection mWorkoutRecordingServiceConnection = new ServiceConnection() {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
+
+            // TODO change activity type to reflect what the service has
+            // Update the activity's actions to reflect the state from the workout service
+            MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+            if (!mWorkoutRecordingService.isHeartRateSensorOn()) {
+                menuItem.setTitle(getString(R.string.hrm_turn_on));
+            }
         }
 
         public void onServiceDisconnected(ComponentName className) {
