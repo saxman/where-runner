@@ -1,7 +1,6 @@
 package com.example.google.whererunner.services;
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -17,11 +16,11 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
 import com.example.google.whererunner.model.Workout;
+import com.example.google.whererunner.model.WorkoutType;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
 import com.google.firebase.analytics.FirebaseAnalytics;
 
@@ -68,6 +67,8 @@ public class WorkoutRecordingService extends Service {
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
+    private WorkoutType mWorkoutType = WorkoutType.RUNNING;
+
     //
     // Service class methods
     //
@@ -78,12 +79,19 @@ public class WorkoutRecordingService extends Service {
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
+        Intent contentIntent = new Intent(this, MainActivity.class);
+        contentIntent.setAction(MainActivity.ACTION_SHOW_WORKOUT);
+
         mNotificationManager = NotificationManagerCompat.from(this);
         mNotificationBuilder = new NotificationCompat.Builder(this)
+                .setPriority(Notification.PRIORITY_MAX)
+                .setOngoing(true)
+                .setOnlyAlertOnce(true)
+                .setLocalOnly(true)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentIntent(
-                        PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0));
+                        PendingIntent.getActivity(this, 0, contentIntent, 0));
     }
 
     @Override
@@ -97,11 +105,6 @@ public class WorkoutRecordingService extends Service {
         startLocationService();
 
         return mServiceBinder;
-    }
-
-    @Override
-    public void onRebind(Intent intent) {
-        super.onRebind(intent);
     }
 
     @Override
@@ -332,6 +335,15 @@ public class WorkoutRecordingService extends Service {
     // Private for now as there's no use-case for toggling sensor state
     private void stopLocationService() {
         unbindService(mLocationServiceConnection);
+    }
+
+    // TODO should be moved to workout class? maybe these wrap accessors on workout class?
+    public void setActivityType(WorkoutType workoutType) {
+        mWorkoutType = workoutType;
+    }
+
+    public WorkoutType getActivityType() {
+        return mWorkoutType;
     }
 
     //

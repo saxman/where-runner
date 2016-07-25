@@ -19,6 +19,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
@@ -41,9 +42,11 @@ public class WorkoutMainFragment extends WearableFragment {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutMainFragment.class.getSimpleName();
 
-    private static final int FRAGMENT_MAP = 0;
-    private static final int FRAGMENT_DATA = 1;
-    private static final int FRAGMENT_HEART = 2;
+    public static final String ARGUMENT_INITIAL_FRAGMENT = "INITIAL_FRAGMENT";
+
+    public static final int FRAGMENT_MAP = 0;
+    public static final int FRAGMENT_DATA = 1;
+    public static final int FRAGMENT_HEART = 2;
 
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
 
@@ -100,7 +103,6 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
-
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
         mViewPager.setAdapter(mViewPagerAdapter);
 
@@ -148,6 +150,27 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
+        // mViewPager.setCurrentItem() doesn't appear to queue the initial page change, even after
+        // mViewPager.setAdapter() is called, as is expected (ref http://stackoverflow.com/a/29136603/763176).
+        // Instead, we need to tell the view pager to change the current item, but we need to wait until it has been laid out.
+        if (getArguments() != null) {
+            final int x = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_MAP);
+
+            ViewTreeObserver observer = mViewPager.getViewTreeObserver();
+            observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+                @Override
+                public void onGlobalLayout() {
+                    mViewPager.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                    if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                        mViewPager.setCurrentItem(x, 0, false);
+                    } else {
+                        mViewPager.setCurrentItem(0, x, false);
+                    }
+                }
+            });
+        }
+
         mDotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
         mDotsPageIndicator.setPager(mViewPager);
 
@@ -174,40 +197,7 @@ public class WorkoutMainFragment extends WearableFragment {
     public void onResume() {
         super.onResume();
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case LocationService.ACTION_CONNECTIVITY_CHANGED:
-                        mIsLocationServiceConnected = intent.getBooleanExtra(LocationService.EXTRA_IS_LOCATION_UPDATING, false);
-
-                        if (!mIsLocationServiceConnected) {
-                            Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
-                            vibrator.vibrate(VIBRATOR_DURATION_MS);
-                        }
-
-                        break;
-
-                    case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
-                        mIsHrmConnected = false;
-                        break;
-
-                    case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                        if (mIsHrmConnected) {
-                            // No need to update the UI if the status hasn't changed
-                            return;
-                        } else {
-                            mIsHrmConnected = true;
-                        }
-
-                        break;
-                }
-
-                if (!isAmbient()) {
-                    updateUI();
-                }
-            }
-        };
+        mBroadcastReceiver = new MyBroadcastReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
@@ -296,6 +286,45 @@ public class WorkoutMainFragment extends WearableFragment {
     private Fragment getCurrentViewPagerFragment() {
         Point p = mViewPager.getCurrentItem();
         return mViewPagerAdapter.findExistingFragment(p.y, p.x);
+    }
+
+    //
+    // Private inner classes
+    //
+
+    private class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case LocationService.ACTION_CONNECTIVITY_CHANGED:
+                    mIsLocationServiceConnected = intent.getBooleanExtra(LocationService.EXTRA_IS_LOCATION_UPDATING, false);
+
+                    if (!mIsLocationServiceConnected) {
+                        Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
+                        vibrator.vibrate(VIBRATOR_DURATION_MS);
+                    }
+
+                    break;
+
+                case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
+                    mIsHrmConnected = false;
+                    break;
+
+                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                    if (mIsHrmConnected) {
+                        // No need to update the UI if the status hasn't changed
+                        return;
+                    } else {
+                        mIsHrmConnected = true;
+                    }
+
+                    break;
+            }
+
+            if (!isAmbient()) {
+                updateUI();
+            }
+        }
     }
 
     private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {

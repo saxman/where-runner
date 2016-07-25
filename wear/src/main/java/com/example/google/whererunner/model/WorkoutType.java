@@ -1,10 +1,18 @@
 package com.example.google.whererunner.model;
 
-public class WorkoutType {
+import com.example.google.whererunner.R;
 
-    // Prevents instantiation
-    private WorkoutType() {}
+public enum WorkoutType {
+    RUNNING(R.drawable.ic_running, R.drawable.ic_running_white, R.string.activity_running),
+    CYCLING(R.drawable.ic_cycling, R.drawable.ic_cycling_white, R.string.activity_cycling);
 
-    public static int RUNNING = 0;
-    public static int CYCLING = 1;
+    public int drawableId;
+    public int invertedDrawableId;
+    public int titleId;
+
+    WorkoutType(int drawableId, int invertedDrawableId, int titleId) {
+        this.drawableId = drawableId;
+        this.invertedDrawableId = invertedDrawableId;
+        this.titleId = titleId;
+    }
 }

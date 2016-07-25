@@ -46,20 +46,16 @@ public class MainActivity extends WearableActivity implements
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    // Firebase Analytics
+    @SuppressWarnings("unused")
     private FirebaseAnalytics mFirebaseAnalytics;
+
+    public static final String ACTION_SHOW_WORKOUT = "com.example.google.whererunner.SHOW_WORKOUT";
+    public static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
 
     private static final int NAV_DRAWER_ITEMS = 3;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
     private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
     private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 2;
-
-    private static final int ACTION_TOGGLE_RECORDING = 0;
-    private static final int ACTION_TOGGLE_ACTIVITY_TYPE = 1;
-    private static final int ACTION_TOGGLE_HEART_RATE = 2;
-
-    private static final int ACTIVITY_TYPE_RUNNING = WorkoutType.RUNNING;
-    private static final int ACTIVITY_TYPE_CYCLING = WorkoutType.CYCLING;
 
     private static final int REQUEST_PERMISSIONS = 1;
 
@@ -73,13 +69,10 @@ public class MainActivity extends WearableActivity implements
 
     private BroadcastReceiver mRecordingBroadcastReceiver;
 
-    private int mActivityType = ACTIVITY_TYPE_RUNNING;
-
     private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
-
 
     private WorkoutRecordingService mWorkoutRecordingService;
 
@@ -87,12 +80,14 @@ public class MainActivity extends WearableActivity implements
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
 
-            // TODO change activity type to reflect what the service has
             // Update the activity's actions to reflect the state from the workout service
-            MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+            MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             if (!mWorkoutRecordingService.isHeartRateSensorOn()) {
                 menuItem.setTitle(getString(R.string.hrm_turn_on));
             }
+
+            setWorkoutActivityTypeUiState(mWorkoutRecordingService.getActivityType());
+            setRecordingButtonState(mWorkoutRecordingService.isRecordingWorkout());
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -116,10 +111,6 @@ public class MainActivity extends WearableActivity implements
                 ambientStateIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
-        FragmentManager fragmentManager = getFragmentManager();
-        mCurrentViewPagerFragment = new WorkoutMainFragment();
-        fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
-
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
         WearableNavigationDrawer wearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
         wearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
@@ -137,16 +128,39 @@ public class MainActivity extends WearableActivity implements
         mMenu = mWearableActionDrawer.getMenu();
         mWearableActionDrawer.setOnMenuItemClickListener(this);
 
+        // If the device has a heart rate monitor, show the menu item for controlling it
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
-            MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+            MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             menuItem.setVisible(true);
         }
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
-        mWearableDrawerLayout.peekDrawer(Gravity.TOP);
-        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        mCurrentViewPagerFragment = new WorkoutMainFragment();
 
-        setRecordingButtonUiState(WorkoutRecordingService.isRecording);
+        switch (getIntent().getAction()) {
+            // Action received from the app's foreground notification
+            case ACTION_SHOW_WORKOUT:
+                // Pass an attribute to the main workout fragment to tell it to display the workout data rather than the map
+                Bundle bundle = new Bundle();
+                bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_DATA);
+                mCurrentViewPagerFragment.setArguments(bundle);
+                break;
+
+            // System voice action for stating a workout
+            case ACTION_START_WORKOUT:
+                String type = getIntent().getType();
+                // TODO start the workout automatically, with the correct workout type
+                break;
+
+            default:
+                // If not start/show workout action specified, peek the drawers to remind the user that they're there
+                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
+                mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+                break;
+        }
+
+        FragmentManager fragmentManager = getFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
 
         // Initialize Firebase Analytics
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
@@ -207,15 +221,15 @@ public class MainActivity extends WearableActivity implements
                     switch (intent.getAction()) {
                         case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
                             boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-                            setRecordingButtonUiState(isRecording);
+                            setRecordingButtonState(isRecording);
                     }
                 }
             };
         }
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mRecordingBroadcastReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mRecordingBroadcastReceiver,
+                new IntentFilter(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED));
     }
 
     @Override
@@ -275,6 +289,8 @@ public class MainActivity extends WearableActivity implements
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
+        } else {
+            // TODO switch to a wearable fragment so we get proper ambient mode rendering
         }
 
         scheduleAmbientUpdate();
@@ -320,8 +336,8 @@ public class MainActivity extends WearableActivity implements
         bindService(intent, mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private void setRecordingButtonUiState(boolean isRecording) {
-        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_RECORDING);
+    private void setRecordingButtonState(boolean isRecording) {
+        MenuItem menuItem = mMenu.findItem(R.id.record_menu_item);
 
         if (isRecording) {
             menuItem.setIcon(getDrawable(R.drawable.ic_stop));
@@ -333,19 +349,27 @@ public class MainActivity extends WearableActivity implements
     }
 
     private void toggleWorkoutActivityType() {
-        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_ACTIVITY_TYPE);
-
-        if (mActivityType == ACTIVITY_TYPE_CYCLING) {
-            menuItem.setIcon(getDrawable(R.drawable.ic_running));
-            menuItem.setTitle(getString(R.string.activity_running));
-            mActivityType = ACTIVITY_TYPE_RUNNING;
-        } else {
-            menuItem.setIcon(getDrawable(R.drawable.ic_cycling));
-            menuItem.setTitle(getString(R.string.activity_cycling));
-            mActivityType = ACTIVITY_TYPE_CYCLING;
+        // Must call setActivityType() on the service first since setWorkoutActivityTypeUiState()
+        // causes both drawers to refresh. The nav drawer UI refresh is handled automatically by
+        // its adapter.
+        switch (mWorkoutRecordingService.getActivityType()) {
+            case RUNNING:
+                mWorkoutRecordingService.setActivityType(WorkoutType.CYCLING);
+                setWorkoutActivityTypeUiState(WorkoutType.CYCLING);
+                break;
+            case CYCLING:
+                mWorkoutRecordingService.setActivityType(WorkoutType.RUNNING);
+                setWorkoutActivityTypeUiState(WorkoutType.RUNNING);
+                break;
         }
+    }
 
-        // Notify the nav drawer adapter that the data has changed, to have the above icon refreshed
+    private void setWorkoutActivityTypeUiState(WorkoutType workoutType) {
+        MenuItem menuItem = mMenu.findItem(R.id.activity_type_menu_item);
+        menuItem.setIcon(getDrawable(workoutType.drawableId));
+        menuItem.setTitle(getString(workoutType.titleId));
+
+        // Notify the nav drawer adapter that the data has changed, so that the record icon is refreshed
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
@@ -358,7 +382,7 @@ public class MainActivity extends WearableActivity implements
     }
 
     private void toggleHearRateSensor() {
-        MenuItem menuItem = mMenu.getItem(ACTION_TOGGLE_HEART_RATE);
+        MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
 
         if (mWorkoutRecordingService.isHeartRateSensorOn()) {
             mWorkoutRecordingService.stopHeartRateService();
@@ -367,9 +391,6 @@ public class MainActivity extends WearableActivity implements
             mWorkoutRecordingService.startHeartRateService();
             menuItem.setTitle(getString(R.string.hrm_turn_off));
         }
-
-        // Notify the nav drawer adapter that the data has changed, to have the above icon refreshed
-        mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
     //
@@ -395,12 +416,12 @@ public class MainActivity extends WearableActivity implements
         public Drawable getItemDrawable(int pos) {
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    int id;
+                    int id = WorkoutType.RUNNING.invertedDrawableId;
 
-                    if (mActivityType == ACTIVITY_TYPE_RUNNING) {
-                        id = R.drawable.ic_running_white;
-                    } else {
-                        id = R.drawable.ic_cycling_white;
+                    // Once we have a connection to the workout recording service, the drawer is
+                    // notified of a data change to refresh, to synchronize the icon
+                    if (mWorkoutRecordingService != null) {
+                        id = mWorkoutRecordingService.getActivityType().invertedDrawableId;
                     }
 
                     return getDrawable(id);
