@@ -23,6 +23,7 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -121,17 +122,21 @@ public class MainActivity extends WearableActivity implements
         // Using a custom peek view since currently the drawer draws a white circle behind drawables
         // in the drawer, but not in the peek, which causes the drawable to look different in the
         // peek vs the drawer
-        // TODO re-test and remove when SDK fixed
-        View peekView = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
-        mWearableActionDrawer.setPeekContent(peekView);
+        // TODO re-test and remove when SDK fixed to render default action icons appropriately
+        mWearableActionDrawer.setPeekContent(
+                getLayoutInflater().inflate(R.layout.action_drawer_peek, null));
 
         mMenu = mWearableActionDrawer.getMenu();
-        mWearableActionDrawer.setOnMenuItemClickListener(this);
 
         // If the device has a heart rate monitor, show the menu item for controlling it
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
             MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             menuItem.setVisible(true);
+        } else {
+            // TODO update if/when SDK fixed to appropriately handle invisible menu items
+            // The Wear SDK appears to display invisible menu items. So for now, delete the
+            // invisible item to ensure it isn't displayed
+            mMenu.removeItem(R.id.heart_rate_menu_item);
         }
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
@@ -153,7 +158,7 @@ public class MainActivity extends WearableActivity implements
                 break;
 
             default:
-                // If not start/show workout action specified, peek the drawers to remind the user that they're there
+                // Peek the drawers to remind the user that they're there
                 mWearableDrawerLayout.peekDrawer(Gravity.TOP);
                 mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
                 break;
