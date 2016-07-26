@@ -22,13 +22,6 @@ public class WhereRunnerApp extends Application {
 
     private static final String SHARED_PREFS = "com.example.google.whererunner.SHARED_PREFS";
 
-    public static final String PREF_MAP_ACCURACY_CIRCLE = "MAP_ACCURACY_CIRCLE";
-    public static final String PREF_WEAR_GPS_ONLY = "WEAR_GPS_ONLY";
-    public static final String PREF_VIBRATE_NO_SIGNAL = "VIBRATE_NO_SIGNAL";
-    public static final String PREF_NO_SIGNAL_TIMEOUT = "NO_SIGNAL_TIMEOUT";
-    public static final String PREF_LOCATION_ACCURACY_TIMEOUT = "LOCATION_ACCURACY_TIMEOUT";
-    public static final String PREF_PHONE_CONNECTIVITY_STATUS = "PHONE_CONNECTIVITY_STATUS";
-
     private SharedPreferences mSharedPrefs;
 
     private static WhereRunnerApp sInstance;

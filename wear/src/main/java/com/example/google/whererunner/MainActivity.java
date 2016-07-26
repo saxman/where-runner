@@ -23,6 +23,7 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -107,9 +108,8 @@ public class MainActivity extends WearableActivity implements
             MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             menuItem.setVisible(true);
         } else {
-            // TODO update if/when SDK fixed to appropriately handle invisible menu items
-            // The Wear SDK appears to display invisible menu items. So for now, delete the
-            // invisible item to ensure it isn't displayed
+            // The Wear SDK displays invisible menu items. So, delete the unused/invisible item to
+            // ensure it isn't displayed
             mMenu.removeItem(R.id.heart_rate_menu_item);
         }
 
@@ -171,23 +171,6 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case REQUEST_PERMISSIONS:
-                // Start the recording service as long as the location permission (first permission) has been granted
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    bindService(new Intent(this, WorkoutRecordingService.class),
-                            mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-                } else {
-                    // TODO notify the user that that the app can't function w/o location permission
-                    finish();
-                }
-
-                break;
-        }
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
 
@@ -202,6 +185,23 @@ public class MainActivity extends WearableActivity implements
         unbindService(mWorkoutRecordingServiceConnection);
 
         super.onStop();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+        switch (requestCode) {
+            case REQUEST_PERMISSIONS:
+                // Start the recording service as long as the location permission (first permission) has been granted
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    bindService(new Intent(this, WorkoutRecordingService.class),
+                            mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+                } else {
+                    // TODO notify the user that that the app can't function w/o location permission
+                    finish();
+                }
+
+                break;
+        }
     }
 
     /**

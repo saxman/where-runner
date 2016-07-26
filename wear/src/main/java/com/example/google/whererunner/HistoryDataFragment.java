@@ -8,12 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.example.google.whererunner.framework.WearableFragment;
 import com.example.google.whererunner.model.Workout;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Locale;
 
 public class HistoryDataFragment extends Fragment {

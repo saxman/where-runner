@@ -40,7 +40,7 @@ public class WorkoutRecordingService extends Service {
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
 
     /** Outgoing action reporting recording status */
-    public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS";
+    public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS_CHANGED";
 
     /** Extra for recording status updates */
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
@@ -281,24 +281,23 @@ public class WorkoutRecordingService extends Service {
     //
 
     public void startRecordingWorkout() {
-        Intent intent = new Intent(this, WorkoutRecordingService.class);
-        startService(intent);
+        startService(new Intent(this, WorkoutRecordingService.class));
         startForeground(NOTIFICATION_ID, mNotificationBuilder.build());
 
         startRecordingData();
-        reportRecordingStatus();
-
         isRecording = true;
+
+        reportRecordingStatus();
     }
 
     public void stopRecordingWorkout() {
         stopRecordingData();
+        isRecording = false;
+
         reportRecordingStatus();
 
         stopForeground(true);
         stopSelf();
-
-        isRecording = false;
     }
 
     public boolean isRecordingWorkout() {
