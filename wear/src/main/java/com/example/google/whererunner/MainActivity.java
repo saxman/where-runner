@@ -56,7 +56,6 @@ public class MainActivity extends WearableActivity implements
     private static final int NAV_DRAWER_ITEMS = 3;
     private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
     private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
-    private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 2;
 
     private static final int REQUEST_PERMISSIONS = 1;
 
@@ -408,8 +407,6 @@ public class MainActivity extends WearableActivity implements
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
                     return getString(R.string.recording);
-                case NAV_DRAWER_FRAGMENT_SETTINGS:
-                    return getString(R.string.settings);
                 case NAV_DRAWER_FRAGMENT_HISTORY:
                     return getString(R.string.history);
             }
@@ -430,8 +427,6 @@ public class MainActivity extends WearableActivity implements
                     }
 
                     return getDrawable(id);
-                case NAV_DRAWER_FRAGMENT_SETTINGS:
-                    return getDrawable(R.drawable.ic_settings);
                 case NAV_DRAWER_FRAGMENT_HISTORY:
                     return getDrawable(R.drawable.ic_view_day);
             }
@@ -448,11 +443,6 @@ public class MainActivity extends WearableActivity implements
                     fragment = new WorkoutMainFragment();
                     // Ensure the action drawer is visible, since it could have been hidden for other nav drawer pages
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
-                    break;
-                case NAV_DRAWER_FRAGMENT_SETTINGS:
-                    fragment = new SettingsFragment();
-                    // Hide the action drawer since we don't need its actions in the settings page
-                    mWearableActionDrawer.setVisibility(View.GONE);
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
                     WorkoutDbHelper dbHelper = new WorkoutDbHelper(MainActivity.this);
