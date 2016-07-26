@@ -23,7 +23,6 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 
-import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -67,7 +66,7 @@ public class MainActivity extends WearableActivity implements
 
     private Menu mMenu;
 
-    private BroadcastReceiver mRecordingBroadcastReceiver;
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
 
@@ -217,28 +216,14 @@ public class MainActivity extends WearableActivity implements
     public void onResume() {
         super.onResume();
 
-        // Register a receiver to listen for the recording status of the location service.
-        if (mRecordingBroadcastReceiver == null) {
-            mRecordingBroadcastReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    switch (intent.getAction()) {
-                        case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                            boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-                            setRecordingButtonState(isRecording);
-                    }
-                }
-            };
-        }
-
         LocalBroadcastManager.getInstance(this).registerReceiver(
-                mRecordingBroadcastReceiver,
+                mBroadcastReceiver,
                 new IntentFilter(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED));
     }
 
     @Override
     public void onStop() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mRecordingBroadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
         unbindService(mWorkoutRecordingServiceConnection);
 
         super.onStop();
@@ -468,4 +453,15 @@ public class MainActivity extends WearableActivity implements
             return NAV_DRAWER_ITEMS;
         }
     }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                    boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                    setRecordingButtonState(isRecording);
+            }
+        }
+    };
 }

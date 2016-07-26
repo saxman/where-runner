@@ -30,7 +30,6 @@ import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.Circle;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
@@ -54,7 +53,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
     private boolean mIsMapInitialized = false;
 
-    private BroadcastReceiver mBroadcastReceiver;
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private LinkedList<LatLng> mPathLatLngs = new LinkedList<>();
 
@@ -106,60 +105,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         mMapView.onResume();
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case LocationService.ACTION_LOCATION_CHANGED:
-                        Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-
-                        if (!isAmbient()) {
-                            updateMapMarkerLocation(location);
-                            updateMapMarkerAccuracy(location);
-                            updateMapCenter(location);
-
-                            // If the location was previously not-fixed, change the marker icon
-                            if (!LocationService.isLocationUpdating) {
-                                updateMapMarkerIcon();
-                            }
-                        }
-
-                        break;
-
-                    case LocationService.ACTION_CONNECTIVITY_CHANGED:
-                        if (!isAmbient()) {
-                            updateMapMarkerAccuracy(LocationService.lastKnownLocation);
-                            updateMapMarkerIcon();
-                        }
-
-                        break;
-
-                    case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
-                        if (!isAmbient()) {
-                            updateMapPolyline();
-                        }
-
-                        break;
-
-                    case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                        if (WorkoutRecordingService.isRecording) {
-                            mPathLatLngs.clear();
-                            mPolyline.setPoints(mPathLatLngs);
-
-                            if (!isAmbient()) {
-                                updateMapPolyline();
-                            }
-                        }
-
-                        if (!isAmbient()) {
-                            updateMapMarkerIcon();
-                        }
-
-                        break;
-                }
-            }
-        };
-
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
@@ -177,6 +122,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     @Override
     public void onPause() {
         mMapView.onPause();
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
         super.onPause();
     }
 
@@ -191,8 +137,6 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
         }
-
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
 
         super.onStop();
     }
@@ -393,6 +337,60 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             if (!isAmbient()) {
                 updateMapCenter(location);
                 updateMapMarkerLocation(location);
+            }
+        }
+    }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case LocationService.ACTION_LOCATION_CHANGED:
+                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+
+                    if (!isAmbient()) {
+                        updateMapMarkerLocation(location);
+                        updateMapMarkerAccuracy(location);
+                        updateMapCenter(location);
+
+                        // If the location was previously not-fixed, change the marker icon
+                        if (!LocationService.isLocationUpdating) {
+                            updateMapMarkerIcon();
+                        }
+                    }
+
+                    break;
+
+                case LocationService.ACTION_CONNECTIVITY_CHANGED:
+                    if (!isAmbient()) {
+                        updateMapMarkerAccuracy(LocationService.lastKnownLocation);
+                        updateMapMarkerIcon();
+                    }
+
+                    break;
+
+                case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
+                    if (!isAmbient()) {
+                        updateMapPolyline();
+                    }
+
+                    break;
+
+                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                    if (WorkoutRecordingService.isRecording) {
+                        mPathLatLngs.clear();
+                        mPolyline.setPoints(mPathLatLngs);
+
+                        if (!isAmbient()) {
+                            updateMapPolyline();
+                        }
+                    }
+
+                    if (!isAmbient()) {
+                        updateMapMarkerIcon();
+                    }
+
+                    break;
             }
         }
     }

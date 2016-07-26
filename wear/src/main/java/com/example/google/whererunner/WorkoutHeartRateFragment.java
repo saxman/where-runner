@@ -32,7 +32,7 @@ public class WorkoutHeartRateFragment extends WearableFragment
 
     private static final long HR_SAMPLE_DELAY_THRESHOLD_MS = 10000;
 
-    private BroadcastReceiver mBroadcastReceiver;
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private TextView mHrMinMaxText;
     private TextView mHrCurrentText;
@@ -80,24 +80,6 @@ public class WorkoutHeartRateFragment extends WearableFragment
     public void onStart() {
         super.onStart();
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                        mHrSensorEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-                        break;
-                    case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
-                        mHrSensorEvent = null;
-                        break;
-                }
-
-                if (!isAmbient()) {
-                    updateUI();
-                }
-            }
-        };
-
         IntentFilter filter = new IntentFilter();
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
@@ -105,10 +87,9 @@ public class WorkoutHeartRateFragment extends WearableFragment
     }
 
     @Override
-    public void onStop() {
+    public void onPause() {
         LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mBroadcastReceiver);
-
-        super.onStop();
+        super.onPause();
     }
 
     @Override
@@ -147,6 +128,24 @@ public class WorkoutHeartRateFragment extends WearableFragment
             mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));
         } else {
             mHrCurrentText.setText(getString(R.string.hrm_no_data));
+        }
+    }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver  {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                    mHrSensorEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+                    break;
+                case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
+                    mHrSensorEvent = null;
+                    break;
+            }
+
+            if (!isAmbient()) {
+                updateUI();
+            }
         }
     }
 }

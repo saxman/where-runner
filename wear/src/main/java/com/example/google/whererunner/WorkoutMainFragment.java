@@ -52,7 +52,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
     private static final int VIBRATOR_DURATION_MS = 200;
 
-    private BroadcastReceiver mBroadcastReceiver;
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
@@ -186,24 +186,26 @@ public class WorkoutMainFragment extends WearableFragment {
     }
 
     @Override
-    public void onStop() {
-        mGoogleApiClient.disconnect();
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
-
-        super.onStop();
-    }
-
-    @Override
     public void onResume() {
         super.onResume();
-
-        mBroadcastReceiver = new MyBroadcastReceiver();
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
+    }
+
+    @Override
+    public void onPause() {
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
+        super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
     }
 
     @Override

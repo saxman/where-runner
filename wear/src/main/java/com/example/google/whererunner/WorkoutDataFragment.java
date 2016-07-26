@@ -32,7 +32,7 @@ public class WorkoutDataFragment extends WearableFragment {
 
     private LinkedList<TextView> mTextViews = new LinkedList<>();
 
-    private BroadcastReceiver mBroadcastReceiver;
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private Timer mDurationTimer;
 
@@ -90,30 +90,6 @@ public class WorkoutDataFragment extends WearableFragment {
     public void onResume() {
         super.onResume();
 
-        mBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                switch (intent.getAction()) {
-                    case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
-                        // noop... just update the UI
-                        break;
-
-                    case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                        if (WorkoutRecordingService.isRecording) {
-                            startDurationTimer();
-                        } else {
-                            stopDurationTimer();
-                        }
-
-                        break;
-                }
-
-                if (!isAmbient()) {
-                    updateUI();
-                }
-            }
-        };
-
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
@@ -121,11 +97,10 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     @Override
-    public void onStop() {
+    public void onPause() {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
         stopDurationTimer();
-
-        super.onStop();
+        super.onPause();
     }
 
     @Override
@@ -221,5 +196,29 @@ public class WorkoutDataFragment extends WearableFragment {
                 String.format(Locale.getDefault(), "%.1f / %.1f",
                         WorkoutRecordingService.workout.getSpeedCurrent() * 3600 / 1000,
                         WorkoutRecordingService.workout.getSpeedAverage() * 3600 / 1000));
+    }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED:
+                    // noop... just update the UI
+                    break;
+
+                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                    if (WorkoutRecordingService.isRecording) {
+                        startDurationTimer();
+                    } else {
+                        stopDurationTimer();
+                    }
+
+                    break;
+            }
+
+            if (!isAmbient()) {
+                updateUI();
+            }
+        }
     }
 }
