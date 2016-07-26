@@ -90,6 +90,7 @@ public class WorkoutRecordingService extends Service {
                 .setLocalOnly(true)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
+                .setContentText(String.format(Locale.getDefault(), "0.0 m", workout.getDistance()))
                 .setContentIntent(
                         PendingIntent.getActivity(this, 0, contentIntent, 0));
     }

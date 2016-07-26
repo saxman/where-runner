@@ -52,47 +52,23 @@ public class MainActivity extends WearableActivity implements
     public static final String ACTION_SHOW_WORKOUT = "com.example.google.whererunner.SHOW_WORKOUT";
     public static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
 
-    private static final int NAV_DRAWER_ITEMS = 3;
-    private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
-    private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
-
     private static final int REQUEST_PERMISSIONS = 1;
+
+    private Menu mMenu;
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
     private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
-
     private Fragment mCurrentViewPagerFragment;
 
-    private Menu mMenu;
-
+    private WorkoutRecordingService mWorkoutRecordingService;
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
+    private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
 
     private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
-
-    private WorkoutRecordingService mWorkoutRecordingService;
-
-    private ServiceConnection mWorkoutRecordingServiceConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className, IBinder binder) {
-            mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
-
-            // Update the activity's actions to reflect the state from the workout service
-            MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
-            if (!mWorkoutRecordingService.isHeartRateSensorOn()) {
-                menuItem.setTitle(getString(R.string.hrm_turn_on));
-            }
-
-            setWorkoutActivityTypeUiState(mWorkoutRecordingService.getActivityType());
-            setRecordingButtonState(mWorkoutRecordingService.isRecordingWorkout());
-        }
-
-        public void onServiceDisconnected(ComponentName className) {
-            mWorkoutRecordingService = null;
-        }
-    };
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -140,26 +116,23 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
         mCurrentViewPagerFragment = new WorkoutMainFragment();
 
-        switch (getIntent().getAction()) {
-            // Action received from the app's foreground notification
-            case ACTION_SHOW_WORKOUT:
+        if (ACTION_SHOW_WORKOUT.equals(getIntent().getAction())) {
                 // Pass an attribute to the main workout fragment to tell it to display the workout data rather than the map
                 Bundle bundle = new Bundle();
                 bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_DATA);
                 mCurrentViewPagerFragment.setArguments(bundle);
-                break;
-
-            // System voice action for stating a workout
-            case ACTION_START_WORKOUT:
-                String type = getIntent().getType();
-                // TODO start the workout automatically, with the correct workout type
-                break;
-
-            default:
-                // Peek the drawers to remind the user that they're there
-                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
-                mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
-                break;
+        } else if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
+            // TODO start the workout automatically with the correct workout type. Need to handle the state if a workout is already active
+            String type = getIntent().getType();
+            switch (type) {
+                case "vnd.google.fitness.activity/biking":
+                case "vnd.google.fitness.activity/running":
+                case "vnd.google.fitness.activity/other":
+            }
+        } else {
+            // Peek the drawers to remind the user that they're there
+            mWearableDrawerLayout.peekDrawer(Gravity.TOP);
+            mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
         }
 
         FragmentManager fragmentManager = getFragmentManager();
@@ -188,11 +161,12 @@ public class MainActivity extends WearableActivity implements
             permissions.add(Manifest.permission.BODY_SENSORS);
         }
 
-        // If there are permissions that haven't been granted yet, request them
+        // If there are permissions that haven't been granted yet, request them. Else, start the recording service
         if (permissions.size() > 0) {
             ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
         } else {
-            startRecordingService();
+            bindService(new Intent(this, WorkoutRecordingService.class),
+                    mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
         }
     }
 
@@ -202,7 +176,8 @@ public class MainActivity extends WearableActivity implements
             case REQUEST_PERMISSIONS:
                 // Start the recording service as long as the location permission (first permission) has been granted
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    startRecordingService();
+                    bindService(new Intent(this, WorkoutRecordingService.class),
+                            mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
                 } else {
                     // TODO notify the user that that the app can't function w/o location permission
                     finish();
@@ -276,13 +251,18 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
+        // If the current fragment supports ambient mode, then enter ambient mode. Else close the app.
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
-        } else {
-            // TODO switch to a wearable fragment so we get proper ambient mode rendering
-        }
+            mWearableDrawerLayout.closeDrawer(Gravity.TOP);
+            mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
 
-        scheduleAmbientUpdate();
+            ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
+
+            scheduleAmbientUpdate();
+        } else {
+            // TODO if there's a recording running, we could instead go back to the data fragment
+            finish();
+        }
     }
 
     @Override
@@ -314,17 +294,15 @@ public class MainActivity extends WearableActivity implements
         long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
         long triggerTimeMs = timeMs + delayMs;
 
-        mAmbientStateAlarmManager.setExact(
-                AlarmManager.RTC_WAKEUP,
-                triggerTimeMs,
-                mAmbientStatePendingIntent);
+        mAmbientStateAlarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs, mAmbientStatePendingIntent);
     }
 
-    private void startRecordingService() {
-        Intent intent = new Intent(this, WorkoutRecordingService.class);
-        bindService(intent, mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-
+    /**
+     * Sets the state (record, stop) of the recording action button. This method is used when the
+     * activity is created, and when the recording state changes.
+     *
+     * @param isRecording
+     */
     private void setRecordingButtonState(boolean isRecording) {
         MenuItem menuItem = mMenu.findItem(R.id.record_menu_item);
 
@@ -387,6 +365,10 @@ public class MainActivity extends WearableActivity implements
     //
 
     class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+        private static final int NAV_DRAWER_ITEMS = 3;
+        private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
+        private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
+
         @Override
         public String getItemText(int pos) {
             switch (pos) {
@@ -463,5 +445,24 @@ public class MainActivity extends WearableActivity implements
                     setRecordingButtonState(isRecording);
             }
         }
-    };
+    }
+
+    private class MyServiceConnection implements ServiceConnection {
+        public void onServiceConnected(ComponentName className, IBinder binder) {
+            mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
+
+            // Update the activity's actions to reflect the state from the workout service
+            MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
+            if (!mWorkoutRecordingService.isHeartRateSensorOn()) {
+                menuItem.setTitle(getString(R.string.hrm_turn_on));
+            }
+
+            setWorkoutActivityTypeUiState(mWorkoutRecordingService.getActivityType());
+            setRecordingButtonState(mWorkoutRecordingService.isRecordingWorkout());
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            mWorkoutRecordingService = null;
+        }
+    }
 }

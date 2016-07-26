@@ -99,8 +99,13 @@ public class WorkoutDataFragment extends WearableFragment {
     @Override
     public void onPause() {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
-        stopDurationTimer();
         super.onPause();
+    }
+
+    @Override
+    public void onStop() {
+        stopDurationTimer();
+        super.onStop();
     }
 
     @Override
