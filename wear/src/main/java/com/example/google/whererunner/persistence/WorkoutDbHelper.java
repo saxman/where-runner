@@ -142,8 +142,8 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
                 int type = c.getInt(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_TYPE));
                 long startTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME));
                 long endTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME));
-                double distance = c.getDouble(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_DISTANCE));
-                double speedMax = c.getDouble(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX));
+                float distance = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_DISTANCE));
+                float speedMax = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX));
 
                 Workout workout = new Workout(id, type);
                 workout.setStartTime(startTime);

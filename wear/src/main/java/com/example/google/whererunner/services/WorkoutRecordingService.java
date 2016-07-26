@@ -177,8 +177,11 @@ public class WorkoutRecordingService extends Service {
             mHeartRateReceiver = new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
-                    HeartRateSensorEvent hrEvent =
-                            intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+                    HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+
+                    // Calculate average
+                    float avg = workout.getHeartRateAverage();
+
                     workout.setCurrentHeartRate(hrEvent.getHeartRate());
                     heartRateSamples.add(hrEvent);
                 }

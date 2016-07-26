@@ -10,15 +10,15 @@ public class Workout implements Parcelable {
     private long endTime;
 
     private int type;
-    private double distance;
+    private float distance;
 
-    private double speedMax;
-    private double speedCurrent;
+    private float speedMax;
+    private float speedCurrent;
 
-    private double heartRateAverage;
-    private double heartRateMin;
-    private double heartRateMax;
-    private double heartRateCurrent;
+    private float heartRateAverage;
+    private float heartRateMin = Float.MAX_VALUE;
+    private float heartRateMax = Float.MIN_VALUE;
+    private float heartRateCurrent;
 
     public Workout() {}
 
@@ -37,13 +37,13 @@ public class Workout implements Parcelable {
         id = parcel.readLong();
         startTime = parcel.readLong();
         endTime = parcel.readLong();
-        distance = parcel.readDouble();
-        speedMax = parcel.readDouble();
-        speedCurrent = parcel.readDouble();
-        heartRateAverage = parcel.readDouble();
-        heartRateMin = parcel.readDouble();
-        heartRateMax = parcel.readDouble();
-        heartRateCurrent = parcel.readDouble();
+        distance = parcel.readFloat();
+        speedMax = parcel.readFloat();
+        speedCurrent = parcel.readFloat();
+        heartRateAverage = parcel.readFloat();
+        heartRateMin = parcel.readFloat();
+        heartRateMax = parcel.readFloat();
+        heartRateCurrent = parcel.readFloat();
     }
 
     public int getType() {
@@ -62,56 +62,52 @@ public class Workout implements Parcelable {
         return endTime;
     }
 
-    public double getDistance() {
+    public float getDistance() {
         return distance;
     }
 
-    public double getSpeedAverage() {
+    public float getSpeedAverage() {
         long time = endTime == 0 ? System.currentTimeMillis() : endTime;
         return distance / (time / 1000);
     }
 
-    public double getSpeedMax() {
+    public float getSpeedMax() {
         return speedMax;
     }
 
-    public double getSpeedCurrent() {
+    public float getSpeedCurrent() {
         return speedCurrent;
     }
 
-    public double getHeartRateMin() {
+    public float getHeartRateMin() {
         return heartRateMin;
     }
 
-    public double getHeartRateMax() {
+    public float getHeartRateMax() {
         return heartRateMax;
     }
 
-    public double getHeartRateCurrent() {
+    public float getHeartRateCurrent() {
         return heartRateCurrent;
     }
 
-    public double getHeartRateAverage() {
+    public float getHeartRateAverage() {
         return heartRateAverage;
-    }
-
-    public void setType(int type) {
-        this.type = type;
     }
 
     public void setStartTime(long startTime) {
         this.startTime = startTime;
     }
 
-    public void setDistance(double distance) {
+    public void setDistance(float distance) {
         this.distance = distance;
     }
 
-    public void setSpeedMax(double speed) {
+    public void setSpeedMax(float speed) {
         speedMax = speed;
     }
 
-    public void setCurrentSpeed(double speed) {
+    public void setCurrentSpeed(float speed) {
         speedCurrent = speed;
 
         if (speedCurrent > speedMax) {
@@ -119,7 +115,7 @@ public class Workout implements Parcelable {
         }
     }
 
-    public void setCurrentHeartRate(double heartRate) {
+    public void setCurrentHeartRate(float heartRate) {
         heartRateCurrent = heartRate;
 
         if (heartRateCurrent > heartRateMax) {
@@ -148,13 +144,13 @@ public class Workout implements Parcelable {
         parcel.writeLong(endTime);
         parcel.writeDouble(distance);
 
-        parcel.writeDouble(speedMax);
-        parcel.writeDouble(speedCurrent);
+        parcel.writeFloat(speedMax);
+        parcel.writeFloat(speedCurrent);
 
-        parcel.writeDouble(heartRateAverage);
-        parcel.writeDouble(heartRateMin);
-        parcel.writeDouble(heartRateMax);
-        parcel.writeDouble(heartRateCurrent);
+        parcel.writeFloat(heartRateAverage);
+        parcel.writeFloat(heartRateMin);
+        parcel.writeFloat(heartRateMax);
+        parcel.writeFloat(heartRateCurrent);
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {

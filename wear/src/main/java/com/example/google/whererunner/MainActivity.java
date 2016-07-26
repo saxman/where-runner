@@ -213,9 +213,10 @@ public class MainActivity extends WearableActivity implements
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-
         setIntent(intent);
 
+        // If the current fragment supports ambient mode (it should, per onEnterAmbient()), have
+        // it update its UI
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
         }
@@ -260,7 +261,7 @@ public class MainActivity extends WearableActivity implements
 
             scheduleAmbientUpdate();
         } else {
-            // TODO if there's a recording running, we could instead go back to the data fragment
+            // TODO if there's a recording in progress, we could instead go back to the data fragment
             finish();
         }
     }
