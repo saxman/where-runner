@@ -31,4 +31,7 @@
     <string name="hr_average">AVERAGE</string>
 
     <string name="history_no_data">No Data</string>
+
+    <string name="distance_kms">%.2f km</string>
+    <string name="distance_meters">%.1f m</string>
 </resources>

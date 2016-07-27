@@ -365,7 +365,7 @@ public class MainActivity extends WearableActivity implements
     // Inner classes
     //
 
-    class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+    private class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
         private static final int NAV_DRAWER_ITEMS = 3;
         private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
         private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;

@@ -164,15 +164,7 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     private void updateUI() {
-        if (WorkoutRecordingService.workout.getDistance() < 1000) {
-            mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.1f m",
-                            WorkoutRecordingService.workout.getDistance()));
-        } else {
-            mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.2f km",
-                            WorkoutRecordingService.workout.getDistance() / 1000));
-        }
+        mDistanceTextView.setText(WhereRunnerApp.formatDistance(WorkoutRecordingService.workout.getDistance()));
 
         long millis = 0;
         if (WorkoutRecordingService.isRecording) {

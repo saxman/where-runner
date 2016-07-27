@@ -10,9 +10,11 @@ import android.graphics.drawable.Drawable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
+import com.example.google.whererunner.services.WorkoutRecordingService;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class WhereRunnerApp extends Application {
@@ -79,5 +81,13 @@ public class WhereRunnerApp extends Application {
         millis -= TimeUnit.SECONDS.toMillis(seconds);
 
         return new long[]{hours, minutes, seconds, millis};
+    }
+
+    public static String formatDistance(float distance) {
+        String kms = sInstance.getString(R.string.distance_kms);
+        String meters = sInstance.getString(R.string.distance_meters);
+        String format = WorkoutRecordingService.workout.getDistance() < 1000 ? meters : kms;
+
+        return String.format(Locale.getDefault(), format, distance);
     }
 }

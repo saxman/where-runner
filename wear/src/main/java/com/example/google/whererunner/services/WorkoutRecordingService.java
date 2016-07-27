@@ -19,6 +19,7 @@ import android.support.v4.content.LocalBroadcastManager;
 
 import com.example.google.whererunner.MainActivity;
 import com.example.google.whererunner.R;
+import com.example.google.whererunner.WhereRunnerApp;
 import com.example.google.whererunner.model.Workout;
 import com.example.google.whererunner.model.WorkoutType;
 import com.example.google.whererunner.persistence.WorkoutDbHelper;
@@ -218,18 +219,9 @@ public class WorkoutRecordingService extends Service {
 
                     locationSamples.add(location);
 
-                    // TODO move distance/time string formatting to utility class
                     // TODO update notification every second, not only when data is received
 
-                    String text;
-
-                    if (workout.getDistance() < 1000) {
-                        text = String.format(Locale.getDefault(), "%.1f m", WorkoutRecordingService.workout.getDistance());
-                    } else {
-                        text = String.format(Locale.getDefault(), "%.2f km", WorkoutRecordingService.workout.getDistance() / 1000);
-                    }
-
-                    mNotificationBuilder.setContentText(String.format(Locale.getDefault(), text, workout.getDistance()));
+                    mNotificationBuilder.setContentText(WhereRunnerApp.formatDistance(workout.getDistance()));
                     mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
 
                     LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
