@@ -121,21 +121,24 @@ public class WorkoutHeartRateFragment extends WearableFragment
         String noData = getString(R.string.hrm_no_data);
 
         if (WorkoutRecordingService.isRecording) {
-            mHrCurrentText.setText(String.valueOf(WorkoutRecordingService.workout.getHeartRateCurrent()));
+            int curr = WorkoutRecordingService.workout.getHeartRateCurrent();
+            int min = WorkoutRecordingService.workout.getHeartRateMin();
+            int max = WorkoutRecordingService.workout.getHeartRateMax();
+            float avg = WorkoutRecordingService.workout.getHeartRateAverage();
 
-            float min = WorkoutRecordingService.workout.getHeartRateMin();
-            float max = WorkoutRecordingService.workout.getHeartRateMax();
+            mHrCurrentText.setText(String.valueOf(curr));
 
+            // If min and max are outside normal bounds (i.e. they haven't been set), show now data
             if (max <= 0 || min > 1000) {
                 mHrMinMaxText.setText(noData);
             } else {
-                mHrMinMaxText.setText(String.format(Locale.getDefault(),"%.1f / %.1f", min, max));
+                mHrMinMaxText.setText(String.format(Locale.getDefault(), "%d / %d", min, max));
             }
 
             if (WorkoutRecordingService.workout.getHeartRateAverage() == 0) {
                 mHrAverageText.setText(noData);
             } else {
-                mHrAverageText.setText(String.valueOf(WorkoutRecordingService.workout.getHeartRateAverage()));
+                mHrAverageText.setText(String.format(Locale.getDefault(), "%.1f", avg));
             }
         } else if (mHrSensorEvent != null) {
             mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));

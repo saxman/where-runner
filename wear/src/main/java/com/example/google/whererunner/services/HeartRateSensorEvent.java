@@ -8,18 +8,18 @@ import android.os.Parcelable;
  */
 public class HeartRateSensorEvent implements Parcelable {
 
-    private float heartRate;
+    private int heartRate;
     private long timestamp;
     private int accuracy;
 
     // Private since only used by Parcelable.Creator
     private HeartRateSensorEvent(Parcel in) {
-        heartRate = in.readFloat();
+        heartRate = in.readInt();
         timestamp = in.readLong();
         accuracy = in.readInt();
     }
 
-    public float getHeartRate() {
+    public int getHeartRate() {
         return heartRate;
     }
 
@@ -31,7 +31,7 @@ public class HeartRateSensorEvent implements Parcelable {
         return timestamp;
     }
 
-    public HeartRateSensorEvent(float heartRate, long timestamp, int accuracy) {
+    public HeartRateSensorEvent(int heartRate, long timestamp, int accuracy) {
         this.heartRate = heartRate;
         this.timestamp = timestamp;
         this.accuracy = accuracy;

@@ -91,7 +91,7 @@ public final class WorkoutContract {
             "CREATE TABLE " + HeartRate.TABLE_NAME + " (" +
                     HeartRate._ID + " INTEGER PRIMARY KEY," +
                     HeartRate.COLUMN_NAME_TIMESTAMP + INT_TYPE + NOT_NULL + COMMA_SEP +
-                    HeartRate.COLUMN_NAME_HEART_RATE + REAL_TYPE + NOT_NULL +
+                    HeartRate.COLUMN_NAME_HEART_RATE + INT_TYPE + NOT_NULL +
                     " )";
 
     /**

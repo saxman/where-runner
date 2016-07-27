@@ -103,7 +103,9 @@ public class HeartRateSensorService extends Service {
 
             // Get the last sample; however, there appears to only ever be one value...
             float value = event.values[event.values.length - 1];
-            HeartRateSensorEvent hrEvent = new HeartRateSensorEvent(value, event.timestamp, event.accuracy);
+
+            // HR sensor values appear to only ever be integers, so store as such
+            HeartRateSensorEvent hrEvent = new HeartRateSensorEvent((int) value, event.timestamp, event.accuracy);
             lastHeartRateSensorEvent = hrEvent;
 
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);

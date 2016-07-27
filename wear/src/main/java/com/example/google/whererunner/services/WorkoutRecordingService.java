@@ -51,15 +51,15 @@ public class WorkoutRecordingService extends Service {
 
     private FirebaseAnalytics mFirebaseAnalytics;
 
-    private BroadcastReceiver mHeartRateReceiver;
-    private ServiceConnection mLocationServiceConnection = new MyServiceConnection();
+    private final BroadcastReceiver mHeartRateBroadcastReceiver = new HeartRateBroadcastReceiver();
+    private final ServiceConnection mLocationServiceConnection = new MyServiceConnection();
 
-    private BroadcastReceiver mLocationReceiver;
-    private ServiceConnection mHeartRateServiceConnection = new MyServiceConnection();
+    private final BroadcastReceiver mLocationBroadcastReceiver = new LocationBroadcastReceiver();
+    private final ServiceConnection mHeartRateServiceConnection = new MyServiceConnection();
 
     private WorkoutRecordingServiceBinder mServiceBinder = new WorkoutRecordingServiceBinder();
 
-    private int NOTIFICATION_ID = 1;
+    private static final int NOTIFICATION_ID = 1;
     private NotificationManagerCompat mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
 
@@ -160,8 +160,8 @@ public class WorkoutRecordingService extends Service {
     private void stopRecordingData() {
         workout.setEndTime(System.currentTimeMillis());
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateBroadcastReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationBroadcastReceiver);
 
         saveWorkout();
         resetSampleCollections();
@@ -174,64 +174,17 @@ public class WorkoutRecordingService extends Service {
      * Starts listening for HR notifications and records values
      */
     private void startHeartRateRecording() {
-        if (mHeartRateReceiver == null) {
-            mHeartRateReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-
-                    // Calculate average
-                    float avg = workout.getHeartRateAverage();
-
-                    workout.setCurrentHeartRate(hrEvent.getHeartRate());
-                    heartRateSamples.add(hrEvent);
-                }
-            };
-        }
-
         IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateReceiver, filter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateBroadcastReceiver, filter);
     }
 
     /**
      * Starts listening for GPS notifications and records values
      */
     private void startLocationRecording() {
-        if (mLocationReceiver == null) {
-            mLocationReceiver = new BroadcastReceiver() {
-                @Override
-                public void onReceive(Context context, Intent intent) {
-                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
-
-                    workout.setCurrentSpeed(location.getSpeed());
-
-                    if (locationSamples.size() > 0) {
-                        Location priorLocation = locationSamples.get(locationSamples.size() - 1);
-
-                        float[] results = new float[1];
-                        Location.distanceBetween(
-                                priorLocation.getLatitude(), priorLocation.getLongitude(),
-                                location.getLatitude(), location.getLongitude(),
-                                results);
-
-                        workout.setDistance(workout.getDistance() + results[0]);
-                    }
-
-                    locationSamples.add(location);
-
-                    // TODO update notification every second, not only when data is received
-
-                    mNotificationBuilder.setContentText(WhereRunnerApp.formatDistance(workout.getDistance()));
-                    mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
-
-                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
-                }
-            };
-        }
-
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationBroadcastReceiver, intentFilter);
     }
 
     /**
@@ -357,5 +310,51 @@ public class WorkoutRecordingService extends Service {
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {}
-    };
+    }
+
+    private class LocationBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+
+            workout.setCurrentSpeed(location.getSpeed());
+
+            if (locationSamples.size() > 0) {
+                Location priorLocation = locationSamples.get(locationSamples.size() - 1);
+
+                float[] results = new float[1];
+                Location.distanceBetween(
+                        priorLocation.getLatitude(), priorLocation.getLongitude(),
+                        location.getLatitude(), location.getLongitude(),
+                        results);
+
+                workout.setDistance(workout.getDistance() + results[0]);
+            }
+
+            locationSamples.add(location);
+
+            // TODO update notification every second, not only when data is received
+
+            mNotificationBuilder.setContentText(WhereRunnerApp.formatDistance(workout.getDistance()));
+            mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
+
+            LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
+        }
+    }
+
+    private class HeartRateBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+
+            // Calculate average
+            float avg = workout.getHeartRateAverage();
+            avg = (avg * heartRateSamples.size() + hrEvent.getHeartRate()) / (heartRateSamples.size() + 1);
+
+            workout.setCurrentHeartRate(hrEvent.getHeartRate());
+            workout.setHeartRateAverage(avg);
+
+            heartRateSamples.add(hrEvent);
+        }
+    }
 }
