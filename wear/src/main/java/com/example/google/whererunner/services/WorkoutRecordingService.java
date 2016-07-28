@@ -347,7 +347,7 @@ public class WorkoutRecordingService extends Service {
         public void onReceive(Context context, Intent intent) {
             HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
 
-            // Calculate average
+            // Calculate new heart rate average
             float avg = workout.getHeartRateAverage();
             avg = (avg * heartRateSamples.size() + hrEvent.getHeartRate()) / (heartRateSamples.size() + 1);
 

@@ -116,23 +116,17 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
         mCurrentViewPagerFragment = new WorkoutMainFragment();
 
-        if (ACTION_SHOW_WORKOUT.equals(getIntent().getAction())) {
-                // Pass an attribute to the main workout fragment to tell it to display the workout data rather than the map
-                Bundle bundle = new Bundle();
-                bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_DATA);
-                mCurrentViewPagerFragment.setArguments(bundle);
-        } else if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
-            // TODO start the workout automatically with the correct workout type. Need to handle the state if a workout is already active
-            String type = getIntent().getType();
-            switch (type) {
-                case "vnd.google.fitness.activity/biking":
-                case "vnd.google.fitness.activity/running":
-                case "vnd.google.fitness.activity/other":
-            }
-        } else {
+        String action = getIntent().getAction();
+        if (Intent.ACTION_MAIN.equals(action)) {
             // Peek the drawers to remind the user that they're there
             mWearableDrawerLayout.peekDrawer(Gravity.TOP);
             mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        } else if (ACTION_SHOW_WORKOUT.equals(action) || ACTION_START_WORKOUT.equals(action)) {
+            // Pass an attribute to the main workout fragment to tell it to display the workout data
+            // rather than the map
+            Bundle bundle = new Bundle();
+            bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_DATA);
+            mCurrentViewPagerFragment.setArguments(bundle);
         }
 
         FragmentManager fragmentManager = getFragmentManager();
@@ -165,8 +159,7 @@ public class MainActivity extends WearableActivity implements
         if (permissions.size() > 0) {
             ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
         } else {
-            bindService(new Intent(this, WorkoutRecordingService.class),
-                    mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+            startWorkoutRecordingService();
         }
     }
 
@@ -193,8 +186,7 @@ public class MainActivity extends WearableActivity implements
             case REQUEST_PERMISSIONS:
                 // Start the recording service as long as the location permission (first permission) has been granted
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    bindService(new Intent(this, WorkoutRecordingService.class),
-                            mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+                    startWorkoutRecordingService();
                 } else {
                     // TODO notify the user that that the app can't function w/o location permission
                     finish();
@@ -289,6 +281,11 @@ public class MainActivity extends WearableActivity implements
     //
     // Class methods
     //
+
+    private void startWorkoutRecordingService() {
+        bindService(new Intent(this, WorkoutRecordingService.class),
+                mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
+    }
 
     private void scheduleAmbientUpdate() {
         long timeMs = System.currentTimeMillis();
@@ -451,6 +448,20 @@ public class MainActivity extends WearableActivity implements
     private class MyServiceConnection implements ServiceConnection {
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
+
+            if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
+                switch (getIntent().getType()) {
+                    case "vnd.google.fitness.activity/biking":
+                        mWorkoutRecordingService.setActivityType(WorkoutType.CYCLING);
+                        break;
+                    case "vnd.google.fitness.activity/running":
+                    case "vnd.google.fitness.activity/other":
+                        mWorkoutRecordingService.setActivityType(WorkoutType.RUNNING);
+                        break;
+                }
+
+                mWorkoutRecordingService.startRecordingWorkout();
+            }
 
             // Update the activity's actions to reflect the state from the workout service
             MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
