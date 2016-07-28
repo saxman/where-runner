@@ -460,7 +460,12 @@ public class MainActivity extends WearableActivity implements
                         break;
                 }
 
-                mWorkoutRecordingService.startRecordingWorkout();
+                String status = getIntent().getExtras().getString("actionStatus");
+                if ("ActiveActionStatus".equals(status)) {
+                    mWorkoutRecordingService.startRecordingWorkout();
+                } else if ("CompletedActionStatus".equals(status)) {
+                    mWorkoutRecordingService.stopRecordingWorkout();
+                }
             }
 
             // Update the activity's actions to reflect the state from the workout service
