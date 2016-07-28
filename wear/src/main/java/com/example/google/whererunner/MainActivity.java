@@ -455,8 +455,10 @@ public class MainActivity extends WearableActivity implements
                         mWorkoutRecordingService.setActivityType(WorkoutType.CYCLING);
                         break;
                     case "vnd.google.fitness.activity/running":
-                    case "vnd.google.fitness.activity/other":
                         mWorkoutRecordingService.setActivityType(WorkoutType.RUNNING);
+                        break;
+                    case "vnd.google.fitness.activity/other":
+                        // Use default for starting, or what was previously set for stopping
                         break;
                 }
 
