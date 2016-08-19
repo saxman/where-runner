@@ -27,6 +27,8 @@ import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Listens for incoming local broadcast intents for starting and stopping a session
@@ -69,6 +71,7 @@ public class WorkoutRecordingService extends Service {
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
     private WorkoutType mWorkoutType = WorkoutType.RUNNING;
+    private Timer mDurationTimer;
 
     //
     // Service class methods
@@ -91,7 +94,6 @@ public class WorkoutRecordingService extends Service {
                 .setLocalOnly(true)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
-                .setContentText(String.format(Locale.getDefault(), "0.0 m", workout.getDistance()))
                 .setContentIntent(
                         PendingIntent.getActivity(this, 0, contentIntent, 0));
     }
@@ -221,6 +223,15 @@ public class WorkoutRecordingService extends Service {
         mFirebaseAnalytics.logEvent("workout_stop", new Bundle());
     }
 
+    private void startLocationService() {
+        Intent intent = new Intent(this, FusedLocationService.class);
+        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private void stopLocationService() {
+        unbindService(mLocationServiceConnection);
+    }
+
     //
     // Public service methods
     //
@@ -233,9 +244,31 @@ public class WorkoutRecordingService extends Service {
         isRecording = true;
 
         reportRecordingStatus();
+
+        mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
+        mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
+
+//        mDurationTimer = new Timer();
+//        mDurationTimer.scheduleAtFixedRate(new TimerTask() {
+//            @Override
+//            public void run() {
+//                long millis = System.currentTimeMillis() - workout.getStartTime();
+//
+//                String text = String.format(Locale.getDefault(),
+//                        "%s - %s - %s",
+//                        WhereRunnerApp.formatDuration(millis),
+//                        WhereRunnerApp.formatDistance(workout.getDistance()),
+//                        WhereRunnerApp.formatSpeed(workout.getSpeedCurrent()));
+//
+//                mNotificationBuilder.setContentText(text);
+//                mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
+//            }
+//        }, 1000, 1000);
     }
 
     public void stopRecordingWorkout() {
+//        mDurationTimer.cancel();
+
         stopRecordingData();
         isRecording = false;
 
@@ -274,17 +307,6 @@ public class WorkoutRecordingService extends Service {
         return HeartRateSensorService.isActive;
     }
 
-    // Private for now as there's no use-case for toggling sensor state
-    private void startLocationService() {
-        Intent intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    // Private for now as there's no use-case for toggling sensor state
-    private void stopLocationService() {
-        unbindService(mLocationServiceConnection);
-    }
-
     // TODO should be moved to workout class? maybe these wrap accessors on workout class?
     public void setActivityType(WorkoutType workoutType) {
         mWorkoutType = workoutType;
@@ -314,47 +336,54 @@ public class WorkoutRecordingService extends Service {
 
     private class LocationBroadcastReceiver extends BroadcastReceiver {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+        public void onReceive(Context context, final Intent intent) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-            workout.setCurrentSpeed(location.getSpeed());
+                    // If we have at least 2 samples, calculate distance and speed
+                    if (locationSamples.size() > 0) {
+                        Location priorLocation = locationSamples.get(locationSamples.size() - 1);
 
-            if (locationSamples.size() > 0) {
-                Location priorLocation = locationSamples.get(locationSamples.size() - 1);
+                        float[] results = new float[1];
+                        Location.distanceBetween(
+                                priorLocation.getLatitude(), priorLocation.getLongitude(),
+                                location.getLatitude(), location.getLongitude(),
+                                results);
+                        float dist = results[0];
 
-                float[] results = new float[1];
-                Location.distanceBetween(
-                        priorLocation.getLatitude(), priorLocation.getLongitude(),
-                        location.getLatitude(), location.getLongitude(),
-                        results);
+                        workout.setDistance(workout.getDistance() + dist);
+                        workout.setCurrentSpeed(dist / (location.getTime() - priorLocation.getTime()));
+                        workout.setAverageSpeed(workout.getDistance() / (location.getTime() - workout.getStartTime()));
+                    }
 
-                workout.setDistance(workout.getDistance() + results[0]);
-            }
+                    locationSamples.add(location);
 
-            locationSamples.add(location);
-
-            // TODO update notification every second, not only when data is received
-
-            mNotificationBuilder.setContentText(WhereRunnerApp.formatDistance(workout.getDistance()));
-            mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
-
-            LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
+                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
+                }
+            }).run();
         }
     }
 
     private class HeartRateBroadcastReceiver extends BroadcastReceiver {
         @Override
-        public void onReceive(Context context, Intent intent) {
-            HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+        public void onReceive(Context context, final Intent intent) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
 
-            // Calculate new heart rate average
-            float avg = workout.getHeartRateAverage();
-            avg = (avg * heartRateSamples.size() + hrEvent.getHeartRate()) / (heartRateSamples.size() + 1);
+                    // Calculate new heart rate average
+                    float avg = workout.getHeartRateAverage();
+                    avg = (avg * heartRateSamples.size() + hrEvent.getHeartRate()) / (heartRateSamples.size() + 1);
 
-            workout.setCurrentHeartRate(hrEvent.getHeartRate());
-            workout.setHeartRateAverage(avg);
+                    workout.setCurrentHeartRate(hrEvent.getHeartRate());
+                    workout.setHeartRateAverage(avg);
 
-            heartRateSamples.add(hrEvent);
+                    heartRateSamples.add(hrEvent);
+                }
+            }).run();
         }
     }
 }

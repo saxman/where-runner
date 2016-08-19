@@ -173,26 +173,11 @@ public class WorkoutDataFragment extends WearableFragment {
             millis = WorkoutRecordingService.workout.getEndTime() - WorkoutRecordingService.workout.getStartTime();
         }
 
-        long[] hms = WhereRunnerApp.millisToHoursMinsSecs(millis);
-        long hours = hms[0];
-        long minutes = hms[1];
-        long seconds = hms[2];
-        millis = hms[3];
+        mDurationTextView.setText(WhereRunnerApp.formatDuration(millis));
 
-        if (hours > 0) {
-            mDurationTextView.setText(
-                    String.format(Locale.getDefault(), "%d:%02d:%02d",
-                            hours, minutes, seconds));
-        } else {
-            mDurationTextView.setText(
-                    String.format(Locale.getDefault(), "%02d:%02d.%1d",
-                            minutes, seconds, millis / 100));
-        }
-
-        mSpeedTextView.setText(
-                String.format(Locale.getDefault(), "%.1f / %.1f",
-                        WorkoutRecordingService.workout.getSpeedCurrent() * 3600 / 1000,
-                        WorkoutRecordingService.workout.getSpeedAverage() * 3600 / 1000));
+        String currSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedCurrent());
+        String avgSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedAverage());
+        mSpeedTextView.setText(String.format(Locale.getDefault(), "%s / %s", currSpeed, avgSpeed));
     }
 
     private class MyBroadcastReceiver extends BroadcastReceiver {

@@ -8,6 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.wearable.view.DefaultOffsettingHelper;
 import android.util.Log;
 
 import com.example.google.whererunner.services.WorkoutRecordingService;
@@ -89,5 +90,26 @@ public class WhereRunnerApp extends Application {
         String format = WorkoutRecordingService.workout.getDistance() < 1000 ? meters : kms;
 
         return String.format(Locale.getDefault(), format, distance);
+    }
+
+    public static String formatSpeed(float speed) {
+        // m/ms * km/m * ms/s * s/hr
+        // speed * 1/1000 * 1000/1 * 3600/1
+        // TODO move to strings
+        return String.format(Locale.getDefault(), "%.1f", speed * 3600);
+    }
+
+    public static String formatDuration(long duration) {
+        long[] hms = WhereRunnerApp.millisToHoursMinsSecs(duration);
+        long hours = hms[0];
+        long minutes = hms[1];
+        long seconds = hms[2];
+        long millis = hms[3];
+
+        if (hours > 0) {
+            return String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds);
+        } else {
+            return String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100);
+        }
     }
 }

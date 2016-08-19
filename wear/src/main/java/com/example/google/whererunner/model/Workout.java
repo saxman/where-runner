@@ -14,6 +14,7 @@ public class Workout implements Parcelable {
 
     private float speedMax;
     private float speedCurrent;
+    private float speedAverage;
 
     private float heartRateAverage;
     private int heartRateMin = Integer.MAX_VALUE;
@@ -40,6 +41,7 @@ public class Workout implements Parcelable {
         distance = parcel.readFloat();
         speedMax = parcel.readFloat();
         speedCurrent = parcel.readFloat();
+        speedAverage = parcel.readFloat();
         heartRateAverage = parcel.readFloat();
         heartRateMin = parcel.readInt();
         heartRateMax = parcel.readInt();
@@ -67,8 +69,8 @@ public class Workout implements Parcelable {
     }
 
     public float getSpeedAverage() {
-        long time = endTime == 0 ? System.currentTimeMillis() : endTime;
-        return distance / (time / 1000);
+        // TODO calculate average speed if dist/time loaded from db.
+        return speedAverage;
     }
 
     public float getSpeedMax() {
@@ -115,6 +117,10 @@ public class Workout implements Parcelable {
         }
     }
 
+    public void setAverageSpeed(float speed) {
+        speedAverage = speed;
+    }
+
     public void setCurrentHeartRate(int heartRate) {
         heartRateCurrent = heartRate;
 
@@ -150,6 +156,7 @@ public class Workout implements Parcelable {
 
         parcel.writeFloat(speedMax);
         parcel.writeFloat(speedCurrent);
+        parcel.writeFloat(speedAverage);
 
         parcel.writeFloat(heartRateAverage);
         parcel.writeInt(heartRateMin);
