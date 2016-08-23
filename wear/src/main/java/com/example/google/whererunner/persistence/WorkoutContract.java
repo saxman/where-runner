@@ -33,8 +33,9 @@ public final class WorkoutContract {
         public static final String COLUMN_NAME_TYPE = "type";
         public static final String COLUMN_NAME_START_TIME = "starttime";
         public static final String COLUMN_NAME_END_TIME = "endtime";
-        public static final String COLUMN_NAME_SPEED_MAX = "speedMax";
         public static final String COLUMN_NAME_DISTANCE = "distance";
+        public static final String COLUMN_NAME_SPEED_MAX = "speedMax";
+        public static final String COLUMN_NAME_SPEED_AVG = "speedAvg";
     }
 
     /**
@@ -75,7 +76,8 @@ public final class WorkoutContract {
                     Workout.COLUMN_NAME_START_TIME + INT_TYPE + NOT_NULL + COMMA_SEP +
                     Workout.COLUMN_NAME_END_TIME + INT_TYPE + NOT_NULL + COMMA_SEP +
                     Workout.COLUMN_NAME_DISTANCE + REAL_TYPE + COMMA_SEP +
-                    Workout.COLUMN_NAME_SPEED_MAX + REAL_TYPE +
+                    Workout.COLUMN_NAME_SPEED_MAX + REAL_TYPE + COMMA_SEP +
+                    Workout.COLUMN_NAME_SPEED_AVG + REAL_TYPE +
                     " )";
 
     /**

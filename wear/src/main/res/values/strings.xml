@@ -32,6 +32,7 @@
 
     <string name="history_no_data">No Data</string>
 
-    <string name="distance_kms">%.2f km</string>
-    <string name="distance_meters">%.1f m</string>
+    <string name="format_distance_kms">%.2f km</string>
+    <string name="format_distance_meters">%.1f m</string>
+    <string name="format_speed">%.1f</string>
 </resources>

@@ -59,37 +59,9 @@ public class HistoryDataFragment extends Fragment {
     }
 
     private void updateUI() {
-        String date = DateUtils.formatDateTime(getActivity(), mWorkout.getStartTime(),
-                DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NUMERIC_DATE | DateUtils.FORMAT_SHOW_TIME);
-
-        mDateTimeTextView.setText(date);
-
-        if (mWorkout.getDistance() < 1000) {
-            mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.1f m", mWorkout.getDistance()));
-        } else {
-            mDistanceTextView.setText(
-                    String.format(Locale.getDefault(), "%.2f km", mWorkout.getDistance() / 1000));
-        }
-
-        long millis = mWorkout.getEndTime() - mWorkout.getStartTime();
-        long[] hms = WhereRunnerApp.millisToHoursMinsSecs(millis);
-        long hours = hms[0];
-        long minutes = hms[1];
-        long seconds = hms[2];
-        millis = hms[3];
-
-        if (hours > 0) {
-            mDurationTextView.setText(
-                    String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds));
-        } else {
-            mDurationTextView.setText(
-                    String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100));
-        }
-
-        mSpeedTextView.setText(
-                String.format(Locale.getDefault(), "%.1f / %.1f",
-                        mWorkout.getSpeedAverage() * 3600 / 1000,
-                        mWorkout.getSpeedMax() * 3600 / 1000));
+        mDateTimeTextView.setText(WhereRunnerApp.formatDateTime(mWorkout.getStartTime()));
+        mDistanceTextView.setText(WhereRunnerApp.formatDistance(mWorkout.getDistance()));
+        mDurationTextView.setText(WhereRunnerApp.formatDuration(mWorkout.getEndTime() - mWorkout.getStartTime()));
+        mSpeedTextView.setText(WhereRunnerApp.formatSpeed(mWorkout.getSpeedAverage()) + " / " + WhereRunnerApp.formatSpeed(mWorkout.getSpeedMax()));
     }
 }

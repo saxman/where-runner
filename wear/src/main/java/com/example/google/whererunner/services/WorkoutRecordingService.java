@@ -71,7 +71,6 @@ public class WorkoutRecordingService extends Service {
     public static ArrayList<Location> locationSamples = new ArrayList<>();
 
     private WorkoutType mWorkoutType = WorkoutType.RUNNING;
-    private Timer mDurationTimer;
 
     //
     // Service class methods
@@ -247,28 +246,9 @@ public class WorkoutRecordingService extends Service {
 
         mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
         mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
-
-//        mDurationTimer = new Timer();
-//        mDurationTimer.scheduleAtFixedRate(new TimerTask() {
-//            @Override
-//            public void run() {
-//                long millis = System.currentTimeMillis() - workout.getStartTime();
-//
-//                String text = String.format(Locale.getDefault(),
-//                        "%s - %s - %s",
-//                        WhereRunnerApp.formatDuration(millis),
-//                        WhereRunnerApp.formatDistance(workout.getDistance()),
-//                        WhereRunnerApp.formatSpeed(workout.getSpeedCurrent()));
-//
-//                mNotificationBuilder.setContentText(text);
-//                mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
-//            }
-//        }, 1000, 1000);
     }
 
     public void stopRecordingWorkout() {
-//        mDurationTimer.cancel();
-
         stopRecordingData();
         isRecording = false;
 

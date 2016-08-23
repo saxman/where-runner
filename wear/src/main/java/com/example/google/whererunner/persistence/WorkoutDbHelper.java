@@ -56,8 +56,9 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         values.put(WorkoutContract.Workout.COLUMN_NAME_TYPE, workout.getType());
         values.put(WorkoutContract.Workout.COLUMN_NAME_START_TIME, workout.getStartTime());
         values.put(WorkoutContract.Workout.COLUMN_NAME_END_TIME, workout.getEndTime());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
         values.put(WorkoutContract.Workout.COLUMN_NAME_DISTANCE, workout.getDistance());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
+        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG, workout.getSpeedAverage());
 
         long id = db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
 
@@ -118,8 +119,9 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             WorkoutContract.Workout.COLUMN_NAME_TYPE,
             WorkoutContract.Workout.COLUMN_NAME_START_TIME,
             WorkoutContract.Workout.COLUMN_NAME_END_TIME,
+            WorkoutContract.Workout.COLUMN_NAME_DISTANCE,
             WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX,
-            WorkoutContract.Workout.COLUMN_NAME_DISTANCE
+            WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG
         };
 
         String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
@@ -144,12 +146,14 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
                 long endTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME));
                 float distance = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_DISTANCE));
                 float speedMax = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX));
+                float speedAvg = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG));
 
                 Workout workout = new Workout(id, type);
                 workout.setStartTime(startTime);
                 workout.setEndTime(endTime);
                 workout.setDistance(distance);
                 workout.setSpeedMax(speedMax);
+                workout.setAverageSpeed(speedAvg);
 
                 workouts.add(workout);
             }

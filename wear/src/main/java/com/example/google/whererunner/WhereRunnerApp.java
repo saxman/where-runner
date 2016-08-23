@@ -8,7 +8,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.wearable.view.DefaultOffsettingHelper;
+import android.text.format.DateUtils;
 import android.util.Log;
 
 import com.example.google.whererunner.services.WorkoutRecordingService;
@@ -85,18 +85,24 @@ public class WhereRunnerApp extends Application {
     }
 
     public static String formatDistance(float distance) {
-        String kms = sInstance.getString(R.string.distance_kms);
-        String meters = sInstance.getString(R.string.distance_meters);
-        String format = WorkoutRecordingService.workout.getDistance() < 1000 ? meters : kms;
+        String string;
 
-        return String.format(Locale.getDefault(), format, distance);
+        if (WorkoutRecordingService.workout.getDistance() < 1000) {
+            String meters = sInstance.getString(R.string.format_distance_meters);
+            string = String.format(Locale.getDefault(), meters, distance);
+        } else {
+            String kms = sInstance.getString(R.string.format_distance_kms);
+            string = String.format(Locale.getDefault(), kms, distance / 1000);
+        }
+
+        return string;
     }
 
     public static String formatSpeed(float speed) {
         // m/ms * km/m * ms/s * s/hr
         // speed * 1/1000 * 1000/1 * 3600/1
-        // TODO move to strings
-        return String.format(Locale.getDefault(), "%.1f", speed * 3600);
+        String format = sInstance.getString(R.string.format_speed);
+        return String.format(Locale.getDefault(), format, speed * 3600);
     }
 
     public static String formatDuration(long duration) {
@@ -111,5 +117,9 @@ public class WhereRunnerApp extends Application {
         } else {
             return String.format(Locale.getDefault(), "%02d:%02d.%1d", minutes, seconds, millis / 100);
         }
+    }
+
+    public static String formatDateTime(long time) {
+        return DateUtils.formatDateTime(sInstance, time, DateUtils.FORMAT_SHOW_DATE | DateUtils.FORMAT_NUMERIC_DATE | DateUtils.FORMAT_SHOW_TIME);
     }
 }
