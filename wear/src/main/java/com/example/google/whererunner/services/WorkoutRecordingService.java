@@ -82,6 +82,18 @@ public class WorkoutRecordingService extends Service {
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
+
+        Intent stopIntent = new Intent(this, WorkoutRecordingService.class);
+        PendingIntent pi = PendingIntent.getService(this, 0, stopIntent, 0);
+        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action.Builder( R.drawable.ic_stop, "stop", pi);
+
+        NotificationCompat.Action.WearableExtender actionExtender = new NotificationCompat.Action.WearableExtender().setHintLaunchesActivity(false).setHintDisplayActionInline(true);
+        NotificationCompat.WearableExtender wearableExtender = new NotificationCompat.WearableExtender();
+        wearableExtender.addAction(actionBuilder.extend(actionExtender).build());
+        wearableExtender.setHintContentIntentLaunchesActivity(false);
+
+        // orig
+
         Intent contentIntent = new Intent(this, MainActivity.class);
         contentIntent.setAction(MainActivity.ACTION_SHOW_WORKOUT);
 
@@ -94,7 +106,8 @@ public class WorkoutRecordingService extends Service {
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentIntent(
-                        PendingIntent.getActivity(this, 0, contentIntent, 0));
+                        PendingIntent.getActivity(this, 0, contentIntent, 0))
+                .extend(wearableExtender);
     }
 
     @Override
