@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".WorkoutMainFragment">
+    tools:context="info.saxman.whererunner.WorkoutMainFragment">
 
     <android.support.wearable.view.GridViewPager
         android:id="@+id/pager"

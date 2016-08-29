@@ -12,4 +12,4 @@
     map:uiRotateGestures="false"
     map:uiTiltGestures="false"
     map:ambientEnabled="true"
-    tools:context=".WorkoutMapFragment" />
+    tools:context="info.saxman.whererunner.WorkoutMapFragment" />

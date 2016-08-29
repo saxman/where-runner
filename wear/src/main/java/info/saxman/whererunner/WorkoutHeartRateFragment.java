@@ -1,0 +1,164 @@
+package info.saxman.whererunner;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Color;
+import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import info.saxman.whererunner.framework.WearableFragment;
+import info.saxman.whererunner.services.HeartRateSensorEvent;
+import info.saxman.whererunner.services.HeartRateSensorService;
+import info.saxman.whererunner.services.WorkoutRecordingService;
+
+import java.util.LinkedList;
+import java.util.Locale;
+
+public class WorkoutHeartRateFragment extends WearableFragment
+        implements ActivityCompat.OnRequestPermissionsResultCallback {
+
+    @SuppressWarnings("unused")
+    private static final String LOG_TAG = WorkoutHeartRateFragment.class.getSimpleName();
+
+    private static final long HR_SAMPLE_DELAY_THRESHOLD_MS = 10000;
+
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
+
+    private TextView mHrMinMaxText;
+    private TextView mHrCurrentText;
+    private TextView mHrAverageText;
+
+    private LinkedList<TextView> mTextViews = new LinkedList<>();
+
+    private HeartRateSensorEvent mHrSensorEvent;
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        // Don't both using the last HR sample if it's too old
+        if (HeartRateSensorService.lastHeartRateSensorEvent != null) {
+            long delta = System.currentTimeMillis() - HeartRateSensorService.lastHeartRateSensorEvent.getTimestamp();
+            if (delta < HR_SAMPLE_DELAY_THRESHOLD_MS) {
+                mHrSensorEvent = HeartRateSensorService.lastHeartRateSensorEvent;
+            }
+        }
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_workout_heartrate, container, false);
+
+        mHrMinMaxText = (TextView) view.findViewById(R.id.hr_min_max);
+        mHrAverageText = (TextView) view.findViewById(R.id.hr_average);
+        mHrCurrentText = (TextView) view.findViewById(R.id.hr_current);
+
+        mTextViews.add(mHrMinMaxText);
+        mTextViews.add(mHrAverageText);
+        mTextViews.add(mHrCurrentText);
+        mTextViews.add((TextView) view.findViewById(R.id.hr_title));
+        mTextViews.add((TextView) view.findViewById(R.id.hr_min_max_title));
+        mTextViews.add((TextView) view.findViewById(R.id.hr_average_title));
+        mTextViews.add((TextView) view.findViewById(R.id.hr_current_title));
+
+        updateUI();
+
+        return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, filter);
+    }
+
+    @Override
+    public void onPause() {
+        LocalBroadcastManager.getInstance(getActivity()).unregisterReceiver(mBroadcastReceiver);
+        super.onPause();
+    }
+
+    @Override
+    public void onEnterAmbient(Bundle ambientDetails) {
+        super.onEnterAmbient(ambientDetails);
+
+        for (TextView view : mTextViews) {
+            view.getPaint().setAntiAlias(false);
+            view.setTextColor(Color.WHITE);
+        }
+    }
+
+    @Override
+    public void onExitAmbient() {
+        super.onExitAmbient();
+
+        for (TextView view : mTextViews) {
+            view.getPaint().setAntiAlias(true);
+            view.setTextColor(getResources().getColor(R.color.text_primary, null));
+        }
+    }
+
+    @Override
+    public void onUpdateAmbient() {
+        updateUI();
+    }
+
+    private void updateUI() {
+        String noData = getString(R.string.hrm_no_data);
+
+        if (WorkoutRecordingService.isRecording) {
+            int curr = WorkoutRecordingService.workout.getHeartRateCurrent();
+            int min = WorkoutRecordingService.workout.getHeartRateMin();
+            int max = WorkoutRecordingService.workout.getHeartRateMax();
+            float avg = WorkoutRecordingService.workout.getHeartRateAverage();
+
+            mHrCurrentText.setText(String.valueOf(curr));
+
+            // If min and max are outside normal bounds (i.e. they haven't been set), show now data
+            if (max <= 0 || min > 1000) {
+                mHrMinMaxText.setText(noData);
+            } else {
+                mHrMinMaxText.setText(String.format(Locale.getDefault(), "%d / %d", min, max));
+            }
+
+            if (WorkoutRecordingService.workout.getHeartRateAverage() == 0) {
+                mHrAverageText.setText(noData);
+            } else {
+                mHrAverageText.setText(String.format(Locale.getDefault(), "%.1f", avg));
+            }
+        } else if (mHrSensorEvent != null) {
+            mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));
+        } else {
+            mHrCurrentText.setText(noData);
+        }
+    }
+
+    private class MyBroadcastReceiver extends BroadcastReceiver  {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            switch (intent.getAction()) {
+                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                    mHrSensorEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+                    break;
+                case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
+                    mHrSensorEvent = null;
+                    break;
+            }
+
+            if (!isAmbient()) {
+                updateUI();
+            }
+        }
+    }
+}

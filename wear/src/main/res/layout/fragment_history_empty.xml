@@ -8,4 +8,4 @@
     android:layout_gravity="center"
     android:gravity="center"
     android:text="@string/history_no_data"
-    tools:context=".HistoryMainFragment" />
+    tools:context="info.saxman.whererunner.HistoryMainFragment" />

@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 24
-    buildToolsVersion "24"
+    buildToolsVersion "24.0.1"
 
     signingConfigs {
         debug {
@@ -12,9 +12,9 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.example.google.whererunner"
-        versionCode 1
-        versionName "1.0"
+        applicationId "info.saxman.whererunner"
+        versionCode 3
+        versionName "1.0.2"
 
         minSdkVersion 23
         targetSdkVersion 24

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--xmlns:whererunner="http://schemas.android.com/apk/res/com.example.google.whererunner"-->
-<com.example.google.whererunner.framework.VerticalDotsPageIndicator
+<info.saxman.whererunner.framework.VerticalDotsPageIndicator
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:whererunner="http://schemas.android.com/apk/res-auto"
     android:id="@+id/page_indicator"

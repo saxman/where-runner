@@ -10,7 +10,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:120284867077:android:6ef8c11cce2b193f",
         "android_client_info": {
-          "package_name": "com.example.google.whererunner"
+          "package_name": "info.saxman.whererunner"
         }
       },
       "oauth_client": [

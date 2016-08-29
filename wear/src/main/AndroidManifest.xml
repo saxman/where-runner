@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.google.whererunner">
+    package="info.saxman.whererunner">
 
     <uses-feature android:name="android.hardware.type.watch" />
+
+    <uses-feature android:name="android.hardware.location.gps" android:required="false" />
+    <uses-feature android:name="android.hardware.location" android:required="true" />
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -25,7 +28,7 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".MainActivity"
+            android:name="info.saxman.whererunner.MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleInstance">
 
@@ -54,19 +57,19 @@
         </activity>
 
         <service
-            android:name=".services.GpsLocationService"
+            android:name="info.saxman.whererunner.services.GpsLocationService"
             android:exported="false" />
 
         <service
-            android:name=".services.FusedLocationService"
+            android:name="info.saxman.whererunner.services.FusedLocationService"
             android:exported="false" />
 
         <service
-            android:name=".services.HeartRateSensorService"
+            android:name="info.saxman.whererunner.services.HeartRateSensorService"
             android:exported="false" />
 
         <service
-            android:name=".services.WorkoutRecordingService"
+            android:name="info.saxman.whererunner.services.WorkoutRecordingService"
             android:exported="false" />
 
     </application>
