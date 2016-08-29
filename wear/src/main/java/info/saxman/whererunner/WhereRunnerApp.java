@@ -99,8 +99,7 @@ public class WhereRunnerApp extends Application {
     }
 
     public static String formatSpeed(float speed) {
-        // m/ms * km/m * ms/s * s/hr
-        // speed * 1/1000 * 1000/1 * 3600/1
+        // kph = m/ms * km/m * ms/s * s/hr = speed * 1/1000 * 1000/1 * 3600/1
         String format = sInstance.getString(R.string.format_speed);
         return String.format(Locale.getDefault(), format, speed * 3600);
     }
