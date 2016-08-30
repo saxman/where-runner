@@ -46,10 +46,7 @@ public class MainActivity extends WearableActivity implements
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    @SuppressWarnings("unused")
-    private FirebaseAnalytics mFirebaseAnalytics;
-
-    public static final String ACTION_SHOW_WORKOUT = "com.example.google.whererunner.SHOW_WORKOUT";
+    public static final String ACTION_SHOW_WORKOUT = MainActivity.class.getPackage() + ".SHOW_WORKOUT";
     public static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
 
     private static final int REQUEST_PERMISSIONS = 1;
@@ -69,6 +66,9 @@ public class MainActivity extends WearableActivity implements
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
+
+    @SuppressWarnings("unused")
+    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -308,7 +308,7 @@ public class MainActivity extends WearableActivity implements
             menuItem.setTitle(getString(R.string.stop_recording));
         } else {
             menuItem.setIcon(getDrawable(R.drawable.ic_record));
-            menuItem.setTitle(getString(R.string.record));
+            menuItem.setTitle(getString(R.string.record_workout));
         }
     }
 
@@ -331,7 +331,7 @@ public class MainActivity extends WearableActivity implements
     private void setWorkoutActivityTypeUiState(WorkoutType workoutType) {
         MenuItem menuItem = mMenu.findItem(R.id.activity_type_menu_item);
         menuItem.setIcon(getDrawable(workoutType.drawableId));
-        menuItem.setTitle(getString(workoutType.titleId));
+        menuItem.setTitle(getString(R.string.activity_type) + ": " + getString(workoutType.titleId));
 
         // Notify the nav drawer adapter that the data has changed, so that the record icon is refreshed
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();

@@ -3,7 +3,7 @@
 
     <item android:id="@+id/record_menu_item"
         android:icon="@drawable/ic_record"
-        android:title="@string/record" />
+        android:title="@string/record_workout" />
 
     <item android:id="@+id/activity_type_menu_item"
         android:icon="@drawable/ic_running"
