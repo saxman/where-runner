@@ -400,30 +400,37 @@ public class MainActivity extends WearableActivity implements
 
         @Override
         public void onItemSelected(int pos) {
-            Fragment fragment = null;
-
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
-                    fragment = new WorkoutMainFragment();
+                    mCurrentViewPagerFragment = new WorkoutMainFragment();
                     // Ensure the action drawer is visible, since it could have been hidden for other nav drawer pages
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    WorkoutDbHelper dbHelper = new WorkoutDbHelper(MainActivity.this);
-                    ArrayList<Workout> workouts = dbHelper.readLastFiveWorkouts();
+                    // Show the loading fragment while the workouts are loaded from the db
+                    mCurrentViewPagerFragment = new LoadingFragment();
 
-                    fragment = HistoryMainFragment.newInstance(workouts);
+                    WorkoutDbHelper dbHelper = new WorkoutDbHelper(MainActivity.this);
+                    dbHelper.readLastFiveWorkoutsAsync(new WorkoutDbHelper.ReadWorkoutsCallback() {
+
+                        @Override
+                        public void onRead(ArrayList<Workout> workouts) {
+                            mCurrentViewPagerFragment = HistoryMainFragment.newInstance(workouts);
+                            getFragmentManager()
+                                    .beginTransaction()
+                                    .replace(R.id.content_frame, mCurrentViewPagerFragment)
+                                    .commit();
+                        }
+                    });
 
                     // Hide the action drawer since we don't need its actions in the history page
                     mWearableActionDrawer.setVisibility(View.GONE);
                     break;
             }
 
-            mCurrentViewPagerFragment = fragment;
-
             getFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.content_frame, fragment)
+                    .replace(R.id.content_frame, mCurrentViewPagerFragment)
                     .commit();
         }
 

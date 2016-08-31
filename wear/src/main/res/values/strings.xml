@@ -31,4 +31,6 @@
     <string name="format_distance_kms">%.2f km</string>
     <string name="format_distance_meters">%.1f m</string>
     <string name="format_speed">%.1f</string>
+
+    <string name="loading">Loading ...</string>
 </resources>

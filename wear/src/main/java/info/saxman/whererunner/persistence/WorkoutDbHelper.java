@@ -6,16 +6,21 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.location.Location;
+import android.os.AsyncTask;
+import android.util.Log;
 
 import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.services.HeartRateSensorEvent;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * SQL DB helper for workouts
  */
 public class WorkoutDbHelper extends SQLiteOpenHelper {
+
+    private static final String TAG = WorkoutDbHelper.class.getSimpleName();
 
     // If the database schema changes, increment the database version
     public static final int DATABASE_VERSION = 1;
@@ -158,10 +163,53 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             }
 
             c.close();
+        } catch(Exception e) {
+            Log.e(TAG, "Error reading workouts: " + e.getMessage());
         } finally {
             db.close();
         }
 
         return workouts;
     }
+
+    //
+    // Start of beta async database calls
+    //
+
+    /**
+     * Interface for handling Workout database read requests
+     */
+    public interface ReadWorkoutsCallback {
+
+        void onRead(ArrayList<Workout> workouts);
+    }
+
+    public void readLastFiveWorkoutsAsync(ReadWorkoutsCallback callback) {
+        new ReadWorkoutsTask(callback).execute();
+    }
+
+    /**
+     * Reads the database asynchronously
+     */
+    private class ReadWorkoutsTask extends AsyncTask<Void, Void, ArrayList<Workout>> {
+
+        private ReadWorkoutsCallback callback;
+
+        public ReadWorkoutsTask(ReadWorkoutsCallback callback) {
+            super();
+            this.callback = callback;
+        }
+
+        @Override
+        protected ArrayList<Workout> doInBackground(Void... ignored) {
+            return readLastFiveWorkouts();
+        }
+
+        // onPostExecute displays the results of the AsyncTask.
+        @Override
+        protected void onPostExecute(ArrayList<Workout> workouts) {
+            this.callback.onRead(workouts);
+        }
+    }
+
 }
