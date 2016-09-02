@@ -77,7 +77,9 @@ public class WorkoutRecordingService extends Service {
 
         mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
 
-        Intent stopIntent = new Intent(this, WorkoutRecordingService.class);
+        // TODO clean up and add support for actual workout pause/stop
+
+        Intent stopIntent = new Intent("", null, this, WorkoutRecordingService.class);
         PendingIntent pi = PendingIntent.getService(this, 0, stopIntent, 0);
         NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action.Builder( info.saxman.whererunner.R.drawable.ic_stop, "stop", pi);
 
@@ -86,7 +88,7 @@ public class WorkoutRecordingService extends Service {
         wearableExtender.addAction(actionBuilder.extend(actionExtender).build());
         wearableExtender.setHintContentIntentLaunchesActivity(false);
 
-        // orig
+        // TODO END
 
         Intent contentIntent = new Intent(this, MainActivity.class);
         contentIntent.setAction(MainActivity.ACTION_SHOW_WORKOUT);

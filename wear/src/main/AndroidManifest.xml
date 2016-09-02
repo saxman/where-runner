@@ -28,7 +28,7 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name="info.saxman.whererunner.MainActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleInstance">
 
@@ -57,19 +57,19 @@
         </activity>
 
         <service
-            android:name="info.saxman.whererunner.services.GpsLocationService"
+            android:name=".services.GpsLocationService"
             android:exported="false" />
 
         <service
-            android:name="info.saxman.whererunner.services.FusedLocationService"
+            android:name=".services.FusedLocationService"
             android:exported="false" />
 
         <service
-            android:name="info.saxman.whererunner.services.HeartRateSensorService"
+            android:name=".services.HeartRateSensorService"
             android:exported="false" />
 
         <service
-            android:name="info.saxman.whererunner.services.WorkoutRecordingService"
+            android:name=".services.WorkoutRecordingService"
             android:exported="false" />
 
     </application>

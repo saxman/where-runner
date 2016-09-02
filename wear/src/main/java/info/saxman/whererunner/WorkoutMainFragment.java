@@ -11,7 +11,6 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.annotation.NonNull;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.*;
 import android.util.Log;
@@ -61,7 +60,6 @@ public class WorkoutMainFragment extends WearableFragment {
     private TextClock mTextClock;
     private VerticalDotsPageIndicator mDotsPageIndicator;
 
-    private ImageView mPhoneConnectivityImageView;
     private ImageView mGpsConnectivityImageView;
     private ImageView mHrmConnectivityImageView;
 
@@ -92,7 +90,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
         // Status overlays
         mTextClock = (TextClock) view.findViewById(R.id.time);
-        mPhoneConnectivityImageView = (ImageView) view.findViewById(R.id.phone_connectivity);
         mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
         mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
 
@@ -221,7 +218,6 @@ public class WorkoutMainFragment extends WearableFragment {
         mDotsPageIndicator.setVisibility(View.INVISIBLE);
 
         // TODO instead of just hiding the status indicator, create b&w modes for them
-        mPhoneConnectivityImageView.setVisibility(View.INVISIBLE);
         mGpsConnectivityImageView.setVisibility(View.INVISIBLE);
         mHrmConnectivityImageView.setVisibility(View.INVISIBLE);
 
@@ -241,7 +237,6 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setTextColor(getResources().getColor(R.color.text_dark, null));
         mTextClock.getPaint().setAntiAlias(true);
 
-        mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
         mGpsConnectivityImageView.setVisibility(View.VISIBLE);
         mHrmConnectivityImageView.setVisibility(View.VISIBLE);
 
@@ -268,12 +263,6 @@ public class WorkoutMainFragment extends WearableFragment {
             mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_fixed);
         } else {
             mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_not_fixed);
-        }
-
-        if (mIsPhoneConnected) {
-            mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_connected);
-        } else {
-            mPhoneConnectivityImageView.setImageResource(R.drawable.ic_phone_disconnected);
         }
 
         // TODO can set image tint instead of changing icon
@@ -374,48 +363,15 @@ public class WorkoutMainFragment extends WearableFragment {
             // Get the initial connectivity state of the phone
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override
-                public void onResult(@NonNull NodeApi.GetConnectedNodesResult result) {
-                    mIsPhoneConnected = result.getNodes().size() > 0;
-
-                    if (!isAmbient()) {
-                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
-                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
+                public void onResult(NodeApi.GetConnectedNodesResult result) {
+                    for (Node node : result.getNodes()) {
+                        // only nearby nodes can give GPS results
+                        if (node.isNearby()) {
+                            mIsPhoneConnected = true;
                         }
-
-                        updateUI();
                     }
                 }
-            }, 10000, TimeUnit.MILLISECONDS);
-
-            // Get updates on the connectivity state of the phone
-            // TODO use non-deprecated API
-            Wearable.NodeApi.addListener(mGoogleApiClient, new NodeApi.NodeListener() {
-                @Override
-                public void onPeerConnected(Node node) {
-                    mIsPhoneConnected = true;
-
-                    if (!isAmbient()) {
-                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
-                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
-                        }
-
-                        updateUI();
-                    }
-                }
-
-                @Override
-                public void onPeerDisconnected(Node node) {
-                    mIsPhoneConnected = false;
-
-                    if (!isAmbient()) {
-                        if (mPhoneConnectivityImageView.getVisibility() == View.GONE) {
-                            mPhoneConnectivityImageView.setVisibility(View.VISIBLE);
-                        }
-
-                        updateUI();
-                    }
-                }
-            });
+            }, 5000, TimeUnit.MILLISECONDS);
         }
 
         @Override
@@ -424,7 +380,7 @@ public class WorkoutMainFragment extends WearableFragment {
         }
 
         @Override
-        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+        public void onConnectionFailed(ConnectionResult connectionResult) {
             // TODO
         }
     }
