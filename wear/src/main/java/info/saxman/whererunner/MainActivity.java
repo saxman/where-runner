@@ -28,8 +28,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
-import com.google.firebase.analytics.FirebaseAnalytics;
-
 import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.model.WorkoutType;
 import info.saxman.whererunner.framework.WearableFragment;
@@ -55,6 +53,7 @@ public class MainActivity extends WearableActivity implements
 
     private WearableDrawerLayout mWearableDrawerLayout;
     private WearableActionDrawer mWearableActionDrawer;
+    private WearableNavigationDrawer mWearableNavigationDrawer;
     private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
     private Fragment mCurrentViewPagerFragment;
 
@@ -62,13 +61,10 @@ public class MainActivity extends WearableActivity implements
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
     private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
 
-    private static final long AMBIENT_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
+    private static final long AMBIENT_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
 
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
-
-    @SuppressWarnings("unused")
-    private FirebaseAnalytics mFirebaseAnalytics;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -87,22 +83,23 @@ public class MainActivity extends WearableActivity implements
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
-        WearableNavigationDrawer wearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
-        wearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
+        mWearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
+        mWearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
 
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
+        mWearableActionDrawer.setShouldLockWhenNotOpenOrPeeking(false);
 
         // Using a custom peek view since currently the drawer draws a white circle behind drawables
         // in the drawer, but not in the peek, which causes the drawable to look different in the
         // peek vs the drawer
         // TODO re-test and remove when SDK fixed to render default action icons appropriately
-        mWearableActionDrawer.setPeekContent(
-                getLayoutInflater().inflate(R.layout.action_drawer_peek, null));
+        View peekLayout = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
+        mWearableActionDrawer.setPeekContent(peekLayout);
 
         mMenu = mWearableActionDrawer.getMenu();
 
-        // If the device has a heart rate monitor, show the menu item for controlling it
+        // If the device has a heart rate monitor, un-hide the menu item for controlling it
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
             MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             menuItem.setVisible(true);
@@ -130,9 +127,6 @@ public class MainActivity extends WearableActivity implements
 
         FragmentManager fragmentManager = getFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
-
-        // Initialize Firebase Analytics
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
     }
 
     @Override
@@ -235,6 +229,25 @@ public class MainActivity extends WearableActivity implements
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+        // Bring the user back to the home view (workout data) if they're elsewhere in the app.
+        // If they're already on the home view, exit the app.
+        if (mCurrentViewPagerFragment instanceof WorkoutMainFragment) {
+            WorkoutMainFragment wmf = (WorkoutMainFragment) mCurrentViewPagerFragment;
+            if (wmf.getCurrentFragment() != WorkoutMainFragment.FRAGMENT_DATA) {
+                wmf.setCurrentFragment(WorkoutMainFragment.FRAGMENT_DATA);
+                return;
+            }
+
+        } else {
+            mWearableNavigationDrawer.setCurrentItem(0, true);
+            return;
+        }
+
+        super.onBackPressed();
+    }
+
     //
     // WearableActivity methods
     //
@@ -243,7 +256,7 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
-        // If the current fragment supports ambient mode, then enter ambient mode. Else close the app.
+        // If the current fragment supports ambient mode, then enter ambient mode.
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             mWearableDrawerLayout.closeDrawer(Gravity.TOP);
             mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
@@ -252,7 +265,7 @@ public class MainActivity extends WearableActivity implements
 
             scheduleAmbientUpdate();
         } else {
-            // TODO if there's a recording in progress, we could instead go back to the data fragment
+            // TODO instead of exiting the app, return to the home view (workout data)
             finish();
         }
     }
@@ -278,7 +291,7 @@ public class MainActivity extends WearableActivity implements
     }
 
     //
-    // Class methods
+    // Class methods (private)
     //
 
     private void startWorkoutRecordingService() {
@@ -288,7 +301,7 @@ public class MainActivity extends WearableActivity implements
 
     private void scheduleAmbientUpdate() {
         long timeMs = System.currentTimeMillis();
-        long delayMs = AMBIENT_INTERVAL_MS - (timeMs % AMBIENT_INTERVAL_MS);
+        long delayMs = AMBIENT_UPDATE_INTERVAL_MS - (timeMs % AMBIENT_UPDATE_INTERVAL_MS);
         long triggerTimeMs = timeMs + delayMs;
 
         mAmbientStateAlarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs, mAmbientStatePendingIntent);
@@ -358,11 +371,12 @@ public class MainActivity extends WearableActivity implements
     }
 
     //
-    // Inner classes
+    // Inner classes (private)
     //
 
     private class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
         private static final int NAV_DRAWER_ITEMS = 2;
+
         private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
         private static final int NAV_DRAWER_FRAGMENT_HISTORY = 1;
 
@@ -455,6 +469,7 @@ public class MainActivity extends WearableActivity implements
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
 
+            // TODO move constants elsewhere
             if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
                 switch (getIntent().getType()) {
                     case "vnd.google.fitness.activity/biking":
@@ -464,7 +479,7 @@ public class MainActivity extends WearableActivity implements
                         mWorkoutRecordingService.setActivityType(WorkoutType.RUNNING);
                         break;
                     case "vnd.google.fitness.activity/other":
-                        // Use default for starting, or what was previously set for stopping
+                        // Use default if starting new workout
                         break;
                 }
 

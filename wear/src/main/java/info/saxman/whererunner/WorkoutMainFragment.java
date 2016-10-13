@@ -12,10 +12,13 @@ import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Vibrator;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.wearable.view.*;
+import android.support.wearable.view.FragmentGridPagerAdapter;
+import android.support.wearable.view.GridViewPager;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -23,10 +26,6 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
 
-import info.saxman.whererunner.framework.VerticalDotsPageIndicator;
-import info.saxman.whererunner.framework.WearableFragment;
-import info.saxman.whererunner.services.HeartRateSensorService;
-import info.saxman.whererunner.services.LocationService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.ResultCallback;
@@ -35,6 +34,10 @@ import com.google.android.gms.wearable.NodeApi;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.concurrent.TimeUnit;
+
+import info.saxman.whererunner.framework.WearableFragment;
+import info.saxman.whererunner.services.HeartRateSensorService;
+import info.saxman.whererunner.services.LocationService;
 
 public class WorkoutMainFragment extends WearableFragment {
 
@@ -47,7 +50,7 @@ public class WorkoutMainFragment extends WearableFragment {
     public static final int FRAGMENT_DATA = 1;
     public static final int FRAGMENT_HEART = 2;
 
-    private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
+    private static final int PAGER_ORIENTATION = LinearLayout.HORIZONTAL;
 
     private static final int VIBRATOR_DURATION_MS = 200;
 
@@ -58,10 +61,9 @@ public class WorkoutMainFragment extends WearableFragment {
     private int mViewPagerItems = 2;
 
     private TextClock mTextClock;
-    private VerticalDotsPageIndicator mDotsPageIndicator;
 
-    private ImageView mGpsConnectivityImageView;
-    private ImageView mHrmConnectivityImageView;
+    private ImageView mMapButton;
+    private ImageView mHeartButton;
 
     private boolean mIsHrmConnected = false;
     private boolean mIsPhoneConnected = false;
@@ -85,17 +87,72 @@ public class WorkoutMainFragment extends WearableFragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
-        // Status overlays
         mTextClock = (TextClock) view.findViewById(R.id.time);
-        mGpsConnectivityImageView = (ImageView) view.findViewById(R.id.gps_connectivity);
-        mHrmConnectivityImageView = (ImageView) view.findViewById(R.id.hrm_connectivity);
+
+        final GestureDetector mapButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDown (MotionEvent event){
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapUp(MotionEvent event) {
+                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                    mViewPager.setCurrentItem(FRAGMENT_MAP, 0);
+                } else {
+                    mViewPager.setCurrentItem(0, FRAGMENT_MAP);
+                }
+
+                return super.onSingleTapConfirmed(event);
+            }
+        });
+
+        mMapButton = (ImageView) view.findViewById(R.id.map_button);
+        mMapButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                // Dispatch all events to the underlying viewpager so that it can handle dragging
+                // and flinging events
+                mViewPager.dispatchTouchEvent(event);
+                return mapButtonGestureDetector.onTouchEvent(event);
+            }
+        });
+
+        final GestureDetector heartButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDown (MotionEvent event){
+                return true;
+            }
+
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent event) {
+                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                    mViewPager.setCurrentItem(FRAGMENT_HEART, 0);
+                } else {
+                    mViewPager.setCurrentItem(0, FRAGMENT_HEART);
+                }
+
+                return super.onSingleTapConfirmed(event);
+            }
+        });
+
+        mHeartButton = (ImageView) view.findViewById(R.id.heart_button);
+        mHeartButton.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                // Dispatch all events to the underlying viewpager so that it can handle dragging
+                // and flinging events
+                mViewPager.dispatchTouchEvent(event);
+                return heartButtonGestureDetector.onTouchEvent(event);
+            }
+        });
 
         // If the device has a heart rate monitor, add the HRM view to the view pager
         if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
-            mHrmConnectivityImageView.setVisibility(View.VISIBLE);
+            mHeartButton.setVisibility(View.VISIBLE);
             mViewPagerItems += 1;
         }
 
@@ -114,7 +171,6 @@ public class WorkoutMainFragment extends WearableFragment {
                     case KeyEvent.KEYCODE_STEM_1:
                     case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
                         Point p1 = mViewPager.getCurrentItem();
-
                         if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
                             mViewPager.setCurrentItem(p1.y - 1, p1.x);
                         } else {
@@ -126,7 +182,6 @@ public class WorkoutMainFragment extends WearableFragment {
                     case KeyEvent.KEYCODE_STEM_2:
                     case KeyEvent.KEYCODE_NAVIGATE_NEXT:
                         Point p2 = mViewPager.getCurrentItem();
-
                         if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
                             mViewPager.setCurrentItem(p2.y + 1, p2.x);
                         } else {
@@ -150,26 +205,26 @@ public class WorkoutMainFragment extends WearableFragment {
         // mViewPager.setCurrentItem() doesn't appear to queue the initial page change, even after
         // mViewPager.setAdapter() is called, as is expected (ref http://stackoverflow.com/a/29136603/763176).
         // Instead, we need to tell the view pager to change the current item, but we need to wait until it has been laid out.
+        final int currentItem;
         if (getArguments() != null) {
-            final int x = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_MAP);
-
-            ViewTreeObserver observer = mViewPager.getViewTreeObserver();
-            observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-                @Override
-                public void onGlobalLayout() {
-                    mViewPager.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-
-                    if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                        mViewPager.setCurrentItem(x, 0, false);
-                    } else {
-                        mViewPager.setCurrentItem(0, x, false);
-                    }
-                }
-            });
+            currentItem = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_DATA);
+        } else {
+            currentItem  = FRAGMENT_DATA;
         }
 
-        mDotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
-        mDotsPageIndicator.setPager(mViewPager);
+        ViewTreeObserver observer = mViewPager.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mViewPager.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+
+                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+                    mViewPager.setCurrentItem(currentItem, 0, false);
+                } else {
+                    mViewPager.setCurrentItem(0, currentItem, false);
+                }
+            }
+        });
 
         updateUI();
 
@@ -212,14 +267,11 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setFormat12Hour("h:mm");
         mTextClock.setFormat24Hour("H:mm");
         mTextClock.setTextColor(Color.WHITE);
-        mTextClock.setBackgroundResource(R.drawable.bg_map_overlay_ambient);
+        mTextClock.setBackgroundResource(R.drawable.bg_text_overlay_ambient);
         mTextClock.getPaint().setAntiAlias(false);
 
-        mDotsPageIndicator.setVisibility(View.INVISIBLE);
-
-        // TODO instead of just hiding the status indicator, create b&w modes for them
-        mGpsConnectivityImageView.setVisibility(View.INVISIBLE);
-        mHrmConnectivityImageView.setVisibility(View.INVISIBLE);
+        mMapButton.setVisibility(View.INVISIBLE);
+        mHeartButton.setVisibility(View.INVISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -233,14 +285,12 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm:ss");
         mTextClock.setFormat24Hour("H:mm:ss");
-        mTextClock.setBackgroundResource(R.drawable.bg_map_overlay);
+        mTextClock.setBackgroundResource(R.drawable.bg_text_overlay);
         mTextClock.setTextColor(getResources().getColor(R.color.text_dark, null));
         mTextClock.getPaint().setAntiAlias(true);
 
-        mGpsConnectivityImageView.setVisibility(View.VISIBLE);
-        mHrmConnectivityImageView.setVisibility(View.VISIBLE);
-
-        mDotsPageIndicator.setVisibility(View.VISIBLE);
+        mMapButton.setVisibility(View.VISIBLE);
+        mHeartButton.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -258,25 +308,48 @@ public class WorkoutMainFragment extends WearableFragment {
         updateUI();
     }
 
+    //
+    // Private class methods
+    //
+
     private void updateUI() {
         if (mIsLocationServiceConnected) {
-            mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_fixed);
+            mMapButton.setColorFilter(getContext().getColor(R.color.primary));
         } else {
-            mGpsConnectivityImageView.setImageResource(R.drawable.ic_gps_not_fixed);
+            mMapButton.setColorFilter(getContext().getColor(R.color.black_86p));
         }
 
-        // TODO can set image tint instead of changing icon
-        // TODO determine how this vector image is scale and make it larger
         if (mIsHrmConnected) {
-            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart_red);
+            mHeartButton.setColorFilter(getContext().getColor(R.color.highlight_dark));
         } else {
-            mHrmConnectivityImageView.setImageResource(R.drawable.ic_heart);
+            mHeartButton.setColorFilter(getContext().getColor(R.color.black_86p));
         }
     }
 
     private Fragment getCurrentViewPagerFragment() {
         Point p = mViewPager.getCurrentItem();
         return mViewPagerAdapter.findExistingFragment(p.y, p.x);
+    }
+
+    //
+    // Public class methods
+    //
+
+    public int getCurrentFragment() {
+        Point p = mViewPager.getCurrentItem();
+        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+            return p.y;
+        }
+
+        return p.x;
+    }
+
+    public void setCurrentFragment(int fragmentIndex) {
+        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
+            mViewPager.setCurrentItem(fragmentIndex, 0, true);
+        } else {
+            mViewPager.setCurrentItem(0, fragmentIndex, true);
+        }
     }
 
     //

@@ -13,10 +13,10 @@ android {
 
     defaultConfig {
         applicationId "info.saxman.whererunner"
-        versionCode 3
-        versionName "1.0.2"
+        versionCode 4
+        versionName "1.0.3"
 
-        minSdkVersion 23
+        minSdkVersion 24
         targetSdkVersion 24
     }
 
@@ -31,15 +31,15 @@ android {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
 
-    compile 'com.google.android.support:wearable:2.0.0-alpha2'
+    compile 'com.google.android.support:wearable:2.0.0-alpha3'
     provided 'com.google.android.wearable:wearable:1.0.0'
 
-    compile "com.android.support:support-v4:24.2.0"
+    compile "com.android.support:support-v4:24.2.1"
 
-    compile 'com.google.android.gms:play-services-wearable:9.4.0'
-    compile 'com.google.android.gms:play-services-maps:9.4.0'
-    compile 'com.google.android.gms:play-services-location:9.4.0'
-    compile 'com.google.android.gms:play-services-fitness:9.4.0'
+    compile 'com.google.android.gms:play-services-wearable:9.6.1'
+    compile 'com.google.android.gms:play-services-maps:9.6.1'
+    compile 'com.google.android.gms:play-services-location:9.6.1'
+    compile 'com.google.android.gms:play-services-fitness:9.6.1'
 
     compile 'com.google.firebase:firebase-core:9.2.1'
 }

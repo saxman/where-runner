@@ -14,9 +14,13 @@
         <item name="android:textSize">@dimen/text_small</item>
     </style>
 
-    <style name="map_overlay" parent="@android:style/Widget.TextView">
+    <style name="text_overlay" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/text_dark</item>
         <item name="android:textSize">@dimen/text_small</item>
-        <item name="android:background">@drawable/bg_map_overlay</item>
+        <item name="android:background">@drawable/bg_text_overlay</item>
+    </style>
+
+    <style name="button_round" parent="@android:style/Widget.ActionButton">
+        <item name="android:background">@drawable/bg_button_round</item>
     </style>
 </resources>

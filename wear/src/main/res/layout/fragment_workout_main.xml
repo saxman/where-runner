@@ -17,7 +17,7 @@
     </android.support.wearable.view.GridViewPager>
 
     <TextClock
-        style="@style/map_overlay"
+        style="@style/text_overlay"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/time"
@@ -30,36 +30,27 @@
         android:format12Hour="h:mm:ss"
         android:format24Hour="H:mm:ss" />
 
-    <RelativeLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- TODO move constants to dimens -->
+    <ImageView
+        android:id="@+id/map_button"
+        style="@style/button_round"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
         android:layout_gravity="center_vertical|left"
-        android:layout_marginLeft="@dimen/map_overlay_margin">
+        android:paddingLeft="23dp"
+        android:paddingRight="5dp"
+        android:layout_marginLeft="-23dp"
+        android:src="@drawable/ic_place" />
 
-        <ImageView
-            android:id="@+id/gps_connectivity"
-            style="@style/map_overlay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:src="@drawable/ic_gps_not_fixed"
-            android:padding="@dimen/map_overlay_padding"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing" />
-
-        <ImageView
-            android:id="@+id/hrm_connectivity"
-            style="@style/map_overlay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_below="@+id/gps_connectivity"
-            android:padding="@dimen/map_overlay_padding"
-            android:layout_marginTop="@dimen/map_overlay_spacing"
-            android:layout_marginBottom="@dimen/map_overlay_spacing"
-            android:src="@drawable/ic_heart"
-            android:visibility="gone" />
-
-    </RelativeLayout>
-
-    <include layout="@layout/dot_page_indicator" />
+    <ImageView
+        android:id="@+id/heart_button"
+        style="@style/button_round"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_vertical|right"
+        android:paddingLeft="5dp"
+        android:paddingRight="23dp"
+        android:layout_marginRight="-23dp"
+        android:src="@drawable/ic_heart" />
 
 </FrameLayout>
