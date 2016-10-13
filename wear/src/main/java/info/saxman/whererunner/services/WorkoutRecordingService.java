@@ -11,17 +11,17 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.location.Location;
 import android.os.Binder;
-import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
+import android.support.v4.app.RemoteInput;
 import android.support.v4.content.LocalBroadcastManager;
 
 import info.saxman.whererunner.MainActivity;
+import info.saxman.whererunner.R;
 import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.model.WorkoutType;
 import info.saxman.whererunner.persistence.WorkoutDbHelper;
-import com.google.firebase.analytics.FirebaseAnalytics;
 
 import java.util.ArrayList;
 
@@ -45,8 +45,6 @@ public class WorkoutRecordingService extends Service {
 
     /** Outgoing action reporting that the workout data has been updated */
     public final static String ACTION_WORKOUT_DATA_UPDATED = "WORKOUT_DATA_UPDATED";
-
-    private FirebaseAnalytics mFirebaseAnalytics;
 
     private final BroadcastReceiver mHeartRateBroadcastReceiver = new HeartRateBroadcastReceiver();
     private final ServiceConnection mLocationServiceConnection = new MyServiceConnection();
@@ -75,20 +73,22 @@ public class WorkoutRecordingService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        mFirebaseAnalytics = FirebaseAnalytics.getInstance(this);
+        Intent stopIntent =
+                new Intent(MainActivity.ACTION_STOP_WORKOUT, null, this, MainActivity.class);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, stopIntent, 0);
 
-        // TODO clean up and add support for actual workout pause/stop
+        NotificationCompat.Action.Builder actionBuilder =
+                new NotificationCompat.Action.Builder(
+                    R.drawable.ic_stop_white, getString(R.string.stop_recording), pi);
 
-        Intent stopIntent = new Intent("", null, this, WorkoutRecordingService.class);
-        PendingIntent pi = PendingIntent.getService(this, 0, stopIntent, 0);
-        NotificationCompat.Action.Builder actionBuilder = new NotificationCompat.Action.Builder( info.saxman.whererunner.R.drawable.ic_stop, "stop", pi);
+        NotificationCompat.Action.WearableExtender actionExtender =
+                new NotificationCompat.Action.WearableExtender()
+                        .setHintLaunchesActivity(true)
+                        .setHintDisplayActionInline(true);
 
-        NotificationCompat.Action.WearableExtender actionExtender = new NotificationCompat.Action.WearableExtender().setHintLaunchesActivity(false).setHintDisplayActionInline(true);
-        NotificationCompat.WearableExtender wearableExtender = new NotificationCompat.WearableExtender();
-        wearableExtender.addAction(actionBuilder.extend(actionExtender).build());
-        wearableExtender.setHintContentIntentLaunchesActivity(false);
-
-        // TODO END
+        NotificationCompat.WearableExtender wearableExtender =
+                new NotificationCompat.WearableExtender()
+                        .addAction(actionBuilder.extend(actionExtender).build());
 
         Intent contentIntent = new Intent(this, MainActivity.class);
         contentIntent.setAction(MainActivity.ACTION_SHOW_WORKOUT);
@@ -159,9 +159,6 @@ public class WorkoutRecordingService extends Service {
 
         startHeartRateRecording();
         startLocationRecording();
-
-        // Log in Firebase
-        fbLogStartWorkout();
     }
 
     /**
@@ -175,9 +172,6 @@ public class WorkoutRecordingService extends Service {
 
         saveWorkout();
         resetSampleCollections();
-
-        // Log in Firebase
-        fbLogStopWorkout();
     }
 
     /**
@@ -213,22 +207,6 @@ public class WorkoutRecordingService extends Service {
     private void resetSampleCollections() {
         heartRateSamples.clear();
         locationSamples.clear();
-    }
-
-    /* FIREBASE METHODS */
-
-    /**
-     * Logs a user starting a workout
-     */
-    private void fbLogStartWorkout() {
-        mFirebaseAnalytics.logEvent("workout_start", new Bundle());
-    }
-
-    /**
-     * Logs a user stopping a workout
-     */
-    private void fbLogStopWorkout() {
-        mFirebaseAnalytics.logEvent("workout_stop", new Bundle());
     }
 
     private void startLocationService() {

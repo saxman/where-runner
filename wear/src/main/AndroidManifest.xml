@@ -54,6 +54,12 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <data android:mimeType="vnd.google.fitness.activity/other"/>
             </intent-filter>
+
+            <intent-filter>
+                <action android:name="vnd.google.fitness.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="vnd.google.fitness.data_type/com.google.heart_rate.bpm"/>
+            </intent-filter>
         </activity>
 
         <service

@@ -46,6 +46,12 @@ public class MainActivity extends WearableActivity implements
 
     public static final String ACTION_SHOW_WORKOUT = MainActivity.class.getPackage() + ".SHOW_WORKOUT";
     public static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
+    public static final String ACTION_STOP_WORKOUT = MainActivity.class.getPackage() + ".STOP_WORKOUT";
+    public static final String ACTION_SHOW_HEART_RATE = "vnd.google.fitness.VIEW";
+
+    private static final String MIME_TYPE_WORKOUT_BIKING = "vnd.google.fitness.activity/biking";
+    private static final String MIME_TYPE_WORKOUT_RUNNING =  "vnd.google.fitness.activity/running";
+    private static final String MIME_TYPE_WORKOUT_OTHER = "vnd.google.fitness.activity/other";
 
     private static final int REQUEST_PERMISSIONS = 1;
 
@@ -112,16 +118,17 @@ public class MainActivity extends WearableActivity implements
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
         mCurrentViewPagerFragment = new WorkoutMainFragment();
 
+        // Set up the UI based on intent action. Starting and stopping the recording is handled once
+        // the recording service has been connected to.
         String action = getIntent().getAction();
         if (Intent.ACTION_MAIN.equals(action)) {
-            // Peek the drawers to remind the user that they're there
+            // If starting fresh, peek the drawers to remind the user that they're there
             mWearableDrawerLayout.peekDrawer(Gravity.TOP);
             mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
-        } else if (ACTION_SHOW_WORKOUT.equals(action) || ACTION_START_WORKOUT.equals(action)) {
+        } else if (ACTION_SHOW_HEART_RATE.equals(action)) {
             // Pass an attribute to the main workout fragment to tell it to display the workout data
-            // rather than the map
             Bundle bundle = new Bundle();
-            bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_DATA);
+            bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_HEART);
             mCurrentViewPagerFragment.setArguments(bundle);
         }
 
@@ -239,7 +246,6 @@ public class MainActivity extends WearableActivity implements
                 wmf.setCurrentFragment(WorkoutMainFragment.FRAGMENT_DATA);
                 return;
             }
-
         } else {
             mWearableNavigationDrawer.setCurrentItem(0, true);
             return;
@@ -265,8 +271,13 @@ public class MainActivity extends WearableActivity implements
 
             scheduleAmbientUpdate();
         } else {
-            // TODO instead of exiting the app, return to the home view (workout data)
+            // TODO instead of exiting the app, return to the home view (workout data) and the enter ambient mode
             finish();
+
+            // For manually switching back to the main fragment for ambient mode, there's an issue
+            // where the current nav drawer fragment isn't initialized directly after
+            // mWearableNavigationDrawer.setCurrentItem() returns. Therefore, we can't call
+            // onEnterAmbient() on the fragment, since it's views aren't ready.
         }
     }
 
@@ -469,26 +480,28 @@ public class MainActivity extends WearableActivity implements
         public void onServiceConnected(ComponentName className, IBinder binder) {
             mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
 
-            // TODO move constants elsewhere
             if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
                 switch (getIntent().getType()) {
-                    case "vnd.google.fitness.activity/biking":
+                    case MIME_TYPE_WORKOUT_BIKING:
                         mWorkoutRecordingService.setActivityType(WorkoutType.CYCLING);
                         break;
-                    case "vnd.google.fitness.activity/running":
+                    case MIME_TYPE_WORKOUT_RUNNING:
                         mWorkoutRecordingService.setActivityType(WorkoutType.RUNNING);
                         break;
-                    case "vnd.google.fitness.activity/other":
+                    case MIME_TYPE_WORKOUT_OTHER:
                         // Use default if starting new workout
                         break;
                 }
 
+                // TODO move constants elsewhere
                 String status = getIntent().getExtras().getString("actionStatus");
                 if ("ActiveActionStatus".equals(status)) {
                     mWorkoutRecordingService.startRecordingWorkout();
                 } else if ("CompletedActionStatus".equals(status)) {
                     mWorkoutRecordingService.stopRecordingWorkout();
                 }
+            } else if (ACTION_STOP_WORKOUT.equals(getIntent().getAction())) {
+                mWorkoutRecordingService.stopRecordingWorkout();
             }
 
             // Update the activity's actions to reflect the state from the workout service

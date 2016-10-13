@@ -202,6 +202,7 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
+        // If a different initial view has been requested, display it first.
         // mViewPager.setCurrentItem() doesn't appear to queue the initial page change, even after
         // mViewPager.setAdapter() is called, as is expected (ref http://stackoverflow.com/a/29136603/763176).
         // Instead, we need to tell the view pager to change the current item, but we need to wait until it has been laid out.
@@ -209,7 +210,7 @@ public class WorkoutMainFragment extends WearableFragment {
         if (getArguments() != null) {
             currentItem = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_DATA);
         } else {
-            currentItem  = FRAGMENT_DATA;
+            currentItem = FRAGMENT_DATA;
         }
 
         ViewTreeObserver observer = mViewPager.getViewTreeObserver();
