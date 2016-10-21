@@ -78,5 +78,8 @@
             android:name=".services.WorkoutRecordingService"
             android:exported="false" />
 
+        <service
+            android:name=".services.PhoneConnectivityService"
+            android:exported="false" />
     </application>
 </manifest>

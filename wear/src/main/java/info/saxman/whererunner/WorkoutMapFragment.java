@@ -168,8 +168,9 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         mAccuracyCircle = mGoogleMap.addCircle(new CircleOptions()
                 .center(new LatLng(0, 0))
                 .radius(0)
-                .strokeWidth(0)
-                .fillColor(getResources().getColor(R.color.location_accuracy_circle, null))
+                .strokeWidth(1)
+                .strokeColor(getResources().getColor(R.color.location_accuracy_stroke, null))
+                .fillColor(getResources().getColor(R.color.location_accuracy_fill, null))
                 .visible(false));
 
         updateUI();
@@ -245,7 +246,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             return;
         }
 
-        if (LocationService.isLocationUpdating) {
+        if (LocationService.isReceivingAccurateLocationSamples) {
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
             mAccuracyCircle.setCenter(latLng);
             mAccuracyCircle.setRadius(location.getAccuracy());
@@ -268,7 +269,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         if (isAmbient()) {
             mMapMarker.setIcon(mAmbientMapMarkerIcon);
-        } else if (LocationService.isLocationUpdating) {
+        } else if (LocationService.isReceivingAccurateLocationSamples) {
             if (WorkoutRecordingService.isRecording) {
                 mMapMarker.setIcon(mRecordingMapMarkerIcon);
             } else {
@@ -354,7 +355,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                         updateMapCenter(location);
 
                         // If the location was previously not-fixed, change the marker icon
-                        if (!LocationService.isLocationUpdating) {
+                        if (!LocationService.isReceivingAccurateLocationSamples) {
                             updateMapMarkerIcon();
                         }
                     }

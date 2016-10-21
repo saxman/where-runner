@@ -19,7 +19,7 @@ public class Workout implements Parcelable {
     private float heartRateAverage;
     private int heartRateMin = Integer.MAX_VALUE;
     private int heartRateMax = Integer.MIN_VALUE;
-    private int heartRateCurrent;
+    private int heartRateCurrent = -1;
 
     public Workout() {}
 
@@ -45,7 +45,6 @@ public class Workout implements Parcelable {
         heartRateAverage = parcel.readFloat();
         heartRateMin = parcel.readInt();
         heartRateMax = parcel.readInt();
-        heartRateCurrent = parcel.readInt();
     }
 
     public int getType() {
@@ -89,12 +88,12 @@ public class Workout implements Parcelable {
         return heartRateMax;
     }
 
-    public int getHeartRateCurrent() {
-        return heartRateCurrent;
-    }
-
     public float getHeartRateAverage() {
         return heartRateAverage;
+    }
+
+    public int getHeartRateCurrent() {
+        return heartRateCurrent;
     }
 
     public void setStartTime(long startTime) {
@@ -161,7 +160,6 @@ public class Workout implements Parcelable {
         parcel.writeFloat(heartRateAverage);
         parcel.writeInt(heartRateMin);
         parcel.writeInt(heartRateMax);
-        parcel.writeInt(heartRateCurrent);
     }
 
     public static final Parcelable.Creator<Workout> CREATOR = new Parcelable.Creator<Workout>() {

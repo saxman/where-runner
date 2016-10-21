@@ -33,4 +33,7 @@
     <string name="format_speed">%.1f</string>
 
     <string name="loading">Loading ...</string>
+    <string name="phone_disconnected">Phone Disconnected</string>
+    <string name="location_unavailable">GPS location unavailable</string>
+    <string name="reacquiring_location">Attempting to reacquire GPS</string>
 </resources>

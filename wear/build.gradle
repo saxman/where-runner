@@ -16,7 +16,7 @@ android {
         versionCode 4
         versionName "1.0.3"
 
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdkVersion 24
     }
 
@@ -39,9 +39,7 @@ dependencies {
     compile 'com.google.android.gms:play-services-wearable:9.6.1'
     compile 'com.google.android.gms:play-services-maps:9.6.1'
     compile 'com.google.android.gms:play-services-location:9.6.1'
-    compile 'com.google.android.gms:play-services-fitness:9.6.1'
-
-    compile 'com.google.firebase:firebase-core:9.2.1'
+//    compile 'com.google.android.gms:play-services-fitness:9.6.1'
 }
 
 // Includes the google-settings.json file

@@ -44,7 +44,7 @@ public class GpsLocationService extends LocationService {
         if (checkPermission()) {
             mLocationManager.removeUpdates(mLocationListener);
             mLocationManager.removeGpsStatusListener(mGpsStatusListener);
-            isLocationUpdating = false;
+            isReceivingAccurateLocationSamples = false;
         }
     }
 

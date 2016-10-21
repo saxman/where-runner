@@ -17,7 +17,8 @@ public class HeartRateSensorService extends Service {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HeartRateSensorService.class.getSimpleName();
 
-    public static final String ACTION_HEART_RATE_SENSOR_TIMEOUT = "HEART_RATE_SENSOR_TIMEOUT";
+    public static final String ACTION_CONNECTIVITY_CHANGED = "HEART_RATE_SENSOR_CONNECTIVITY_CHANGED";
+    public static final String EXTRA_IS_RECEIVING_SAMPLES = "IS_RECEIVING_HEART_RATE_SAMPLES";
 
     public static final String ACTION_HEART_RATE_CHANGED = "HEART_RATE_CHANGED";
     public static final String EXTRA_HEART_RATE = "HEART_RATE";
@@ -30,7 +31,8 @@ public class HeartRateSensorService extends Service {
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-    public static HeartRateSensorEvent lastHeartRateSensorEvent;
+    public static HeartRateSensorEvent lastHeartRateSample;
+    public static boolean isReceivingAccurateHeartRateSamples = false;
 
     public static boolean isActive = false;
 
@@ -87,31 +89,40 @@ public class HeartRateSensorService extends Service {
                 return;
             }
 
-            if (mSensorSampleTimer != null) {
-                mSensorSampleTimer.cancel();
-            }
-
-            // Start a timer to detect if we're not receiving location samples in regular intervals
-            mSensorSampleTimer = new CountDownTimer(HRM_UPDATE_INTERVAL_TIMEOUT_MS, HRM_UPDATE_INTERVAL_TIMEOUT_MS) {
-                public void onTick(long millisUntilFinished) {}
-
-                public void onFinish() {
-                    Intent intent = new Intent(ACTION_HEART_RATE_SENSOR_TIMEOUT);
-                    LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
-                }
-            }.start();
-
             // Get the last sample; however, there appears to only ever be one value...
             float value = event.values[event.values.length - 1];
 
             // HR sensor values appear to only ever be integers, so store as such
             HeartRateSensorEvent hrEvent = new HeartRateSensorEvent((int) value, event.timestamp, event.accuracy);
-            lastHeartRateSensorEvent = hrEvent;
+            lastHeartRateSample = hrEvent;
 
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
             intent.putExtra(HeartRateSensorService.EXTRA_HEART_RATE, hrEvent);
-
             LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
+
+            if (!isReceivingAccurateHeartRateSamples) {
+                isReceivingAccurateHeartRateSamples = true;
+                intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
+                intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, true);
+                LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
+            }
+
+            // Since we received an accurate heart rate sample, cancel the existing timer
+            if (mSensorSampleTimer != null) {
+                mSensorSampleTimer.cancel();
+            }
+
+            // Start a timer to detect if we're not receiving HR samples in regular intervals
+            mSensorSampleTimer = new CountDownTimer(HRM_UPDATE_INTERVAL_TIMEOUT_MS, HRM_UPDATE_INTERVAL_TIMEOUT_MS) {
+                public void onTick(long millisUntilFinished) {}
+
+                public void onFinish() {
+                    isReceivingAccurateHeartRateSamples = false;
+                    Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
+                    intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, false);
+                    LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
+                }
+            }.start();
         }
 
         @Override

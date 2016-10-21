@@ -87,7 +87,7 @@ public class WhereRunnerApp extends Application {
     public static String formatDistance(float distance) {
         String string;
 
-        if (WorkoutRecordingService.workout.getDistance() < 1000) {
+        if (distance < 1000) {
             String meters = sInstance.getString(R.string.format_distance_meters);
             string = String.format(Locale.getDefault(), meters, distance);
         } else {

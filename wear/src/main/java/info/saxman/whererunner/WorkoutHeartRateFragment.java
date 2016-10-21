@@ -27,29 +27,22 @@ public class WorkoutHeartRateFragment extends WearableFragment
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutHeartRateFragment.class.getSimpleName();
 
-    private static final long HR_SAMPLE_DELAY_THRESHOLD_MS = 10000;
-
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private TextView mHrMinMaxText;
     private TextView mHrCurrentText;
     private TextView mHrAverageText;
 
+    /** All TextViews in the fragment which need updating when the app goes in/out of ambient mode. */
     private LinkedList<TextView> mTextViews = new LinkedList<>();
 
-    private HeartRateSensorEvent mHrSensorEvent;
+    private String mNoDataString;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Don't both using the last HR sample if it's too old
-        if (HeartRateSensorService.lastHeartRateSensorEvent != null) {
-            long delta = System.currentTimeMillis() - HeartRateSensorService.lastHeartRateSensorEvent.getTimestamp();
-            if (delta < HR_SAMPLE_DELAY_THRESHOLD_MS) {
-                mHrSensorEvent = HeartRateSensorService.lastHeartRateSensorEvent;
-            }
-        }
+        mNoDataString = getString(R.string.hrm_no_data);
     }
 
     @Override
@@ -79,7 +72,7 @@ public class WorkoutHeartRateFragment extends WearableFragment
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
+        filter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, filter);
     }
 
@@ -115,32 +108,31 @@ public class WorkoutHeartRateFragment extends WearableFragment
     }
 
     private void updateUI() {
-        String noData = getString(R.string.hrm_no_data);
-
-        if (WorkoutRecordingService.isRecording) {
-            int curr = WorkoutRecordingService.workout.getHeartRateCurrent();
+        // If we have workout data (active or recently stopped), use it
+        if (WorkoutRecordingService.workout.getHeartRateCurrent() > -1) {
             int min = WorkoutRecordingService.workout.getHeartRateMin();
             int max = WorkoutRecordingService.workout.getHeartRateMax();
             float avg = WorkoutRecordingService.workout.getHeartRateAverage();
 
-            mHrCurrentText.setText(String.valueOf(curr));
-
             // If min and max are outside normal bounds (i.e. they haven't been set), show now data
             if (max <= 0 || min > 1000) {
-                mHrMinMaxText.setText(noData);
+                mHrMinMaxText.setText(mNoDataString);
             } else {
                 mHrMinMaxText.setText(String.format(Locale.getDefault(), "%d / %d", min, max));
             }
 
             if (WorkoutRecordingService.workout.getHeartRateAverage() == 0) {
-                mHrAverageText.setText(noData);
+                mHrAverageText.setText(mNoDataString);
             } else {
                 mHrAverageText.setText(String.format(Locale.getDefault(), "%.1f", avg));
             }
-        } else if (mHrSensorEvent != null) {
-            mHrCurrentText.setText(String.valueOf(mHrSensorEvent.getHeartRate()));
+        }
+
+        // If we're actively receiving heart rate samples, display the most recent
+        if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
+            mHrCurrentText.setText(String.valueOf(HeartRateSensorService.lastHeartRateSample.getHeartRate()));
         } else {
-            mHrCurrentText.setText(noData);
+            mHrCurrentText.setText(mNoDataString);
         }
     }
 
@@ -149,10 +141,7 @@ public class WorkoutHeartRateFragment extends WearableFragment
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                    mHrSensorEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
-                    break;
-                case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
-                    mHrSensorEvent = null;
+                case HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED:
                     break;
             }
 

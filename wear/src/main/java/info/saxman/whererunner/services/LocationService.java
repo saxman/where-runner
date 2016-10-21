@@ -18,8 +18,8 @@ public abstract class LocationService extends Service {
     public final static String ACTION_LOCATION_CHANGED = "LOCATION_CHANGED";
     public final static String EXTRA_LOCATION = "LOCATION";
 
-    public final static String ACTION_CONNECTIVITY_CHANGED = "ACTION_CONNECTIVITY_CHANGED";
-    public final static String EXTRA_IS_LOCATION_UPDATING = "IS_LOCATION_UPDATING";
+    public final static String ACTION_CONNECTIVITY_CHANGED = "LOCATION_SENOR_CONNECTIVITY_CHANGED";
+    public final static String EXTRA_IS_RECEIVING_SAMPLES = "IS_RECEIVING_LOCATION_SAMPLES";
 
     protected static final int LOCATION_UPDATE_INTERVAL_MS = 1000;
     private static final int LOCATION_UPDATE_INTERVAL_TIMEOUT_MS = 10000;
@@ -28,7 +28,7 @@ public abstract class LocationService extends Service {
     private CountDownTimer mLocationSampleTimer;
 
     public static Location lastKnownLocation;
-    public static boolean isLocationUpdating = false;
+    public static boolean isReceivingAccurateLocationSamples = false;
 
     public static boolean isActive = false;
 
@@ -80,21 +80,16 @@ public abstract class LocationService extends Service {
 
         lastKnownLocation = location;
 
-        Intent intent = new Intent(ACTION_LOCATION_CHANGED)
-                .putExtra(EXTRA_LOCATION, location);
-
+        Intent intent = new Intent(ACTION_LOCATION_CHANGED).putExtra(EXTRA_LOCATION, location);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
-        if (!isLocationUpdating) {
-            isLocationUpdating = true;
-
-            intent = new Intent(ACTION_CONNECTIVITY_CHANGED)
-                    .putExtra(EXTRA_IS_LOCATION_UPDATING, true);
-
+        if (!isReceivingAccurateLocationSamples) {
+            isReceivingAccurateLocationSamples = true;
+            intent = new Intent(ACTION_CONNECTIVITY_CHANGED).putExtra(EXTRA_IS_RECEIVING_SAMPLES, true);
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         }
 
-        // Reset (cancel) pre-existing timer
+        // Since we received an accurate location samples, cancel the existing timer
         if (mLocationSampleTimer != null) {
             mLocationSampleTimer.cancel();
         }
@@ -104,11 +99,9 @@ public abstract class LocationService extends Service {
             public void onTick(long millisUntilFinished) {}
 
             public void onFinish() {
-                isLocationUpdating = false;
-
-                Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED)
-                        .putExtra(EXTRA_IS_LOCATION_UPDATING, false);
-
+                isReceivingAccurateLocationSamples = false;
+                Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
+                intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, false);
                 LocalBroadcastManager.getInstance(LocationService.this).sendBroadcast(intent);
             }
         }.start();

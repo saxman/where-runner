@@ -32,6 +32,8 @@ import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.model.WorkoutType;
 import info.saxman.whererunner.framework.WearableFragment;
 import info.saxman.whererunner.persistence.WorkoutDbHelper;
+import info.saxman.whererunner.services.HeartRateSensorService;
+import info.saxman.whererunner.services.LocationService;
 import info.saxman.whererunner.services.WorkoutRecordingService;
 
 import java.util.ArrayList;
@@ -64,8 +66,8 @@ public class MainActivity extends WearableActivity implements
     private Fragment mCurrentViewPagerFragment;
 
     private WorkoutRecordingService mWorkoutRecordingService;
-    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
     private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
+    private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
     private static final long AMBIENT_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
 
@@ -144,14 +146,14 @@ public class MainActivity extends WearableActivity implements
         ArrayList<String> permissions = new ArrayList<>(2);
 
         // If not already granted, ask for fine location permission
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
         }
 
         // If the device has a HRM, also request body sensor permission, if not already granted
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)
                 && ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
-
             permissions.add(Manifest.permission.BODY_SENSORS);
         }
 
@@ -167,9 +169,9 @@ public class MainActivity extends WearableActivity implements
     public void onResume() {
         super.onResume();
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                mBroadcastReceiver,
-                new IntentFilter(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED));
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
@@ -428,6 +430,7 @@ public class MainActivity extends WearableActivity implements
             switch (pos) {
                 case NAV_DRAWER_FRAGMENT_MAIN:
                     mCurrentViewPagerFragment = new WorkoutMainFragment();
+
                     // Ensure the action drawer is visible, since it could have been hidden for other nav drawer pages
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
                     break;
@@ -472,6 +475,7 @@ public class MainActivity extends WearableActivity implements
                 case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
                     boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
                     setRecordingButtonState(isRecording);
+                    break;
             }
         }
     }

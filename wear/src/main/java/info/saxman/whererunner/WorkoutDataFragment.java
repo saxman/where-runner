@@ -18,6 +18,7 @@ import info.saxman.whererunner.services.WorkoutRecordingService;
 
 import java.util.LinkedList;
 import java.util.Locale;
+import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -37,30 +38,6 @@ public class WorkoutDataFragment extends WearableFragment {
     private Timer mDurationTimer;
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
-
-    public static final String EXTRA_START_TIME = "START_TIME";
-    public static final String EXTRA_DISTANCE = "DISTANCE";
-    public static final String EXTRA_SPEED_CURRENT = "SPEED_CURRENT";
-    public static final String EXTRA_SPEED_AVERAGE = "SPEED_AVERAGE";
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-    }
-
-    // TODO migrate to instancing in containing activity/fragment
-    public static final WorkoutDataFragment newInstance(Workout workout) {
-        Bundle bundle = new Bundle(4);
-        bundle.putDouble(EXTRA_START_TIME, workout.getStartTime());
-        bundle.putDouble(EXTRA_DISTANCE, workout.getStartTime());
-        bundle.putDouble(EXTRA_SPEED_CURRENT, workout.getStartTime());
-        bundle.putDouble(EXTRA_SPEED_AVERAGE, workout.getStartTime());
-
-        WorkoutDataFragment fragment = new WorkoutDataFragment();
-        fragment.setArguments(bundle);
-
-        return fragment;
-    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {

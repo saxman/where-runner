@@ -64,7 +64,7 @@ public class FusedLocationService extends LocationService {
     protected void stopLocationUpdates() {
         if (mGoogleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, mLocationListener);
-            isLocationUpdating = false;
+            isReceivingAccurateLocationSamples = false;
         }
     }
 

@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
@@ -29,8 +30,8 @@ import java.util.ArrayList;
  * Listens for incoming local broadcast intents for starting and stopping a session
  * and all the data associated with it.
  *
- * This service should be spun up when the app is started and should be foregrounded to ensure
- * that all data is captured and recorded.
+ * This service should be spun up when the app is started and should be foregrounded during an
+ * active workout to ensure that all data is captured and recorded.
  */
 public class WorkoutRecordingService extends Service {
 
@@ -52,18 +53,20 @@ public class WorkoutRecordingService extends Service {
     private final BroadcastReceiver mLocationBroadcastReceiver = new LocationBroadcastReceiver();
     private final ServiceConnection mHeartRateServiceConnection = new MyServiceConnection();
 
+    private final ServiceConnection mPhoneConnectivityServiceConnection = new MyServiceConnection();
+
     private WorkoutRecordingServiceBinder mServiceBinder = new WorkoutRecordingServiceBinder();
 
     private static final int NOTIFICATION_ID = 1;
     private NotificationManagerCompat mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
 
+    private WorkoutType mWorkoutType = WorkoutType.RUNNING;
+
     public static boolean isRecording = false;
     public static Workout workout = new Workout();
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
-
-    private WorkoutType mWorkoutType = WorkoutType.RUNNING;
 
     //
     // Service class methods
@@ -114,7 +117,12 @@ public class WorkoutRecordingService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         startHeartRateService();
-        startLocationService();
+
+        Intent i = new Intent(this, FusedLocationService.class);
+        bindService(i, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+
+        i = new Intent(this, PhoneConnectivityService.class);
+        bindService(i, mPhoneConnectivityServiceConnection, Context.BIND_AUTO_CREATE);
 
         return mServiceBinder;
     }
@@ -131,7 +139,8 @@ public class WorkoutRecordingService extends Service {
     public void onDestroy() {
         mNotificationManager.cancel(NOTIFICATION_ID);
 
-        stopLocationService();
+        unbindService(mPhoneConnectivityServiceConnection);
+        unbindService(mLocationServiceConnection);
         stopHeartRateService();
 
         // Reset static vars since these survive outside of the service lifecycle
@@ -178,7 +187,8 @@ public class WorkoutRecordingService extends Service {
      * Starts listening for HR notifications and records values
      */
     private void startHeartRateRecording() {
-        IntentFilter filter = new IntentFilter(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateBroadcastReceiver, filter);
     }
 
@@ -207,15 +217,6 @@ public class WorkoutRecordingService extends Service {
     private void resetSampleCollections() {
         heartRateSamples.clear();
         locationSamples.clear();
-    }
-
-    private void startLocationService() {
-        Intent intent = new Intent(this, FusedLocationService.class);
-        bindService(intent, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    private void stopLocationService() {
-        unbindService(mLocationServiceConnection);
     }
 
     //
@@ -249,9 +250,6 @@ public class WorkoutRecordingService extends Service {
         return isRecording;
     }
 
-    /**
-     * Start the heart rate service, which reads and broadcasts heart rate samples from the corresponding sensor.
-     */
     public void startHeartRateService() {
         Intent intent = new Intent(this, HeartRateSensorService.class);
         bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
@@ -304,9 +302,8 @@ public class WorkoutRecordingService extends Service {
     private class LocationBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, final Intent intent) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
+            switch (intent.getAction()) {
+                case LocationService.ACTION_LOCATION_CHANGED:
                     Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
                     // If we have at least 2 samples, calculate distance and speed
@@ -328,17 +325,17 @@ public class WorkoutRecordingService extends Service {
                     locationSamples.add(location);
 
                     LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
-                }
-            }).run();
+
+                    break;
+            }
         }
     }
 
     private class HeartRateBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, final Intent intent) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
+            switch (intent.getAction()) {
+                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
                     HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
 
                     // Calculate new heart rate average
@@ -349,8 +346,9 @@ public class WorkoutRecordingService extends Service {
                     workout.setHeartRateAverage(avg);
 
                     heartRateSamples.add(hrEvent);
-                }
-            }).run();
+
+                    break;
+            }
         }
     }
 }

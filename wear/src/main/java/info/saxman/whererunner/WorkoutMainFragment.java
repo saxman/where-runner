@@ -11,6 +11,7 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.FragmentGridPagerAdapter;
 import android.support.wearable.view.GridViewPager;
@@ -36,8 +37,10 @@ import com.google.android.gms.wearable.Wearable;
 import java.util.concurrent.TimeUnit;
 
 import info.saxman.whererunner.framework.WearableFragment;
+import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.services.HeartRateSensorService;
 import info.saxman.whererunner.services.LocationService;
+import info.saxman.whererunner.services.WorkoutRecordingService;
 
 public class WorkoutMainFragment extends WearableFragment {
 
@@ -58,33 +61,14 @@ public class WorkoutMainFragment extends WearableFragment {
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
-    private int mViewPagerItems = 2;
+    private int mViewPagerItems = 3;
 
     private TextClock mTextClock;
 
-    private ImageView mMapButton;
+    private ImageView mLocationButton;
     private ImageView mHeartButton;
 
-    private boolean mIsHrmConnected = false;
-    private boolean mIsPhoneConnected = false;
-    private boolean mIsLocationServiceConnected = false;
-
-    private GoogleApiClient mGoogleApiClient;
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        if (mGoogleApiClient == null) {
-            GoogleApiClientCallbacks callbacks = new GoogleApiClientCallbacks();
-
-            mGoogleApiClient = new GoogleApiClient.Builder(getContext())
-                    .addConnectionCallbacks(callbacks)
-                    .addOnConnectionFailedListener(callbacks)
-                    .addApi(Wearable.API)
-                    .build();
-        }
-    }
+    private ViewGroup mDialogContainer;
 
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
@@ -92,7 +76,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
 
-        final GestureDetector mapButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+        final GestureDetector locationButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDown (MotionEvent event){
                 return true;
@@ -110,14 +94,14 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
-        mMapButton = (ImageView) view.findViewById(R.id.map_button);
-        mMapButton.setOnTouchListener(new View.OnTouchListener() {
+        mLocationButton = (ImageView) view.findViewById(R.id.map_button);
+        mLocationButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
                 // Dispatch all events to the underlying viewpager so that it can handle dragging
                 // and flinging events
                 mViewPager.dispatchTouchEvent(event);
-                return mapButtonGestureDetector.onTouchEvent(event);
+                return locationButtonGestureDetector.onTouchEvent(event);
             }
         });
 
@@ -149,12 +133,6 @@ public class WorkoutMainFragment extends WearableFragment {
                 return heartButtonGestureDetector.onTouchEvent(event);
             }
         });
-
-        // If the device has a heart rate monitor, add the HRM view to the view pager
-        if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
-            mHeartButton.setVisibility(View.VISIBLE);
-            mViewPagerItems += 1;
-        }
 
         mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
         mViewPager = (GridViewPager) view.findViewById(R.id.pager);
@@ -227,15 +205,11 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
+        mDialogContainer = (ViewGroup) view.findViewById(R.id.dialog_container);
+
         updateUI();
 
         return view;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
     }
 
     @Override
@@ -244,8 +218,7 @@ public class WorkoutMainFragment extends WearableFragment {
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
-        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT);
-        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        intentFilter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
@@ -253,12 +226,6 @@ public class WorkoutMainFragment extends WearableFragment {
     public void onPause() {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
         super.onPause();
-    }
-
-    @Override
-    public void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
     }
 
     @Override
@@ -271,8 +238,10 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setBackgroundResource(R.drawable.bg_text_overlay_ambient);
         mTextClock.getPaint().setAntiAlias(false);
 
-        mMapButton.setVisibility(View.INVISIBLE);
+        mLocationButton.setVisibility(View.INVISIBLE);
         mHeartButton.setVisibility(View.INVISIBLE);
+
+        mDialogContainer.setVisibility(View.INVISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -290,8 +259,10 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setTextColor(getResources().getColor(R.color.text_dark, null));
         mTextClock.getPaint().setAntiAlias(true);
 
-        mMapButton.setVisibility(View.VISIBLE);
+        mLocationButton.setVisibility(View.VISIBLE);
         mHeartButton.setVisibility(View.VISIBLE);
+
+        mDialogContainer.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -314,13 +285,13 @@ public class WorkoutMainFragment extends WearableFragment {
     //
 
     private void updateUI() {
-        if (mIsLocationServiceConnected) {
-            mMapButton.setColorFilter(getContext().getColor(R.color.primary));
+        if (LocationService.isReceivingAccurateLocationSamples) {
+            mLocationButton.setImageDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.ic_gps_fixed));
         } else {
-            mMapButton.setColorFilter(getContext().getColor(R.color.black_86p));
+            mLocationButton.setImageDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.ic_gps_not_fixed));
         }
 
-        if (mIsHrmConnected) {
+        if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
             mHeartButton.setColorFilter(getContext().getColor(R.color.highlight_dark));
         } else {
             mHeartButton.setColorFilter(getContext().getColor(R.color.black_86p));
@@ -362,27 +333,28 @@ public class WorkoutMainFragment extends WearableFragment {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case LocationService.ACTION_CONNECTIVITY_CHANGED:
-                    mIsLocationServiceConnected = intent.getBooleanExtra(LocationService.EXTRA_IS_LOCATION_UPDATING, false);
-
-                    if (!mIsLocationServiceConnected) {
+                    if (!LocationService.isReceivingAccurateLocationSamples) {
                         Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(VIBRATOR_DURATION_MS);
-                    }
 
-                    break;
-
-                case HeartRateSensorService.ACTION_HEART_RATE_SENSOR_TIMEOUT:
-                    mIsHrmConnected = false;
-                    break;
-
-                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                    if (mIsHrmConnected) {
-                        // No need to update the UI if the status hasn't changed
-                        return;
+                        // TODO show a dialog or notification about the status of location. e.g. if the user needs to get their phone, or they should wait for watch GPS to sync
+//                        if (!mIsPhoneConnected && wasPhoneConnected) {
+//                            if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
+//                                View.inflate(getActivity(), R.layout.dialog_gps_reacquiring, mDialogContainer);
+//                            } else {
+//                                View.inflate(getActivity(), R.layout.dialog_gps_unavailable, mDialogContainer);
+//                            }
+//                        }
                     } else {
-                        mIsHrmConnected = true;
+                        // Location data available... remove any previously displayed GPS connectivity dialogs
+//                        if (mDialogContainer.getChildCount() > 0) {
+//                            mDialogContainer.removeAllViews();
+//                        }
                     }
 
+                    break;
+
+                case HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED:
                     break;
             }
 
@@ -426,36 +398,6 @@ public class WorkoutMainFragment extends WearableFragment {
         @Override
         public int getColumnCount(int i) {
             return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mViewPagerItems : 1;
-        }
-    }
-
-    private class GoogleApiClientCallbacks implements
-            GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
-
-        @Override
-        public void onConnected(Bundle connectionHint) {
-            // Get the initial connectivity state of the phone
-            Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
-                @Override
-                public void onResult(NodeApi.GetConnectedNodesResult result) {
-                    for (Node node : result.getNodes()) {
-                        // only nearby nodes can give GPS results
-                        if (node.isNearby()) {
-                            mIsPhoneConnected = true;
-                        }
-                    }
-                }
-            }, 5000, TimeUnit.MILLISECONDS);
-        }
-
-        @Override
-        public void onConnectionSuspended(int i) {
-            // TODO
-        }
-
-        @Override
-        public void onConnectionFailed(ConnectionResult connectionResult) {
-            // TODO
         }
     }
 }
