@@ -177,7 +177,10 @@ public class MainActivity extends WearableActivity implements
     @Override
     public void onStop() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
-        unbindService(mWorkoutRecordingServiceConnection);
+
+        if (mWorkoutRecordingService != null) {
+            unbindService(mWorkoutRecordingServiceConnection);
+        }
 
         super.onStop();
     }
