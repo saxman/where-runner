@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -185,7 +186,9 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         super.onEnterAmbient(ambientDetails);
 
         mMapView.onEnterAmbient(ambientDetails);
-        updateMapMarkerIcon();
+
+        mPolyline.setColor(Color.WHITE);
+        mMapMarker.setIcon(mAmbientMapMarkerIcon);
     }
 
     @Override
@@ -193,6 +196,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         super.onExitAmbient();
 
         mMapView.onExitAmbient();
+
+        mPolyline.setColor(getActivity().getColor(R.color.highlight));
         updateUI();
     }
 
@@ -267,16 +272,16 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             return;
         }
 
-        if (isAmbient()) {
-            mMapMarker.setIcon(mAmbientMapMarkerIcon);
-        } else if (LocationService.isReceivingAccurateLocationSamples) {
-            if (WorkoutRecordingService.isRecording) {
-                mMapMarker.setIcon(mRecordingMapMarkerIcon);
+        if (!isAmbient()) {
+            if (LocationService.isReceivingAccurateLocationSamples) {
+                if (WorkoutRecordingService.isRecording) {
+                    mMapMarker.setIcon(mRecordingMapMarkerIcon);
+                } else {
+                    mMapMarker.setIcon(mDefaultMapMarkerIcon);
+                }
             } else {
-                mMapMarker.setIcon(mDefaultMapMarkerIcon);
+                mMapMarker.setIcon(mDisconnectedMapMarkerIcon);
             }
-        } else {
-            mMapMarker.setIcon(mDisconnectedMapMarkerIcon);
         }
     }
 

@@ -165,6 +165,7 @@ public class WorkoutRecordingService extends Service {
      */
     private void startRecordingData() {
         workout = new Workout(System.currentTimeMillis());
+        resetSampleCollections();
 
         startHeartRateRecording();
         startLocationRecording();
@@ -180,7 +181,6 @@ public class WorkoutRecordingService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationBroadcastReceiver);
 
         saveWorkout();
-        resetSampleCollections();
     }
 
     /**
