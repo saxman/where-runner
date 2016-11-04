@@ -1,7 +1,7 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 24
+    compileSdkVersion 25
     buildToolsVersion "24.0.2"
 
     signingConfigs {
@@ -17,7 +17,7 @@ android {
         versionName "1.0.5"
 
         minSdkVersion 23
-        targetSdkVersion 24
+        targetSdkVersion 25
     }
 
     buildTypes {
@@ -32,14 +32,14 @@ dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
 
     compile 'com.google.android.support:wearable:2.0.0-alpha3'
-    provided 'com.google.android.wearable:wearable:1.0.0'
+    provided 'com.google.android.wearable:wearable:2.0.0-alpha3'
 
-    compile "com.android.support:support-v4:24.2.1"
+    compile "com.android.support:support-v4:25.0.0"
 
-    compile 'com.google.android.gms:play-services-wearable:9.6.1'
-    compile 'com.google.android.gms:play-services-maps:9.6.1'
-    compile 'com.google.android.gms:play-services-location:9.6.1'
-//    compile 'com.google.android.gms:play-services-fitness:9.6.1'
+    compile 'com.google.android.gms:play-services-wearable:9.8.0'
+    compile 'com.google.android.gms:play-services-maps:9.8.0'
+    compile 'com.google.android.gms:play-services-location:9.8.0'
+//    compile 'com.google.android.gms:play-services-fitness:9.8.0'
 }
 
 // Includes the google-settings.json file

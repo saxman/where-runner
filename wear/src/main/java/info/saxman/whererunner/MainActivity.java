@@ -438,21 +438,7 @@ public class MainActivity extends WearableActivity implements
                     mWearableActionDrawer.setVisibility(View.VISIBLE);
                     break;
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    // Show the loading fragment while the workouts are loaded from the db
-                    mCurrentViewPagerFragment = new LoadingFragment();
-
-                    WorkoutDbHelper dbHelper = new WorkoutDbHelper(MainActivity.this);
-                    dbHelper.readLastFiveWorkoutsAsync(new WorkoutDbHelper.ReadWorkoutsCallback() {
-
-                        @Override
-                        public void onRead(ArrayList<Workout> workouts) {
-                            mCurrentViewPagerFragment = HistoryMainFragment.newInstance(workouts);
-                            getFragmentManager()
-                                    .beginTransaction()
-                                    .replace(R.id.content_frame, mCurrentViewPagerFragment)
-                                    .commit();
-                        }
-                    });
+                    mCurrentViewPagerFragment = new HistoryMainFragment();
 
                     // Hide the action drawer since we don't need its actions in the history page
                     mWearableActionDrawer.setVisibility(View.GONE);

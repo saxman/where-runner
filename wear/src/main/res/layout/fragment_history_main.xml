@@ -17,4 +17,23 @@
 
     <include layout="@layout/dot_page_indicator" />
 
+    <TextView
+        style="@style/text_header"
+        android:id="@+id/loading"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="@string/loading" />
+
+    <TextView
+        style="@style/text_header"
+        android:id="@+id/no_data"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center"
+        android:text="@string/history_no_data"
+        android:visibility="gone" />
+
 </FrameLayout>

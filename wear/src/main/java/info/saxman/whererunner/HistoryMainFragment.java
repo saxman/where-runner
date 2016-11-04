@@ -1,6 +1,7 @@
 package info.saxman.whererunner;
 
 import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.graphics.Point;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -15,48 +16,28 @@ import android.widget.LinearLayout;
 
 import info.saxman.whererunner.framework.VerticalDotsPageIndicator;
 import info.saxman.whererunner.model.Workout;
+import info.saxman.whererunner.persistence.WorkoutDbHelper;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 public class HistoryMainFragment extends Fragment {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HistoryMainFragment.class.getSimpleName();
 
-    public static final String EXTRA_WORKOUTS = "WORKOUTS";
-
     private static final int PAGER_ORIENTATION = LinearLayout.VERTICAL;
 
     private GridViewPager mViewPager;
-    private FragmentGridPagerAdapter mViewPagerAdapter;
+    private WorkoutGridPagerAdapter mViewPagerAdapter;
 
-    private ArrayList<Workout> mWorkouts;
+    private VerticalDotsPageIndicator mDotsPageIndicator;
 
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        mWorkouts = getArguments().getParcelableArrayList(EXTRA_WORKOUTS);
-    }
-
-    public static HistoryMainFragment newInstance(ArrayList<Workout> workouts)
-    {
-        HistoryMainFragment fragment = new HistoryMainFragment();
-
-        Bundle bundle = new Bundle(1);
-        bundle.putParcelableArrayList(EXTRA_WORKOUTS, workouts);
-
-        fragment.setArguments(bundle);
-
-        return fragment;
-    }
+    private View mLoadingView;
+    private View mNoDataView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        if (mWorkouts.size() == 0) {
-            return inflater.inflate(R.layout.fragment_history_empty, container, false);
-        }
-
         final View view = inflater.inflate(R.layout.fragment_history_main, container, false);
 
         mViewPagerAdapter = new WorkoutGridPagerAdapter(getChildFragmentManager());
@@ -108,14 +89,38 @@ public class HistoryMainFragment extends Fragment {
             }
         });
 
-        VerticalDotsPageIndicator dotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
-        dotsPageIndicator.setPager(mViewPager);
+        mDotsPageIndicator = (VerticalDotsPageIndicator) view.findViewById(R.id.page_indicator);
+
+        mLoadingView = view.findViewById(R.id.loading);
+        mNoDataView = view.findViewById(R.id.no_data);
+
+        WorkoutDbHelper dbHelper = new WorkoutDbHelper(getActivity());
+        dbHelper.readLastFiveWorkoutsAsync(new WorkoutDbHelper.ReadWorkoutsCallback() {
+            @Override
+            public void onRead(ArrayList<Workout> workouts) {
+                mLoadingView.setVisibility(View.GONE);
+
+                if (workouts.size() == 0) {
+                    mNoDataView.setVisibility(View.VISIBLE);
+                    return;
+                }
+
+                mViewPagerAdapter.addAll(workouts);
+                mViewPagerAdapter.notifyDataSetChanged();
+
+                // Must follow the mWorkouts assignment since this view access the adapter's underlying data
+                mDotsPageIndicator.setPager(mViewPager);
+            }
+        });
 
         return view;
     }
 
     private class WorkoutGridPagerAdapter extends FragmentGridPagerAdapter {
-        public WorkoutGridPagerAdapter(FragmentManager fm) {
+
+        private ArrayList<Workout> mWorkouts = new ArrayList<>();
+
+        WorkoutGridPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
@@ -133,6 +138,10 @@ public class HistoryMainFragment extends Fragment {
         @Override
         public int getColumnCount(int i) {
             return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mWorkouts.size() : 1;
+        }
+
+        public void addAll(Collection<Workout> workouts) {
+            mWorkouts.addAll(workouts);
         }
     }
 }
