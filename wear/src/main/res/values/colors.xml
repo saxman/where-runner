@@ -30,9 +30,9 @@
     <item name="red_65b" type="color">#FFA62C23</item>
     <item name="red_40b" type="color">#FF661B15</item>
 
-    <!-- Alert dialog colors -->
-    <item name="alert_fg_tint" type="color">#9d9d9d</item>
-    <item name="alert_bg_tint" type="color">#434343</item>
+    <!-- Alert overlay colors -->
+    <item name="alert_overlay_foreground" type="color">#9d9d9d</item>
+    <item name="alert_overlay_background" type="color">#434343</item>
 
     <!-- Colors for the map location accuracy indicator -->
     <item name="map_location_accuracy_fill" type="color">#220000FF</item>

@@ -24,12 +24,12 @@
         <item name="android:background">@drawable/bg_button_round</item>
     </style>
 
-    <style name="alert_dialog">
-        <item name="android:background">@color/alert_bg_tint</item>
+    <style name="alert_overlay">
+        <item name="android:background">@color/alert_overlay_background</item>
     </style>
 
-    <style name="alert_dialog_text">
-        <item name="android:textColor">@color/alert_fg_tint</item>
+    <style name="alert_overlay_text">
+        <item name="android:textColor">@color/alert_overlay_foreground</item>
         <item name="android:textSize">14sp</item>
     </style>
 </resources>

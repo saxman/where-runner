@@ -21,10 +21,10 @@
     <dimen name="workout_data_top_margin">20dp</dimen>
 
     <!-- Layout dimensions for the connectivity alert overlay -->
-    <dimen name="alert_view_height">75dp</dimen>
+    <dimen name="alert_overlay_height">75dp</dimen>
     <!-- negative height for translations -->
-    <dimen name="alert_view_height_neg">-75dp</dimen>
-    <dimen name="alert_view_padding_vertical">10dp</dimen>
+    <dimen name="alert_overlay_height_neg">-75dp</dimen>
+    <dimen name="alert_overlay_padding_vertical">10dp</dimen>
 
     <!-- Layout dimensions for the workout FABs for location and heart rate -->
     <dimen name="fab_diameter">50dp</dimen>

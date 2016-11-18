@@ -4,10 +4,10 @@
     android:id="@+id/alert_connectivity"
     android:layout_height="@dimen/alert_view_height"
     android:layout_width="match_parent"
-    android:paddingTop="@dimen/alert_view_padding_vertical"
-    android:paddingBottom="@dimen/alert_view_padding_vertical"
-    android:translationY="@dimen/alert_view_height_neg"
-    style="@style/alert_dialog">
+    android:paddingTop="@dimen/alert_overlay_padding_vertical"
+    android:paddingBottom="@dimen/alert_overlay_padding_vertical"
+    android:translationY="@dimen/alert_overlay_height_neg"
+    style="@style/alert_overlay">
 
     <ImageView
         android:id="@+id/icon"
@@ -15,7 +15,7 @@
         android:layout_height="16dp"
         android:layout_centerHorizontal="true"
         android:src="@drawable/ic_cloud_off"
-        android:tint="@color/alert_fg_tint"/>
+        android:tint="@color/alert_overlay_foreground"/>
 
     <TextView
         android:id="@+id/text1"
@@ -24,7 +24,7 @@
         android:layout_below="@id/icon"
         android:layout_centerHorizontal="true"
         android:text="@string/phone_disconnected"
-        style="@style/alert_dialog_text"/>
+        style="@style/alert_overlay_text"/>
 
     <TextView
         android:id="@+id/text2"
@@ -32,6 +32,6 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/text1"
         android:layout_centerHorizontal="true"
-        style="@style/alert_dialog_text"/>
+        style="@style/alert_overlay_text"/>
 
 </RelativeLayout>

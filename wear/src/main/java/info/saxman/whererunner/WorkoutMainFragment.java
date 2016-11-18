@@ -11,7 +11,6 @@ import android.graphics.Point;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.FragmentGridPagerAdapter;
@@ -342,11 +341,12 @@ public class WorkoutMainFragment extends WearableFragment {
                         vibrator.vibrate(VIBRATOR_DURATION_MS);
 
                         if (!PhoneConnectivityService.isPhoneConnected) {
+                            // TODO shows the dialog even if the phone disconnected a long time ago...
                             notifyUserOfConnectivityIssue();
                         }
                     } else {
-                        // Ensure that the connectivity alert dialog is closed
-                        float x = WorkoutMainFragment.this.getResources().getDimension(R.dimen.alert_view_height_neg);
+                        // Ensure that the connectivity alert overlay is closed, as we're receiving GPS samples
+                        float x = WorkoutMainFragment.this.getResources().getDimension(R.dimen.alert_overlay_height_neg);
                         if (mAlertTextView.getTranslationY() != x) {
                             mAlertView.animate().translationY(x);
                         }
