@@ -77,6 +77,17 @@ public class HeartRateSensorService extends Service {
         return null;
     }
 
+    @Override
+    public boolean onUnbind (Intent i) {
+        // Notify broadcast receivers that we're no longer receiving sensor samples
+        isReceivingAccurateHeartRateSamples = false;
+        Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
+        intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, false);
+        LocalBroadcastManager.getInstance(HeartRateSensorService.this).sendBroadcast(intent);
+
+        return false;
+    }
+
     /**
      * Sensor event listener for heart rate; fires an ACTION_HEART_RATE_CHANGED intent whenever
      * a new HR reading is received.
