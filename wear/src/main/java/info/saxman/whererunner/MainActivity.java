@@ -27,6 +27,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 
 import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.model.WorkoutType;
@@ -65,6 +66,8 @@ public class MainActivity extends WearableActivity implements
     private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
     private Fragment mCurrentViewPagerFragment;
 
+    private ImageView mRecordButton;
+
     private WorkoutRecordingService mWorkoutRecordingService;
     private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
@@ -96,14 +99,11 @@ public class MainActivity extends WearableActivity implements
 
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
-        mWearableActionDrawer.setShouldLockWhenNotOpenOrPeeking(false);
 
-        // Using a custom peek view since currently the drawer draws a white circle behind drawables
-        // in the drawer, but not in the peek, which causes the drawable to look different in the
-        // peek vs the drawer
-        // TODO re-test and remove when SDK fixed to render default action icons appropriately
+        // Use a more compact, custom peek view
         View peekLayout = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
         mWearableActionDrawer.setPeekContent(peekLayout);
+        mRecordButton = (ImageView) peekLayout.findViewById(R.id.record_button);
 
         mMenu = mWearableActionDrawer.getMenu();
 
@@ -114,20 +114,19 @@ public class MainActivity extends WearableActivity implements
         } else {
             // The Wear SDK displays invisible menu items. So, delete the unused/invisible item to
             // ensure it isn't displayed
+            // TODO bug?
             mMenu.removeItem(R.id.heart_rate_menu_item);
         }
 
         mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
+        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+
         mCurrentViewPagerFragment = new WorkoutMainFragment();
 
         // Set up the UI based on intent action. Starting and stopping the recording is handled once
         // the recording service has been connected to.
         String action = getIntent().getAction();
-        if (Intent.ACTION_MAIN.equals(action)) {
-            // If starting fresh, peek the drawers to remind the user that they're there
-            mWearableDrawerLayout.peekDrawer(Gravity.TOP);
-            mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
-        } else if (ACTION_SHOW_HEART_RATE.equals(action)) {
+        if (ACTION_SHOW_HEART_RATE.equals(action)) {
             // Pass an attribute to the main workout fragment to tell it to display the workout data
             Bundle bundle = new Bundle();
             bundle.putInt(WorkoutMainFragment.ARGUMENT_INITIAL_FRAGMENT, WorkoutMainFragment.FRAGMENT_HEART);
@@ -226,7 +225,6 @@ public class MainActivity extends WearableActivity implements
         switch (menuItem.getItemId()) {
             case R.id.record_menu_item:
                 toggleWorkoutRecording();
-                mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
                 break;
 
             case R.id.activity_type_menu_item:
@@ -267,11 +265,11 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
+        mWearableDrawerLayout.closeDrawer(Gravity.TOP);
+        mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
+
         // If the current fragment supports ambient mode, then enter ambient mode.
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            mWearableDrawerLayout.closeDrawer(Gravity.TOP);
-            mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
-
             ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
 
             scheduleAmbientUpdate();
@@ -289,6 +287,8 @@ public class MainActivity extends WearableActivity implements
     @Override
     public void onExitAmbient() {
         super.onExitAmbient();
+
+        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
@@ -333,9 +333,11 @@ public class MainActivity extends WearableActivity implements
         MenuItem menuItem = mMenu.findItem(R.id.record_menu_item);
 
         if (isRecording) {
+            mRecordButton.setImageResource(R.drawable.ic_stop_white);
             menuItem.setIcon(getDrawable(R.drawable.ic_stop));
             menuItem.setTitle(getString(R.string.stop_recording));
         } else {
+            mRecordButton.setImageResource(R.drawable.ic_record_white);
             menuItem.setIcon(getDrawable(R.drawable.ic_record));
             menuItem.setTitle(getString(R.string.record_workout));
         }

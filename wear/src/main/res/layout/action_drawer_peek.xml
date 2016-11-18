@@ -9,16 +9,9 @@
     android:gravity="center">
 
     <ImageView
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:id="@+id/test"
+        android:id="@+id/record_button"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
         android:src="@drawable/ic_record_white"/>
-
-    <ImageView
-        android:layout_width="35dp"
-        android:layout_height="35dp"
-        android:layout_toRightOf="@id/test"
-        android:layout_marginLeft="10dp"
-        android:src="@drawable/ic_more_vert"/>
 
 </RelativeLayout>

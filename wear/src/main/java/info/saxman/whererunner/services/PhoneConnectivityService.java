@@ -27,7 +27,7 @@ public class PhoneConnectivityService extends Service {
 
     private static final int UPDATE_INTERVAL_MS = 5000;
 
-    private static boolean isPhoneConnected = false;
+    public static boolean isPhoneConnected = false;
 
     private GoogleApiClient mGoogleApiClient;
 
@@ -84,16 +84,16 @@ public class PhoneConnectivityService extends Service {
             Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                 @Override
                 public void onResult(NodeApi.GetConnectedNodesResult result) {
-                    boolean status = false;
+                    boolean isNodeNearby = false;
                     for (Node node : result.getNodes()) {
                         // only nearby nodes can give GPS results
                         if (node.isNearby()) {
-                            status = true;
+                            isNodeNearby = true;
                         }
                     }
 
-                    if (wasPhoneConnected != status) {
-                        isPhoneConnected = status;
+                    if (wasPhoneConnected != isNodeNearby) {
+                        isPhoneConnected = isNodeNearby;
 
                         Intent intent = new Intent(ACTION_PHONE_CONNECTIVITY_CHANGED);
                         intent.putExtra(EXTRA_IS_PHONE_CONNECTED, isPhoneConnected);

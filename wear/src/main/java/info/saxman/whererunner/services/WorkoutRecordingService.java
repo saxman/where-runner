@@ -78,11 +78,12 @@ public class WorkoutRecordingService extends Service {
 
         Intent stopIntent =
                 new Intent(MainActivity.ACTION_STOP_WORKOUT, null, this, MainActivity.class);
+
         PendingIntent pi = PendingIntent.getActivity(this, 0, stopIntent, 0);
 
         NotificationCompat.Action.Builder actionBuilder =
                 new NotificationCompat.Action.Builder(
-                    R.drawable.ic_stop_white, getString(R.string.stop_recording), pi);
+                        R.drawable.ic_stop_white, getString(R.string.stop_recording), pi);
 
         NotificationCompat.Action.WearableExtender actionExtender =
                 new NotificationCompat.Action.WearableExtender()

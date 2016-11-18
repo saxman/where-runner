@@ -6,11 +6,12 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Point;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
+import android.support.design.widget.Snackbar;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.wearable.view.FragmentGridPagerAdapter;
@@ -26,21 +27,12 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextClock;
-
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.Node;
-import com.google.android.gms.wearable.NodeApi;
-import com.google.android.gms.wearable.Wearable;
-
-import java.util.concurrent.TimeUnit;
+import android.widget.TextView;
 
 import info.saxman.whererunner.framework.WearableFragment;
-import info.saxman.whererunner.model.Workout;
 import info.saxman.whererunner.services.HeartRateSensorService;
 import info.saxman.whererunner.services.LocationService;
-import info.saxman.whererunner.services.WorkoutRecordingService;
+import info.saxman.whererunner.services.PhoneConnectivityService;
 
 public class WorkoutMainFragment extends WearableFragment {
 
@@ -61,20 +53,23 @@ public class WorkoutMainFragment extends WearableFragment {
 
     private GridViewPager mViewPager;
     private FragmentGridPagerAdapter mViewPagerAdapter;
-    private int mViewPagerItems = 3;
+    private static final int VIEW_PAGER_ITEMS = 3;
 
     private TextClock mTextClock;
 
     private ImageView mLocationButton;
     private ImageView mHeartButton;
 
-    private ViewGroup mDialogContainer;
+    private View mAlertView;
+    private TextView mAlertTextView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
         mTextClock = (TextClock) view.findViewById(R.id.time);
+        mAlertView = view.findViewById(R.id.alert_connectivity);
+        mAlertTextView = (TextView) mAlertView.findViewById(R.id.text2);
 
         final GestureDetector locationButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -205,8 +200,6 @@ public class WorkoutMainFragment extends WearableFragment {
             }
         });
 
-        mDialogContainer = (ViewGroup) view.findViewById(R.id.dialog_container);
-
         updateUI();
 
         return view;
@@ -219,6 +212,7 @@ public class WorkoutMainFragment extends WearableFragment {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
         intentFilter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
+        intentFilter.addAction(PhoneConnectivityService.ACTION_PHONE_CONNECTIVITY_CHANGED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
@@ -241,8 +235,6 @@ public class WorkoutMainFragment extends WearableFragment {
         mLocationButton.setVisibility(View.INVISIBLE);
         mHeartButton.setVisibility(View.INVISIBLE);
 
-        mDialogContainer.setVisibility(View.INVISIBLE);
-
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
             ((WearableFragment) fragment).onEnterAmbient(ambientDetails);
@@ -261,8 +253,6 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mLocationButton.setVisibility(View.VISIBLE);
         mHeartButton.setVisibility(View.VISIBLE);
-
-        mDialogContainer.setVisibility(View.VISIBLE);
 
         Fragment fragment = getCurrentViewPagerFragment();
         if (fragment instanceof WearableFragment) {
@@ -303,6 +293,18 @@ public class WorkoutMainFragment extends WearableFragment {
         return mViewPagerAdapter.findExistingFragment(p.y, p.x);
     }
 
+    private void notifyUserOfConnectivityIssue() {
+        final LocationManager manager = (LocationManager) getActivity().getSystemService( Context.LOCATION_SERVICE );
+
+        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            mAlertTextView.setText(getString(R.string.location_unavailable));
+        } else {
+            mAlertTextView.setText(getString(R.string.reacquiring_location));
+        }
+
+        mAlertView.animate().translationY(0);
+    }
+
     //
     // Public class methods
     //
@@ -333,28 +335,35 @@ public class WorkoutMainFragment extends WearableFragment {
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case LocationService.ACTION_CONNECTIVITY_CHANGED:
-                    if (!LocationService.isReceivingAccurateLocationSamples) {
+                    boolean accurateSamples = intent.getBooleanExtra(LocationService.EXTRA_IS_RECEIVING_SAMPLES, false);
+
+                    if (!accurateSamples) {
                         Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(VIBRATOR_DURATION_MS);
 
-                        // TODO show a dialog or notification about the status of location. e.g. if the user needs to get their phone, or they should wait for watch GPS to sync
-//                        if (!mIsPhoneConnected && wasPhoneConnected) {
-//                            if (getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
-//                                View.inflate(getActivity(), R.layout.dialog_gps_reacquiring, mDialogContainer);
-//                            } else {
-//                                View.inflate(getActivity(), R.layout.dialog_gps_unavailable, mDialogContainer);
-//                            }
-//                        }
+                        if (!PhoneConnectivityService.isPhoneConnected) {
+                            notifyUserOfConnectivityIssue();
+                        }
                     } else {
-                        // Location data available... remove any previously displayed GPS connectivity dialogs
-//                        if (mDialogContainer.getChildCount() > 0) {
-//                            mDialogContainer.removeAllViews();
-//                        }
+                        // Ensure that the connectivity alert dialog is closed
+                        float x = WorkoutMainFragment.this.getResources().getDimension(R.dimen.alert_view_height_neg);
+                        if (mAlertTextView.getTranslationY() != x) {
+                            mAlertView.animate().translationY(x);
+                        }
                     }
 
                     break;
 
                 case HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED:
+                    break;
+
+                case PhoneConnectivityService.ACTION_PHONE_CONNECTIVITY_CHANGED:
+                    boolean isPhoneConnected = intent.getBooleanExtra(PhoneConnectivityService.EXTRA_IS_PHONE_CONNECTED, false);
+
+                    if (!isPhoneConnected && !LocationService.isReceivingAccurateLocationSamples) {
+                        notifyUserOfConnectivityIssue();
+                    }
+
                     break;
             }
 
@@ -392,12 +401,12 @@ public class WorkoutMainFragment extends WearableFragment {
 
         @Override
         public int getRowCount() {
-            return PAGER_ORIENTATION == LinearLayout.VERTICAL ? mViewPagerItems : 1;
+            return PAGER_ORIENTATION == LinearLayout.VERTICAL ? VIEW_PAGER_ITEMS : 1;
         }
 
         @Override
         public int getColumnCount(int i) {
-            return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? mViewPagerItems : 1;
+            return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? VIEW_PAGER_ITEMS : 1;
         }
     }
 }

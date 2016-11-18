@@ -26,14 +26,14 @@
     <string name="hr_current">CURRENT</string>
     <string name="hr_average">AVERAGE</string>
 
+    <string name="loading">Loading…</string>
     <string name="history_no_data">No Data</string>
 
     <string name="format_distance_kms">%.2f km</string>
     <string name="format_distance_meters">%.1f m</string>
     <string name="format_speed">%.1f</string>
 
-    <string name="loading">Loading ...</string>
     <string name="phone_disconnected">Phone Disconnected</string>
-    <string name="location_unavailable">GPS location unavailable</string>
-    <string name="reacquiring_location">Attempting to reacquire GPS</string>
+    <string name="location_unavailable">GPS Unavailable</string>
+    <string name="reacquiring_location">Reacquiring GPS</string>
 </resources>

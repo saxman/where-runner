@@ -22,18 +22,15 @@
         android:layout_height="wrap_content"
         android:id="@+id/time"
         android:layout_gravity="center_horizontal"
-        android:paddingLeft="@dimen/map_overlay_padding_horizontal"
-        android:paddingRight="@dimen/map_overlay_padding_horizontal"
-        android:paddingTop="@dimen/map_overlay_padding_vertical"
-        android:paddingBottom="@dimen/map_overlay_padding_vertical"
-        android:layout_marginTop="@dimen/map_overlay_margin"
+        android:paddingLeft="@dimen/clock_padding_horizontal"
+        android:paddingRight="@dimen/clock_padding_horizontal"
+        android:paddingTop="@dimen/clock_padding_vertical"
+        android:paddingBottom="@dimen/clock_padding_vertical"
+        android:layout_marginTop="@dimen/clock_margin"
         android:format12Hour="h:mm:ss"
         android:format24Hour="H:mm:ss" />
 
-    <FrameLayout
-        android:id="@+id/dialog_container"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+    <include layout="@layout/alert_connectivity"/>
 
     <!-- TODO move constants to dimens -->
     <ImageView
