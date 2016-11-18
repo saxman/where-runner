@@ -1,24 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Generic text dimensions for styles -->
+    <dimen name="text_large">22sp</dimen>
+    <dimen name="text_medium">16sp</dimen>
+    <dimen name="text_small">12sp</dimen>
+
     <dimen name="clock_margin">5dp</dimen>
     <dimen name="clock_padding_vertical">0dp</dimen>
     <dimen name="clock_padding_horizontal">5dp</dimen>
 
-    <!-- Spacing between page indicator dots, implemented as a margin. Visual spacing will be 2x this amount. -->
+    <!-- Spacing between page indicator dots, implemented as a margin.
+         Visual spacing will be 2x this amount, as it's applied to each neighboring dot. -->
     <dimen name="dot_page_indicator_spacing">1dp</dimen>
 
     <dimen name="map_marker_size">13dp</dimen>
-
-    <dimen name="text_large">22sp</dimen>
-    <dimen name="text_medium">16sp</dimen>
-    <dimen name="text_small">12sp</dimen>
 
     <dimen name="drawer_peek_padding_top">0dp</dimen>
     <dimen name="drawer_peek_padding_bottom">0dp</dimen>
 
     <dimen name="workout_data_top_margin">20dp</dimen>
 
+    <!-- Layout dimensions for the connectivity alert overlay -->
     <dimen name="alert_view_height">75dp</dimen>
+    <!-- negative height for translations -->
     <dimen name="alert_view_height_neg">-75dp</dimen>
     <dimen name="alert_view_padding_vertical">10dp</dimen>
+
+    <!-- Layout dimensions for the workout FABs for location and heart rate -->
+    <dimen name="fab_diameter">50dp</dimen>
+    <!-- negative margin for position part of the FAB off screen -->
+    <dimen name="fab_screen_offset">-23dp</dimen>
 </resources>

@@ -32,27 +32,26 @@
 
     <include layout="@layout/alert_connectivity"/>
 
-    <!-- TODO move constants to dimens -->
     <ImageView
         android:id="@+id/map_button"
-        style="@style/button_round"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="@dimen/fab_diameter"
+        android:layout_height="@dimen/fab_diameter"
         android:layout_gravity="center_vertical|left"
         android:paddingLeft="25dp"
         android:paddingRight="4dp"
-        android:layout_marginLeft="-23dp"
-        android:src="@drawable/ic_gps_not_fixed" />
+        android:layout_marginLeft="@dimen/fab_screen_offset"
+        android:src="@drawable/ic_gps_not_fixed"
+        style="@style/button_round"/>
 
     <ImageView
         android:id="@+id/heart_button"
-        style="@style/button_round"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="@dimen/fab_diameter"
+        android:layout_height="@dimen/fab_diameter"
         android:layout_gravity="center_vertical|right"
         android:paddingLeft="2dp"
         android:paddingRight="21dp"
-        android:layout_marginRight="-23dp"
-        android:src="@drawable/ic_heart" />
+        android:layout_marginRight="@dimen/fab_screen_offset"
+        android:src="@drawable/ic_heart"
+        style="@style/button_round"/>
     
 </FrameLayout>
