@@ -23,4 +23,13 @@
     <style name="button_round" parent="@android:style/Widget.ActionButton">
         <item name="android:background">@drawable/bg_button_round</item>
     </style>
+
+    <style name="alert_dialog">
+        <item name="android:background">@color/alert_bg_tint</item>
+    </style>
+
+    <style name="alert_dialog_text">
+        <item name="android:textColor">@color/alert_fg_tint</item>
+        <item name="android:textSize">14sp</item>
+    </style>
 </resources>

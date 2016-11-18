@@ -20,4 +20,5 @@
 
     <dimen name="alert_view_height">75dp</dimen>
     <dimen name="alert_view_height_neg">-75dp</dimen>
+    <dimen name="alert_view_padding_vertical">10dp</dimen>
 </resources>

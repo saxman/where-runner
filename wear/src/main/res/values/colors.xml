@@ -17,9 +17,6 @@
     <item name="white_60a" type="color">#99FFFFFF</item>
     <item name="white_50a" type="color">#80FFFFFF</item>
 
-    <item name="location_accuracy_fill" type="color">#220000FF</item>
-    <item name="location_accuracy_stroke" type="color">#660000FF</item>
-
     <!-- Material Design Indigo 500 palette for wearables -->
     <item name="indigo" type="color">#FF3F51B5</item>
     <item name="indigo_100b" type="color">#FF8093FF</item>
@@ -32,4 +29,12 @@
     <item name="red" type="color">#FFF44336</item>
     <item name="red_65b" type="color">#FFA62C23</item>
     <item name="red_40b" type="color">#FF661B15</item>
+
+    <!-- Alert dialog colors -->
+    <item name="alert_fg_tint" type="color">#9d9d9d</item>
+    <item name="alert_bg_tint" type="color">#434343</item>
+
+    <!-- Colors for the map location accuracy indicator -->
+    <item name="map_location_accuracy_fill" type="color">#220000FF</item>
+    <item name="map_location_accuracy_stroke" type="color">#660000FF</item>
 </resources>

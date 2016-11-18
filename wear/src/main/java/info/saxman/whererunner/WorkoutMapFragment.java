@@ -170,8 +170,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                 .center(new LatLng(0, 0))
                 .radius(0)
                 .strokeWidth(1)
-                .strokeColor(getResources().getColor(R.color.location_accuracy_stroke, null))
-                .fillColor(getResources().getColor(R.color.location_accuracy_fill, null))
+                .strokeColor(getResources().getColor(R.color.map_location_accuracy_stroke, null))
+                .fillColor(getResources().getColor(R.color.map_location_accuracy_fill, null))
                 .visible(false));
 
         updateUI();

@@ -4,19 +4,18 @@
     android:id="@+id/alert_connectivity"
     android:layout_height="@dimen/alert_view_height"
     android:layout_width="match_parent"
-    android:paddingTop="10dp"
-    android:paddingBottom="10dp"
-    android:background="#434343"
-    android:translationY="@dimen/alert_view_height_neg">
-
-    <!-- TODO constants -->
+    android:paddingTop="@dimen/alert_view_padding_vertical"
+    android:paddingBottom="@dimen/alert_view_padding_vertical"
+    android:translationY="@dimen/alert_view_height_neg"
+    style="@style/alert_dialog">
 
     <ImageView
         android:id="@+id/icon"
         android:layout_width="wrap_content"
         android:layout_height="16dp"
         android:layout_centerHorizontal="true"
-        android:src="@drawable/ic_cloud_off"/>
+        android:src="@drawable/ic_cloud_off"
+        android:tint="@color/alert_fg_tint"/>
 
     <TextView
         android:id="@+id/text1"
@@ -24,13 +23,15 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/icon"
         android:layout_centerHorizontal="true"
-        android:text="@string/phone_disconnected"/>
+        android:text="@string/phone_disconnected"
+        style="@style/alert_dialog_text"/>
 
     <TextView
         android:id="@+id/text2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/text1"
-        android:layout_centerHorizontal="true"/>
+        android:layout_centerHorizontal="true"
+        style="@style/alert_dialog_text"/>
 
 </RelativeLayout>
