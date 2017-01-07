@@ -9,6 +9,7 @@ import android.os.CountDownTimer;
 import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 public abstract class LocationService extends Service {
 
@@ -41,6 +42,8 @@ public abstract class LocationService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d(LOG_TAG, "Destroying service");
+
         stopLocationUpdates();
 
         if (mLocationSampleTimer != null) {

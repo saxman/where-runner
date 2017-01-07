@@ -14,22 +14,26 @@
         <item name="android:textSize">@dimen/text_small</item>
     </style>
 
-    <style name="text_overlay" parent="@android:style/Widget.TextView">
-        <item name="android:textColor">@color/text_dark</item>
+    <style name="text_clock" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_small</item>
-        <item name="android:background">@drawable/bg_text_overlay</item>
+        <item name="android:background">@drawable/bg_text_clock</item>
     </style>
 
     <style name="button_round" parent="@android:style/Widget.ActionButton">
         <item name="android:background">@drawable/bg_button_round</item>
+        <item name="android:backgroundTint">@color/primary</item>
+        <item name="android:tint">@color/button_tint</item>
     </style>
 
-    <style name="alert_overlay">
-        <item name="android:background">@color/alert_overlay_background</item>
+    <style name="text_data" parent="@style/text_header">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fontFamily">sans-serif-regular</item>
     </style>
 
-    <style name="alert_overlay_text">
-        <item name="android:textColor">@color/alert_overlay_foreground</item>
-        <item name="android:textSize">14sp</item>
+    <style name="text_data_header" parent="@style/text_small">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:fontFamily">sans-serif-smallcaps</item>
     </style>
 </resources>

@@ -3,7 +3,7 @@ package info.saxman.whererunner;
 import android.Manifest;
 import android.app.AlarmManager;
 import android.app.Fragment;
-import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -23,20 +23,22 @@ import android.support.wearable.view.drawer.WearableActionDrawer;
 import android.support.wearable.view.drawer.WearableDrawerLayout;
 import android.support.wearable.view.drawer.WearableNavigationDrawer;
 
+import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
-import info.saxman.whererunner.model.Workout;
+import com.google.android.gms.maps.MapView;
+
 import info.saxman.whererunner.model.WorkoutType;
 import info.saxman.whererunner.framework.WearableFragment;
-import info.saxman.whererunner.persistence.WorkoutDbHelper;
-import info.saxman.whererunner.services.HeartRateSensorService;
-import info.saxman.whererunner.services.LocationService;
 import info.saxman.whererunner.services.WorkoutRecordingService;
 
+import java.nio.channels.GatheringByteChannel;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -77,6 +79,8 @@ public class MainActivity extends WearableActivity implements
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
 
+    private boolean mIsImmersiveMode = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -100,9 +104,7 @@ public class MainActivity extends WearableActivity implements
         mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
         mWearableActionDrawer.setOnMenuItemClickListener(this);
 
-        // Use a more compact, custom peek view
         View peekLayout = getLayoutInflater().inflate(R.layout.action_drawer_peek, null);
-        mWearableActionDrawer.setPeekContent(peekLayout);
         mRecordButton = (ImageView) peekLayout.findViewById(R.id.record_button);
 
         mMenu = mWearableActionDrawer.getMenu();
@@ -133,8 +135,86 @@ public class MainActivity extends WearableActivity implements
             mCurrentViewPagerFragment.setArguments(bundle);
         }
 
-        FragmentManager fragmentManager = getFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.content_frame, mCurrentViewPagerFragment).commit();
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.replace(R.id.main_content_view, mCurrentViewPagerFragment);
+        ft.commit();
+
+        View contentView = findViewById(R.id.main_content_view);
+        contentView.setOnKeyListener(new View.OnKeyListener() {
+            @Override
+            public boolean onKey(View view, int i, KeyEvent keyEvent) {
+                if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
+                    return false;
+                }
+
+                switch (keyEvent.getKeyCode()) {
+                    case KeyEvent.KEYCODE_STEM_1:
+                        toggleWorkoutRecording();
+                        return true;
+
+                    case KeyEvent.KEYCODE_STEM_2:
+                        // TODO implement stem button 2 behavior
+                        return true;
+
+                    case KeyEvent.KEYCODE_NAVIGATE_IN:
+                    case KeyEvent.KEYCODE_NAVIGATE_OUT:
+                    case KeyEvent.KEYCODE_NAVIGATE_NEXT:
+                    case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
+                        // TODO implement gestures
+                        break;
+
+                    case KeyEvent.KEYCODE_STEM_3:
+                    case KeyEvent.KEYCODE_STEM_PRIMARY:
+                        Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + keyEvent.getKeyCode());
+                        break;
+                }
+
+                return false;
+            }
+        });
+
+        // Capture click events to toggle immersive mode (show/hide UI controls)
+        contentView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                mIsImmersiveMode = !mIsImmersiveMode;
+
+                if (mCurrentViewPagerFragment instanceof WorkoutMainFragment) {
+                    ((WorkoutMainFragment) mCurrentViewPagerFragment).toggleImmersiveMode();
+
+                    if (mIsImmersiveMode) {
+                        mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
+                    } else {
+                        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+                    }
+                }
+            }
+        });
+
+        // Temporarily peek the nav drawer to help ensure the user is aware of it
+        ViewTreeObserver observer = mWearableDrawerLayout.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mWearableDrawerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
+            }
+        });
+
+        // Initialize the MapView in a background thread so that it loads faster when needed
+        // Reduces MapView.onCreate() time from 900 to 100 ms on an LG Urban 2nd Edition
+        // ref: http://stackoverflow.com/questions/26265526/what-makes-my-map-fragment-loading-slow
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    MapView mv = new MapView(getApplicationContext());
+                    mv.onCreate(null);
+                    mv.onPause();
+                    mv.onDestroy();
+                } catch (Exception e) {}
+            }
+        }).start();
     }
 
     @Override
@@ -239,24 +319,6 @@ public class MainActivity extends WearableActivity implements
         return true;
     }
 
-    @Override
-    public void onBackPressed() {
-        // Bring the user back to the home view (workout data) if they're elsewhere in the app.
-        // If they're already on the home view, exit the app.
-        if (mCurrentViewPagerFragment instanceof WorkoutMainFragment) {
-            WorkoutMainFragment wmf = (WorkoutMainFragment) mCurrentViewPagerFragment;
-            if (wmf.getCurrentFragment() != WorkoutMainFragment.FRAGMENT_DATA) {
-                wmf.setCurrentFragment(WorkoutMainFragment.FRAGMENT_DATA);
-                return;
-            }
-        } else {
-            mWearableNavigationDrawer.setCurrentItem(0, true);
-            return;
-        }
-
-        super.onBackPressed();
-    }
-
     //
     // WearableActivity methods
     //
@@ -274,13 +336,12 @@ public class MainActivity extends WearableActivity implements
 
             scheduleAmbientUpdate();
         } else {
-            // TODO instead of exiting the app, return to the home view (workout data) and the enter ambient mode
             finish();
 
-            // For manually switching back to the main fragment for ambient mode, there's an issue
-            // where the current nav drawer fragment isn't initialized directly after
-            // mWearableNavigationDrawer.setCurrentItem() returns. Therefore, we can't call
-            // onEnterAmbient() on the fragment, since it's views aren't ready.
+            // TODO find some way to switch to the main workout fragment in ambient mode
+            // The following call will switch to the main workout fragment; however, the fragment
+            // doesn't know that it's in ambient mode
+            // mWearableNavigationDrawer.setCurrentItem(0, false)
         }
     }
 
@@ -288,7 +349,9 @@ public class MainActivity extends WearableActivity implements
     public void onExitAmbient() {
         super.onExitAmbient();
 
-        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        if (!mIsImmersiveMode) {
+            mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        }
 
         if (mCurrentViewPagerFragment instanceof WearableFragment) {
             ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
@@ -449,7 +512,7 @@ public class MainActivity extends WearableActivity implements
 
             getFragmentManager()
                     .beginTransaction()
-                    .replace(R.id.content_frame, mCurrentViewPagerFragment)
+                    .replace(R.id.main_content_view, mCurrentViewPagerFragment)
                     .commit();
         }
 

@@ -9,14 +9,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Binder;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
-import android.support.v4.app.RemoteInput;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import info.saxman.whererunner.MainActivity;
 import info.saxman.whererunner.R;
@@ -138,6 +137,8 @@ public class WorkoutRecordingService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d(LOG_TAG, "Destroying service");
+
         mNotificationManager.cancel(NOTIFICATION_ID);
 
         unbindService(mPhoneConnectivityServiceConnection);

@@ -7,6 +7,7 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -59,6 +60,8 @@ public class PhoneConnectivityService extends Service {
 
     @Override
     public void onDestroy() {
+        Log.d(LOG_TAG, "Destroying service");
+
         mHandler.removeCallbacks(mStatusChecker);
 
         if (mGoogleApiClient.isConnected()) {

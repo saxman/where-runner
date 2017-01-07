@@ -9,7 +9,7 @@
     tools:context="info.saxman.whererunner.MainActivity">
 
     <FrameLayout
-        android:id="@+id/content_frame"
+        android:id="@+id/main_content_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
@@ -17,13 +17,13 @@
         android:id="@+id/nav_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:attr/colorPrimaryDark" />
+        android:background="?android:attr/colorPrimary" />
 
     <android.support.wearable.view.drawer.WearableActionDrawer
         android:id="@+id/action_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="?android:attr/colorPrimaryDark"
+        android:background="?android:attr/colorPrimary"
         app:action_menu="@menu/action_drawer_menu" />
 
 </android.support.wearable.view.drawer.WearableDrawerLayout>

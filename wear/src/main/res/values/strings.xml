@@ -16,15 +16,15 @@
 
     <string name="hrm_no_data">- -</string>
 
-    <string name="distance_total">TOTAL DISTANCE</string>
-    <string name="speed_current_average">SPEED (CURR/AVG KPH)</string>
-    <string name="speed_average_max">SPEED (AVG/MAX KPH)</string>
-    <string name="time_elapsed">ELAPSED TIME</string>
+    <string name="distance_total">Distance</string>
+    <string name="speed_current_average">Speed (Curr/Avg KPH)</string>
+    <string name="speed_average_max">Speed (Avg/Max KPH)</string>
+    <string name="time_elapsed">Duration</string>
 
-    <string name="heart_rate">HEART RATE</string>
-    <string name="hr_min_max">MIN/MAX</string>
-    <string name="hr_current">CURRENT</string>
-    <string name="hr_average">AVERAGE</string>
+    <string name="heart_rate">Heart Rate</string>
+    <string name="hr_min_max">Min/Max</string>
+    <string name="hr_current">Current</string>
+    <string name="hr_average">Average</string>
 
     <string name="loading">Loading…</string>
     <string name="history_no_data">No Data</string>
@@ -36,4 +36,11 @@
     <string name="phone_disconnected">Phone Disconnected</string>
     <string name="location_unavailable">GPS Unavailable</string>
     <string name="reacquiring_location">Reacquiring GPS</string>
+
+    <string name="na">N/A</string>
+
+    <!-- String constants for tags applied to toggle-able buttons, for tracking state -->
+    <string name="tag_map">MAP</string>
+    <string name="tag_heart_rate">HEART_RATE</string>
+    <string name="tag_data">DATA</string>
 </resources>

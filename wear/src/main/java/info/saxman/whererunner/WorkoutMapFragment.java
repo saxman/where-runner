@@ -14,6 +14,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -62,6 +63,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     private BitmapDescriptor mDefaultMapMarkerIcon;
     private BitmapDescriptor mDisconnectedMapMarkerIcon;
     private BitmapDescriptor mAmbientMapMarkerIcon;
+
+    private boolean mIsImmersiveMode = false;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -150,6 +153,25 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     public void onMapReady(GoogleMap googleMap) {
         mGoogleMap = googleMap;
 
+        mGoogleMap.setOnMapClickListener(new GoogleMap.OnMapClickListener() {
+            @Override
+            public void onMapClick(LatLng latLng) {
+                // TODO find a way to pass onclick to the root view w/o its id
+                getActivity().findViewById(R.id.main_content_view).callOnClick();
+                toggleImmersiveMode();
+            }
+        });
+
+        mGoogleMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                // TODO find a way to pass onclick to the root view w/o its id
+                getActivity().findViewById(R.id.main_content_view).callOnClick();
+                toggleImmersiveMode();
+                return true;
+            }
+        });
+
         mRecordingMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_recording);
         mDefaultMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker);
         mDisconnectedMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_disconnected);
@@ -210,6 +232,17 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     // Class methods
     //
 
+    private void toggleImmersiveMode() {
+        mIsImmersiveMode = !mIsImmersiveMode;
+
+        if (mIsImmersiveMode) {
+            mGoogleMap.getUiSettings().setScrollGesturesEnabled(true);
+        } else {
+            mGoogleMap.getUiSettings().setScrollGesturesEnabled(false);
+            updateMapCenter(LocationService.lastKnownLocation);
+        }
+    }
+
     /**
      * Update all map facets, including the marker, polyline, and center
      */
@@ -221,7 +254,10 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         Location location = LocationService.lastKnownLocation;
 
-        updateMapCenter(location);
+        if (!mIsImmersiveMode) {
+            updateMapCenter(location);
+        }
+
         updateMapMarkerLocation(location);
         updateMapMarkerAccuracy(location);
         updateMapMarkerIcon();
@@ -357,7 +393,10 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
                     if (!isAmbient()) {
                         updateMapMarkerLocation(location);
                         updateMapMarkerAccuracy(location);
-                        updateMapCenter(location);
+
+                        if (!mIsImmersiveMode) {
+                            updateMapCenter(location);
+                        }
 
                         // If the location was previously not-fixed, change the marker icon
                         if (!LocationService.isReceivingAccurateLocationSamples) {

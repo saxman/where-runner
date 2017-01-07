@@ -55,6 +55,8 @@ public class HeartRateSensorService extends Service {
 
     @Override
     public void onDestroy () {
+        Log.d(LOG_TAG, "Destroying service");
+
         mSensorManager.unregisterListener(mSensorListener);
 
         if (mSensorSampleTimer != null) {

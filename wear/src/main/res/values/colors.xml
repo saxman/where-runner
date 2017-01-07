@@ -9,8 +9,8 @@
     <item name="highlight" type="color">@color/red</item>
     <item name="highlight_dark" type="color">@color/red_65b</item>
 
-    <item name="text_primary" type="color">#CCBBBBBB</item>
-    <item name="text_dark" type="color">#CC000000</item>
+    <item name="text_primary" type="color">@color/white_80a</item>
+    <item name="text_dark" type="color">@color/black_86p</item>
 
     <item name="white_80a" type="color">#CCFFFFFF</item>
     <item name="white_70a" type="color">#B3FFFFFF</item>
@@ -30,11 +30,11 @@
     <item name="red_65b" type="color">#FFA62C23</item>
     <item name="red_40b" type="color">#FF661B15</item>
 
-    <!-- Alert overlay colors -->
-    <item name="alert_overlay_foreground" type="color">#9d9d9d</item>
-    <item name="alert_overlay_background" type="color">#434343</item>
+    <item name="mediumorchid" type="color">#CC55D3</item>
 
     <!-- Colors for the map location accuracy indicator -->
     <item name="map_location_accuracy_fill" type="color">#220000FF</item>
     <item name="map_location_accuracy_stroke" type="color">#660000FF</item>
+
+    <color name="button_tint">@color/white_80a</color>
 </resources>

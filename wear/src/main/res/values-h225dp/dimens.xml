@@ -3,6 +3,4 @@
     <dimen name="text_large">26sp</dimen>
     <dimen name="text_medium">16sp</dimen>
     <dimen name="text_small">12sp</dimen>
-
-    <dimen name="workout_data_top_margin">10dp</dimen>
 </resources>

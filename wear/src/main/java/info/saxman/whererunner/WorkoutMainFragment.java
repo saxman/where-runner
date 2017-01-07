@@ -1,32 +1,22 @@
 package info.saxman.whererunner;
 
+import android.animation.ObjectAnimator;
 import android.app.Fragment;
-import android.app.FragmentManager;
+import android.app.FragmentTransaction;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Point;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Vibrator;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.wearable.view.FragmentGridPagerAdapter;
-import android.support.wearable.view.GridViewPager;
-import android.util.Log;
-import android.view.GestureDetector;
-import android.view.KeyEvent;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.ViewTreeObserver;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextClock;
-import android.widget.TextView;
 
 import info.saxman.whererunner.framework.WearableFragment;
 import info.saxman.whererunner.services.HeartRateSensorService;
@@ -44,164 +34,141 @@ public class WorkoutMainFragment extends WearableFragment {
     public static final int FRAGMENT_DATA = 1;
     public static final int FRAGMENT_HEART = 2;
 
-    private static final int PAGER_ORIENTATION = LinearLayout.HORIZONTAL;
-
     private static final int VIBRATOR_DURATION_MS = 200;
 
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
-    private GridViewPager mViewPager;
-    private FragmentGridPagerAdapter mViewPagerAdapter;
-    private static final int VIEW_PAGER_ITEMS = 3;
-
     private TextClock mTextClock;
 
-    private ImageView mLocationButton;
+    private ImageView mMapButton;
     private ImageView mHeartButton;
 
-    private View mAlertView;
-    private TextView mAlertTextView;
+    private ImageView mGpsStatus;
+    private ImageView mPhoneStatus;
+
+    private Fragment mContentFragment;
+
+    private boolean mIsImmersiveMode = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, final ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_workout_main, container, false);
+        final View rootView = inflater.inflate(R.layout.fragment_workout_main, container, false);
 
-        mTextClock = (TextClock) view.findViewById(R.id.time);
-        mAlertView = view.findViewById(R.id.alert_connectivity);
-        mAlertTextView = (TextView) mAlertView.findViewById(R.id.text2);
+        mTextClock = (TextClock) rootView.findViewById(R.id.time);
 
-        final GestureDetector locationButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+        final String TAG_MAP = getString(R.string.tag_map);
+        final String TAG_HEART_RATE = getString(R.string.tag_heart_rate);
+        final String TAG_DATA = getString(R.string.tag_data);
+
+        mMapButton = (ImageView) rootView.findViewById(R.id.map_button);
+        mMapButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onDown (MotionEvent event){
-                return true;
-            }
+            public void onClick(View view) {
+                if (TAG_MAP.equals(view.getTag())) {
+                    mContentFragment = new WorkoutMapFragment();
 
-            @Override
-            public boolean onSingleTapUp(MotionEvent event) {
-                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                    mViewPager.setCurrentItem(FRAGMENT_MAP, 0);
+                    mMapButton.setImageResource(R.drawable.ic_menu);
+                    mMapButton.setTag(TAG_DATA);
+
+                    if (TAG_DATA.equals(mHeartButton.getTag())) {
+                        mHeartButton.setTag(TAG_HEART_RATE);
+                        updateUI();
+                    }
+
+                    mTextClock.setTextColor(getContext().getColor(R.color.text_dark));
+                    mTextClock.setBackgroundResource(R.drawable.bg_text_clock_map);
+
+                    int c1 = getContext().getColor(R.color.text_primary);
+                    int c2 = getContext().getColor(R.color.text_dark);
+
+                    ObjectAnimator.ofArgb(mGpsStatus, "colorFilter", c1, c2).start();
+                    ObjectAnimator.ofArgb(mPhoneStatus, "colorFilter", c1, c2).start();
                 } else {
-                    mViewPager.setCurrentItem(0, FRAGMENT_MAP);
+                    mContentFragment = new WorkoutDataFragment();
+
+                    mMapButton.setImageResource(R.drawable.ic_place);
+                    mMapButton.setTag(TAG_MAP);
+
+                    mTextClock.setTextColor(getContext().getColor(R.color.text_primary));
+                    mTextClock.setBackgroundResource(R.drawable.bg_text_clock);
+
+                    int c1 = getContext().getColor(R.color.text_dark);
+                    int c2 = getContext().getColor(R.color.text_primary);
+
+                    ObjectAnimator.ofArgb(mGpsStatus, "colorFilter", c1, c2).start();
+                    ObjectAnimator.ofArgb(mPhoneStatus, "colorFilter", c1, c2).start();
                 }
 
-                return super.onSingleTapConfirmed(event);
+                FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+                ft.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
+                ft.replace(R.id.workout_content_view, mContentFragment);
+                ft.commit();
             }
         });
 
-        mLocationButton = (ImageView) view.findViewById(R.id.map_button);
-        mLocationButton.setOnTouchListener(new View.OnTouchListener() {
+        mHeartButton = (ImageView) rootView.findViewById(R.id.heart_button);
+        mHeartButton.setOnClickListener(new View.OnClickListener() {
             @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                // Dispatch all events to the underlying viewpager so that it can handle dragging
-                // and flinging events
-                mViewPager.dispatchTouchEvent(event);
-                return locationButtonGestureDetector.onTouchEvent(event);
-            }
-        });
+            public void onClick(View view) {
+                mTextClock.setTextColor(getContext().getColor(R.color.text_primary));
+                mTextClock.setBackgroundResource(R.drawable.bg_text_clock);
 
-        final GestureDetector heartButtonGestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDown (MotionEvent event){
-                return true;
-            }
+                mGpsStatus.setColorFilter(getContext().getColor(R.color.text_primary));
+                mPhoneStatus.setColorFilter(getContext().getColor(R.color.text_primary));
 
-            @Override
-            public boolean onSingleTapConfirmed(MotionEvent event) {
-                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                    mViewPager.setCurrentItem(FRAGMENT_HEART, 0);
+                if (TAG_HEART_RATE.equals(view.getTag())) {
+                    mContentFragment = new WorkoutHeartRateFragment();
+
+                    mHeartButton.setImageResource(R.drawable.ic_menu);
+                    mHeartButton.setColorFilter(getContext().getColor(R.color.button_tint));
+                    mHeartButton.setTag(TAG_DATA);
+
+                    if (TAG_DATA.equals(mMapButton.getTag())) {
+                        mMapButton.setImageResource(R.drawable.ic_place);
+                        mMapButton.setTag(TAG_MAP);
+                    }
                 } else {
-                    mViewPager.setCurrentItem(0, FRAGMENT_HEART);
+                    mContentFragment = new WorkoutDataFragment();
+
+                    mHeartButton.setTag(TAG_HEART_RATE);
+                    updateUI();
                 }
 
-                return super.onSingleTapConfirmed(event);
+                FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+                ft.setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out);
+                ft.replace(R.id.workout_content_view, mContentFragment);
+                ft.commit();
             }
         });
 
-        mHeartButton = (ImageView) view.findViewById(R.id.heart_button);
-        mHeartButton.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                // Dispatch all events to the underlying viewpager so that it can handle dragging
-                // and flinging events
-                mViewPager.dispatchTouchEvent(event);
-                return heartButtonGestureDetector.onTouchEvent(event);
-            }
-        });
+        mPhoneStatus = (ImageView) rootView.findViewById(R.id.phone_status);
+        mGpsStatus = (ImageView) rootView.findViewById(R.id.gps_status);
 
-        mViewPagerAdapter = new MyFragmentGridPagerAdapter(getChildFragmentManager());
-        mViewPager = (GridViewPager) view.findViewById(R.id.pager);
-        mViewPager.setAdapter(mViewPagerAdapter);
-
-        mViewPager.setOnKeyListener(new View.OnKeyListener() {
-            @Override
-            public boolean onKey(View view, int i, KeyEvent keyEvent) {
-                if (keyEvent.getAction() != KeyEvent.ACTION_DOWN) {
-                    return false;
-                }
-
-                switch (keyEvent.getKeyCode()) {
-                    case KeyEvent.KEYCODE_STEM_1:
-                    case KeyEvent.KEYCODE_NAVIGATE_PREVIOUS:
-                        Point p1 = mViewPager.getCurrentItem();
-                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                            mViewPager.setCurrentItem(p1.y - 1, p1.x);
-                        } else {
-                            mViewPager.setCurrentItem(p1.y, p1.x - 1);
-                        }
-
-                        return true;
-
-                    case KeyEvent.KEYCODE_STEM_2:
-                    case KeyEvent.KEYCODE_NAVIGATE_NEXT:
-                        Point p2 = mViewPager.getCurrentItem();
-                        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                            mViewPager.setCurrentItem(p2.y + 1, p2.x);
-                        } else {
-                            mViewPager.setCurrentItem(p2.y, p2.x + 1);
-                        }
-
-                        return true;
-
-                    case KeyEvent.KEYCODE_STEM_3:
-                    case KeyEvent.KEYCODE_STEM_PRIMARY:
-                    case KeyEvent.KEYCODE_NAVIGATE_IN:
-                    case KeyEvent.KEYCODE_NAVIGATE_OUT:
-                        Log.d(LOG_TAG, "Key event received, but not handled: keycode=" + keyEvent.getKeyCode());
-                        break;
-                }
-
-                return false;
-            }
-        });
-
-        // If a different initial view has been requested, display it first.
-        // mViewPager.setCurrentItem() doesn't appear to queue the initial page change, even after
-        // mViewPager.setAdapter() is called, as is expected (ref http://stackoverflow.com/a/29136603/763176).
-        // Instead, we need to tell the view pager to change the current item, but we need to wait until it has been laid out.
-        final int currentItem;
+        int initialFragment;
         if (getArguments() != null) {
-            currentItem = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_DATA);
+            initialFragment = getArguments().getInt(ARGUMENT_INITIAL_FRAGMENT, FRAGMENT_DATA);
         } else {
-            currentItem = FRAGMENT_DATA;
+            initialFragment = FRAGMENT_DATA;
         }
 
-        ViewTreeObserver observer = mViewPager.getViewTreeObserver();
-        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                mViewPager.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+        switch (initialFragment) {
+            case FRAGMENT_DATA:
+                mContentFragment = new WorkoutDataFragment();
+                break;
+            case FRAGMENT_HEART:
+                mContentFragment = new WorkoutHeartRateFragment();
+                break;
+            case FRAGMENT_MAP:
+                mContentFragment = new WorkoutMapFragment();
+        }
 
-                if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-                    mViewPager.setCurrentItem(currentItem, 0, false);
-                } else {
-                    mViewPager.setCurrentItem(0, currentItem, false);
-                }
-            }
-        });
+        FragmentTransaction ft = getChildFragmentManager().beginTransaction();
+        ft.replace(R.id.workout_content_view, mContentFragment);
+        ft.commit();
 
         updateUI();
 
-        return view;
+        return rootView;
     }
 
     @Override
@@ -228,15 +195,18 @@ public class WorkoutMainFragment extends WearableFragment {
         mTextClock.setFormat12Hour("h:mm");
         mTextClock.setFormat24Hour("H:mm");
         mTextClock.setTextColor(Color.WHITE);
-        mTextClock.setBackgroundResource(R.drawable.bg_text_overlay_ambient);
+        mTextClock.setBackgroundResource(R.drawable.bg_text_clock_ambient);
         mTextClock.getPaint().setAntiAlias(false);
 
-        mLocationButton.setVisibility(View.INVISIBLE);
-        mHeartButton.setVisibility(View.INVISIBLE);
+        mGpsStatus.setVisibility(View.INVISIBLE);
+        mPhoneStatus.setVisibility(View.INVISIBLE);
 
-        Fragment fragment = getCurrentViewPagerFragment();
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onEnterAmbient(ambientDetails);
+        if (!mIsImmersiveMode) {
+            hideUiControls();
+        }
+
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onEnterAmbient(ambientDetails);
         }
     }
 
@@ -246,82 +216,100 @@ public class WorkoutMainFragment extends WearableFragment {
 
         mTextClock.setFormat12Hour("h:mm:ss");
         mTextClock.setFormat24Hour("H:mm:ss");
-        mTextClock.setBackgroundResource(R.drawable.bg_text_overlay);
-        mTextClock.setTextColor(getResources().getColor(R.color.text_dark, null));
         mTextClock.getPaint().setAntiAlias(true);
 
-        mLocationButton.setVisibility(View.VISIBLE);
-        mHeartButton.setVisibility(View.VISIBLE);
+        if (mContentFragment instanceof WorkoutMapFragment) {
+            mTextClock.setBackgroundResource(R.drawable.bg_text_clock_map);
+            mTextClock.setTextColor(getContext().getColor(R.color.text_dark));
+        } else {
+            mTextClock.setBackgroundResource(R.drawable.bg_text_clock);
+            mTextClock.setTextAppearance(R.style.text_clock);
+        }
 
-        Fragment fragment = getCurrentViewPagerFragment();
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onExitAmbient();
+        mGpsStatus.setVisibility(View.VISIBLE);
+        mPhoneStatus.setVisibility(View.VISIBLE);
+
+        if (!mIsImmersiveMode) {
+            showUiControls();
+        }
+
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onExitAmbient();
         }
     }
 
     @Override
     public void onUpdateAmbient() {
-        Fragment fragment = getCurrentViewPagerFragment();
-        if (fragment instanceof WearableFragment) {
-            ((WearableFragment) fragment).onUpdateAmbient();
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onUpdateAmbient();
         }
 
         updateUI();
     }
 
     //
+    // Public, non-inherited class methods
+    //
+
+    public void toggleImmersiveMode() {
+        if (mIsImmersiveMode) {
+            showUiControls();
+            mIsImmersiveMode = false;
+        } else {
+            hideUiControls();
+            mIsImmersiveMode = true;
+        }
+    }
+
+    //
     // Private class methods
     //
 
+    private void hideUiControls() {
+        float offset = getResources().getDimensionPixelOffset(R.dimen.fab_screen_offset);
+        float diameter = getResources().getDimensionPixelOffset(R.dimen.fab_diameter);
+
+        ObjectAnimator.ofFloat(mMapButton, "translationX", -offset, -diameter).start();
+        ObjectAnimator.ofFloat(mHeartButton, "translationX", offset, diameter).start();
+    }
+
+    private void showUiControls() {
+        float offset = getResources().getDimensionPixelOffset(R.dimen.fab_screen_offset);
+        float diameter = getResources().getDimensionPixelOffset(R.dimen.fab_diameter);
+
+        ObjectAnimator.ofFloat(mMapButton, "translationX", -diameter, -offset).start();
+        ObjectAnimator.ofFloat(mHeartButton, "translationX", diameter, offset).start();
+    }
+
     private void updateUI() {
         if (LocationService.isReceivingAccurateLocationSamples) {
-            mLocationButton.setImageDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.ic_gps_fixed));
+            mGpsStatus.setImageDrawable(getContext().getDrawable(R.drawable.ic_gps_fixed));
         } else {
-            mLocationButton.setImageDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.ic_gps_not_fixed));
+            PackageManager packageManager = getContext().getPackageManager();
+            boolean hasGPS = packageManager.hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS);
+
+            // if we can (eventually) get GPS data, show that it's not fixed
+            if (hasGPS || PhoneConnectivityService.isPhoneConnected) {
+                mGpsStatus.setImageDrawable(getContext().getDrawable(R.drawable.ic_gps_not_fixed));
+            } else {
+                mGpsStatus.setImageDrawable(getContext().getDrawable(R.drawable.ic_gps_off));
+            }
         }
 
-        if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
-            mHeartButton.setColorFilter(getContext().getColor(R.color.highlight_dark));
+        if (PhoneConnectivityService.isPhoneConnected) {
+            mPhoneStatus.setImageDrawable(getContext().getDrawable(R.drawable.ic_phone_connected));
         } else {
-            mHeartButton.setColorFilter(getContext().getColor(R.color.black_86p));
-        }
-    }
-
-    private Fragment getCurrentViewPagerFragment() {
-        Point p = mViewPager.getCurrentItem();
-        return mViewPagerAdapter.findExistingFragment(p.y, p.x);
-    }
-
-    private void notifyUserOfConnectivityIssue() {
-        final LocationManager manager = (LocationManager) getActivity().getSystemService( Context.LOCATION_SERVICE );
-
-        if (!manager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-            mAlertTextView.setText(getString(R.string.location_unavailable));
-        } else {
-            mAlertTextView.setText(getString(R.string.reacquiring_location));
+            mPhoneStatus.setImageDrawable(getContext().getDrawable(R.drawable.ic_phone_disconnected));
         }
 
-        mAlertView.animate().translationY(0);
-    }
-
-    //
-    // Public class methods
-    //
-
-    public int getCurrentFragment() {
-        Point p = mViewPager.getCurrentItem();
-        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-            return p.y;
-        }
-
-        return p.x;
-    }
-
-    public void setCurrentFragment(int fragmentIndex) {
-        if (PAGER_ORIENTATION == LinearLayout.VERTICAL) {
-            mViewPager.setCurrentItem(fragmentIndex, 0, true);
-        } else {
-            mViewPager.setCurrentItem(0, fragmentIndex, true);
+        if (getString(R.string.tag_heart_rate).equals(mHeartButton.getTag())) {
+            if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
+                mHeartButton.setImageResource(R.drawable.ic_heart);
+                mHeartButton.setColorFilter(getContext().getColor(R.color.mediumorchid));
+            } else {
+                mHeartButton.setImageResource(R.drawable.ic_heart_outline);
+                mHeartButton.setColorFilter(getContext().getColor(R.color.button_tint));
+            }
         }
     }
 
@@ -339,17 +327,6 @@ public class WorkoutMainFragment extends WearableFragment {
                     if (!accurateSamples) {
                         Vibrator vibrator = (Vibrator) getActivity().getSystemService(Context.VIBRATOR_SERVICE);
                         vibrator.vibrate(VIBRATOR_DURATION_MS);
-
-                        if (!PhoneConnectivityService.isPhoneConnected) {
-                            // TODO shows the dialog even if the phone disconnected a long time ago...
-                            notifyUserOfConnectivityIssue();
-                        }
-                    } else {
-                        // Ensure that the connectivity alert overlay is closed, as we're receiving GPS samples
-                        float x = WorkoutMainFragment.this.getResources().getDimension(R.dimen.alert_overlay_height_neg);
-                        if (mAlertTextView.getTranslationY() != x) {
-                            mAlertView.animate().translationY(x);
-                        }
                     }
 
                     break;
@@ -358,55 +335,12 @@ public class WorkoutMainFragment extends WearableFragment {
                     break;
 
                 case PhoneConnectivityService.ACTION_PHONE_CONNECTIVITY_CHANGED:
-                    boolean isPhoneConnected = intent.getBooleanExtra(PhoneConnectivityService.EXTRA_IS_PHONE_CONNECTED, false);
-
-                    if (!isPhoneConnected && !LocationService.isReceivingAccurateLocationSamples) {
-                        notifyUserOfConnectivityIssue();
-                    }
-
                     break;
             }
 
             if (!isAmbient()) {
                 updateUI();
             }
-        }
-    }
-
-    private class MyFragmentGridPagerAdapter extends FragmentGridPagerAdapter {
-        public MyFragmentGridPagerAdapter(FragmentManager fm) {
-            super(fm);
-        }
-
-        @Override
-        public Fragment getFragment(int row, int col) {
-            Fragment fragment = null;
-
-            int x = PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? col : row;
-
-            switch (x) {
-                case FRAGMENT_MAP:
-                    fragment = new WorkoutMapFragment();
-                    break;
-                case FRAGMENT_DATA:
-                    fragment = new WorkoutDataFragment();
-                    break;
-                case FRAGMENT_HEART:
-                    fragment = new WorkoutHeartRateFragment();
-                    break;
-            }
-
-            return fragment;
-        }
-
-        @Override
-        public int getRowCount() {
-            return PAGER_ORIENTATION == LinearLayout.VERTICAL ? VIEW_PAGER_ITEMS : 1;
-        }
-
-        @Override
-        public int getColumnCount(int i) {
-            return PAGER_ORIENTATION == LinearLayout.HORIZONTAL ? VIEW_PAGER_ITEMS : 1;
         }
     }
 }

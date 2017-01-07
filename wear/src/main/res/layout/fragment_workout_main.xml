@@ -7,30 +7,12 @@
     android:layout_height="match_parent"
     tools:context="info.saxman.whererunner.WorkoutMainFragment">
 
-    <android.support.wearable.view.GridViewPager
-        android:id="@+id/pager"
+    <!-- TODO move constants to res -->
+
+    <FrameLayout
+        android:id="@+id/workout_content_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:focusableInTouchMode="true">
-
-        <requestFocus/>
-    </android.support.wearable.view.GridViewPager>
-
-    <TextClock
-        style="@style/text_overlay"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:id="@+id/time"
-        android:layout_gravity="center_horizontal"
-        android:paddingLeft="@dimen/clock_padding_horizontal"
-        android:paddingRight="@dimen/clock_padding_horizontal"
-        android:paddingTop="@dimen/clock_padding_vertical"
-        android:paddingBottom="@dimen/clock_padding_vertical"
-        android:layout_marginTop="@dimen/clock_margin"
-        android:format12Hour="h:mm:ss"
-        android:format24Hour="H:mm:ss" />
-
-    <include layout="@layout/alert_connectivity"/>
+        android:layout_height="match_parent" />
 
     <ImageView
         android:id="@+id/map_button"
@@ -39,19 +21,59 @@
         android:layout_gravity="center_vertical|left"
         android:paddingLeft="25dp"
         android:paddingRight="4dp"
-        android:layout_marginLeft="@dimen/fab_screen_offset"
-        android:src="@drawable/ic_gps_not_fixed"
-        style="@style/button_round"/>
+        android:translationX="-23dp"
+        android:src="@drawable/ic_place"
+        android:tag="@string/tag_map"
+        style="@style/button_round" />
 
     <ImageView
         android:id="@+id/heart_button"
         android:layout_width="@dimen/fab_diameter"
         android:layout_height="@dimen/fab_diameter"
         android:layout_gravity="center_vertical|right"
-        android:paddingLeft="2dp"
-        android:paddingRight="21dp"
-        android:layout_marginRight="@dimen/fab_screen_offset"
-        android:src="@drawable/ic_heart"
+        android:paddingLeft="4dp"
+        android:paddingRight="25dp"
+        android:translationX="23dp"
+        android:src="@drawable/ic_heart_outline"
+        android:tag="@string/tag_heart_rate"
         style="@style/button_round"/>
-    
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/clock_margin">
+
+        <ImageView
+            android:id="@+id/gps_status"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginRight="5dp"
+            android:src="@drawable/ic_gps_not_fixed"
+            android:tint="@color/text_primary" />
+
+        <TextClock
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="@dimen/clock_padding_horizontal"
+            android:paddingRight="@dimen/clock_padding_horizontal"
+            android:paddingTop="@dimen/clock_padding_vertical"
+            android:paddingBottom="@dimen/clock_padding_vertical"
+            android:format12Hour="h:mm:ss"
+            android:format24Hour="H:mm:ss"
+            style="@style/text_clock" />
+
+        <ImageView
+            android:id="@+id/phone_status"
+            android:layout_width="12dp"
+            android:layout_height="12dp"
+            android:layout_marginTop="5dp"
+            android:layout_marginLeft="5dp"
+            android:src="@drawable/ic_phone_disconnected"
+            android:tint="@color/text_primary" />
+
+    </LinearLayout>
+
 </FrameLayout>

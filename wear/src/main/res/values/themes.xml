@@ -1,5 +1,5 @@
 <resources>
-    <style name="AppTheme" parent="@style/Theme.AppCompat">
+    <style name="AppTheme" parent="@style/Theme.Wearable">
         <item name="android:colorPrimary">@color/primary</item>
         <item name="android:colorPrimaryDark">@color/primary_dark</item>
         <item name="android:colorAccent">@color/primary_accent</item>
