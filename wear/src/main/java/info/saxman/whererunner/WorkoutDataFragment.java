@@ -10,6 +10,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
 import android.widget.TextView;
 
 import info.saxman.whererunner.framework.WearableFragment;
@@ -31,6 +32,9 @@ public class WorkoutDataFragment extends WearableFragment {
     private TextView mDistanceTextView;
     private TextView mSpeedTextView;
 
+    private TextView mHeartRateTitle;
+    private TextView mHeartRateTextView;
+
     private LinkedList<TextView> mTextViews = new LinkedList<>();
 
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
@@ -38,6 +42,8 @@ public class WorkoutDataFragment extends WearableFragment {
     private Timer mDurationTimer;
 
     private static final int DURATION_TIMER_INTERVAL_MS = 100;
+
+    private boolean mIsImmersiveMode = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -47,9 +53,14 @@ public class WorkoutDataFragment extends WearableFragment {
         mDurationTextView = (TextView) view.findViewById(R.id.duration);
         mSpeedTextView = (TextView) view.findViewById(R.id.speed);
 
+        mHeartRateTitle = (TextView) view.findViewById(R.id.heart_rate_title);
+        mHeartRateTextView = (TextView) view.findViewById(R.id.heart_rate);
+
         mTextViews.add(mDistanceTextView);
         mTextViews.add(mDurationTextView);
         mTextViews.add(mSpeedTextView);
+        mTextViews.add(mHeartRateTextView);
+        mTextViews.add(mHeartRateTitle);
         mTextViews.add((TextView) view.findViewById(R.id.distance_title));
         mTextViews.add((TextView) view.findViewById(R.id.duration_title));
         mTextViews.add((TextView) view.findViewById(R.id.speed_title));
@@ -93,6 +104,11 @@ public class WorkoutDataFragment extends WearableFragment {
             view.getPaint().setAntiAlias(false);
             view.setTextColor(Color.WHITE);
         }
+
+        if (!mIsImmersiveMode) {
+            mHeartRateTextView.setVisibility(View.VISIBLE);
+            mHeartRateTitle.setVisibility(View.VISIBLE);
+        }
     }
 
     @Override
@@ -102,6 +118,11 @@ public class WorkoutDataFragment extends WearableFragment {
         for (TextView view : mTextViews) {
             view.getPaint().setAntiAlias(true);
             view.setTextColor(getResources().getColor(R.color.text_primary, null));
+        }
+
+        if (!mIsImmersiveMode) {
+            mHeartRateTextView.setVisibility(View.INVISIBLE);
+            mHeartRateTitle.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -155,6 +176,27 @@ public class WorkoutDataFragment extends WearableFragment {
         String currSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedCurrent());
         String avgSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedAverage());
         mSpeedTextView.setText(String.format(Locale.getDefault(), "%s / %s", currSpeed, avgSpeed));
+    }
+
+    public void setImmersiveMode(boolean isImmersiveMode) {
+        mIsImmersiveMode = isImmersiveMode;
+
+        if (isImmersiveMode) {
+            mHeartRateTextView.setVisibility(View.VISIBLE);
+            mHeartRateTitle.setVisibility(View.VISIBLE);
+
+            AlphaAnimation anim = new AlphaAnimation(0f, 1.0f);
+            anim.setDuration(250);
+            mHeartRateTextView.setAlpha(1f);
+            mHeartRateTextView.startAnimation(anim);
+
+            anim.setDuration(250);
+            mHeartRateTitle.setAlpha(1f);
+            mHeartRateTitle.startAnimation(anim);
+        } else {
+            mHeartRateTextView.setVisibility(View.INVISIBLE);
+            mHeartRateTitle.setVisibility(View.INVISIBLE);
+        }
     }
 
     private class MyBroadcastReceiver extends BroadcastReceiver {

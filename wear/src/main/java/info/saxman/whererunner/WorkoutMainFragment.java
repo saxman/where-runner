@@ -259,6 +259,10 @@ public class WorkoutMainFragment extends WearableFragment {
             hideUiControls();
             mIsImmersiveMode = true;
         }
+
+        if (mContentFragment instanceof WorkoutDataFragment) {
+            ((WorkoutDataFragment) mContentFragment).setImmersiveMode(mIsImmersiveMode);
+        }
     }
 
     //

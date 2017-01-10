@@ -38,7 +38,6 @@ import info.saxman.whererunner.model.WorkoutType;
 import info.saxman.whererunner.framework.WearableFragment;
 import info.saxman.whererunner.services.WorkoutRecordingService;
 
-import java.nio.channels.GatheringByteChannel;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
@@ -232,13 +231,15 @@ public class MainActivity extends WearableActivity implements
 
         // If the device has a HRM, also request body sensor permission, if not already granted
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)
-                && ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS) != PackageManager.PERMISSION_GRANTED) {
+                && ActivityCompat.checkSelfPermission(this, Manifest.permission.BODY_SENSORS)
+                    != PackageManager.PERMISSION_GRANTED) {
             permissions.add(Manifest.permission.BODY_SENSORS);
         }
 
         // If there are permissions that haven't been granted yet, request them. Else, start the recording service
         if (permissions.size() > 0) {
-            ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
+            ActivityCompat.requestPermissions(this,
+                    permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
         } else {
             startWorkoutRecordingService();
         }
@@ -265,7 +266,14 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
+    public void onDestroy() {
+        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
+        super.onDestroy();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(
+            int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
         switch (requestCode) {
             case REQUEST_PERMISSIONS:
                 // Start the recording service as long as the location permission (first permission) has been granted

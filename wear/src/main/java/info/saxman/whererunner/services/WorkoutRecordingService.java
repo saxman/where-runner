@@ -37,13 +37,13 @@ public class WorkoutRecordingService extends Service {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
 
-    /** Outgoing action reporting recording status */
+    /** Outgoing action reporting workout recording status */
     public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS_CHANGED";
 
     /** Extra for recording status updates */
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
 
-    /** Outgoing action reporting that the workout data has been updated */
+    /** Outgoing action reporting that the is updated workout data available */
     public final static String ACTION_WORKOUT_DATA_UPDATED = "WORKOUT_DATA_UPDATED";
 
     private final BroadcastReceiver mHeartRateBroadcastReceiver = new HeartRateBroadcastReceiver();
@@ -118,11 +118,15 @@ public class WorkoutRecordingService extends Service {
     public IBinder onBind(Intent intent) {
         startHeartRateService();
 
-        Intent i = new Intent(this, FusedLocationService.class);
-        bindService(i, mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+        bindService(
+                new Intent(this, FusedLocationService.class),
+                mLocationServiceConnection,
+                Context.BIND_AUTO_CREATE);
 
-        i = new Intent(this, PhoneConnectivityService.class);
-        bindService(i, mPhoneConnectivityServiceConnection, Context.BIND_AUTO_CREATE);
+        bindService(
+                new Intent(this, PhoneConnectivityService.class),
+                mPhoneConnectivityServiceConnection,
+                Context.BIND_AUTO_CREATE);
 
         return mServiceBinder;
     }
@@ -130,8 +134,17 @@ public class WorkoutRecordingService extends Service {
     @Override
     public boolean onUnbind(Intent intent) {
         super.onUnbind(intent);
-        // Allow re-binding. Otherwise, the service will remain running if it is bound, started, unbound,
-        // re-bound (attempted; will fail), stopped, and unbound (attempted; will fail since not re-bound).
+
+        // Allow re-binding. Otherwise, the service will remain running if the following sequence of
+        // events occurs:
+        //
+        // 1. the service is bound (the activity binds for controlling the service)
+        // 2. started (the user starts the workout)
+        // 3. unbound (the user exits the activity)
+        // 4. re-bound (attempted; will fail) (the user re-launches the activity)
+        // 5. stopped (the user stops their workout)
+        // 6. unbound (attempted; will fail since not re-bound) (the user exits the activity)
+
         return true;
     }
 
@@ -147,7 +160,8 @@ public class WorkoutRecordingService extends Service {
 
         // Reset static vars since these survive outside of the service lifecycle
         workout = new Workout();
-        resetSampleCollections();
+        heartRateSamples.clear();
+        locationSamples.clear();
 
         super.onDestroy();
     }
@@ -167,10 +181,16 @@ public class WorkoutRecordingService extends Service {
      */
     private void startRecordingData() {
         workout = new Workout(System.currentTimeMillis());
-        resetSampleCollections();
+        heartRateSamples.clear();
+        locationSamples.clear();
 
-        startHeartRateRecording();
-        startLocationRecording();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateBroadcastReceiver, filter);
+
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationBroadcastReceiver, intentFilter);
     }
 
     /**
@@ -182,43 +202,10 @@ public class WorkoutRecordingService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateBroadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationBroadcastReceiver);
 
-        saveWorkout();
-    }
-
-    /**
-     * Starts listening for HR notifications and records values
-     */
-    private void startHeartRateRecording() {
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mHeartRateBroadcastReceiver, filter);
-    }
-
-    /**
-     * Starts listening for GPS notifications and records values
-     */
-    private void startLocationRecording() {
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mLocationBroadcastReceiver, intentFilter);
-    }
-
-    /**
-     * Saves the workout session data
-     */
-    private void saveWorkout() {
         WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
         mDbHelper.writeWorkout(workout);
         mDbHelper.writeHeartRates(heartRateSamples);
         mDbHelper.writeLocations(locationSamples);
-    }
-
-    /**
-     * Empties all the data sample collections
-     */
-    private void resetSampleCollections() {
-        heartRateSamples.clear();
-        locationSamples.clear();
     }
 
     //
