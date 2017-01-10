@@ -70,10 +70,10 @@ public class WorkoutHeartRateFragment extends WearableFragment
     public void onStart() {
         super.onStart();
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
-        filter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
-        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, filter);
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        intentFilter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override

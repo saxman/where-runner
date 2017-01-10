@@ -15,6 +15,7 @@ import android.widget.TextView;
 
 import info.saxman.whererunner.framework.WearableFragment;
 import info.saxman.whererunner.model.Workout;
+import info.saxman.whererunner.services.HeartRateSensorService;
 import info.saxman.whererunner.services.WorkoutRecordingService;
 
 import java.util.LinkedList;
@@ -81,7 +82,9 @@ public class WorkoutDataFragment extends WearableFragment {
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
-        LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
+        intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
+        intentFilter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
+        LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
@@ -176,15 +179,24 @@ public class WorkoutDataFragment extends WearableFragment {
         String currSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedCurrent());
         String avgSpeed = WhereRunnerApp.formatSpeed(WorkoutRecordingService.workout.getSpeedAverage());
         mSpeedTextView.setText(String.format(Locale.getDefault(), "%s / %s", currSpeed, avgSpeed));
+
+        // If we're actively receiving heart rate samples, display the most recent
+        if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
+            mHeartRateTextView.setText(String.valueOf(HeartRateSensorService.lastHeartRateSample.getHeartRate()));
+        } else {
+            mHeartRateTextView.setText(getString(R.string.hrm_no_data));
+        }
     }
 
     public void setImmersiveMode(boolean isImmersiveMode) {
         mIsImmersiveMode = isImmersiveMode;
 
+        // TODO don't reveal HR if no HR sensor present
         if (isImmersiveMode) {
             mHeartRateTextView.setVisibility(View.VISIBLE);
             mHeartRateTitle.setVisibility(View.VISIBLE);
 
+            // TODO add to resources
             AlphaAnimation anim = new AlphaAnimation(0f, 1.0f);
             anim.setDuration(250);
             mHeartRateTextView.setAlpha(1f);
@@ -214,6 +226,11 @@ public class WorkoutDataFragment extends WearableFragment {
                         stopDurationTimer();
                     }
 
+                    break;
+
+                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
+                case HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED:
+                    // noop... just update the UI
                     break;
             }
 
