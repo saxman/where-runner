@@ -4,18 +4,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="info.saxman.whererunner.HistoryMainFragment">
+    tools:context=".HistoryMainFragment">
 
-    <android.support.wearable.view.GridViewPager
-        android:id="@+id/pager"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:focusableInTouchMode="true">
-
-        <requestFocus/>
-    </android.support.wearable.view.GridViewPager>
-
-    <include layout="@layout/dot_page_indicator" />
+        android:scrollbars="vertical" />
 
     <TextView
         style="@style/text_header"
@@ -23,7 +18,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity="center"
         android:text="@string/loading" />
 
     <TextView
@@ -32,8 +26,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity="center"
-        android:text="@string/history_no_data"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:text="@string/history_no_data" />
 
 </FrameLayout>

@@ -1,70 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.wearable.view.WearableRecyclerView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/root_container"
+    android:id="@+id/recycler_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="35dp"
-    android:gravity="center"
-    android:orientation="vertical"
-    tools:context="info.saxman.whererunner.WorkoutDataFragment">
-
-    <TextView
-        android:id="@+id/distance_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/distance_total"
-        style="@style/text_data_header" />
-
-    <TextView
-        android:id="@+id/distance"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/na"
-        style="@style/text_data" />
-
-    <TextView
-        android:id="@+id/speed_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/speed_current_average"
-        style="@style/text_data_header" />
-
-    <TextView
-        android:id="@+id/speed"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/na"
-        style="@style/text_data" />
-
-    <TextView
-        android:id="@+id/duration_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/time_elapsed"
-        style="@style/text_data_header" />
-
-    <TextView
-        android:id="@+id/duration"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/na"
-        style="@style/text_data" />
-
-    <TextView
-        android:id="@+id/heart_rate_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/heart_rate"
-        android:visibility="invisible"
-        style="@style/text_data_header" />
-
-    <TextView
-        android:id="@+id/heart_rate"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/hrm_no_data"
-        android:visibility="invisible"
-        style="@style/text_data" />
-
-</LinearLayout>
+    android:scrollbars="vertical"
+    tools:context=".WorkoutDataFragment" />

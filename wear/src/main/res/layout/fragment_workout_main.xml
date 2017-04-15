@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="info.saxman.whererunner.WorkoutMainFragment">
+    tools:context=".WorkoutMainFragment">
 
     <!-- TODO move constants to res -->
 
@@ -13,30 +13,6 @@
         android:id="@+id/workout_content_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
-
-    <ImageView
-        android:id="@+id/map_button"
-        android:layout_width="@dimen/fab_diameter"
-        android:layout_height="@dimen/fab_diameter"
-        android:layout_gravity="center_vertical|left"
-        android:paddingLeft="25dp"
-        android:paddingRight="4dp"
-        android:translationX="-23dp"
-        android:src="@drawable/ic_place"
-        android:tag="@string/tag_map"
-        style="@style/button_round" />
-
-    <ImageView
-        android:id="@+id/heart_button"
-        android:layout_width="@dimen/fab_diameter"
-        android:layout_height="@dimen/fab_diameter"
-        android:layout_gravity="center_vertical|right"
-        android:paddingLeft="4dp"
-        android:paddingRight="25dp"
-        android:translationX="23dp"
-        android:src="@drawable/ic_heart_outline"
-        android:tag="@string/tag_heart_rate"
-        style="@style/button_round"/>
 
     <LinearLayout
         android:layout_width="wrap_content"

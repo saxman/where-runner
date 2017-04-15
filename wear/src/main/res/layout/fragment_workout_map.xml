@@ -7,10 +7,15 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/light_grey"
+    android:focusableInTouchMode="true"
     map:cameraZoom="18"
-    map:uiZoomGestures="true"
+    map:uiZoomGestures="false"
     map:uiScrollGestures="false"
     map:uiRotateGestures="false"
     map:uiTiltGestures="false"
     map:ambientEnabled="true"
-    tools:context="info.saxman.whererunner.WorkoutMapFragment" />
+    tools:context=".WorkoutMapFragment">
+
+    <!-- request focus and focusableInTouchMode so map can receive rotary input gestures -->
+    <requestFocus />
+</com.google.android.gms.maps.MapView>

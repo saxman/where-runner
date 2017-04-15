@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="settings_list">
-        <!-- TODO add support for tweaking UI and location settings -->
-        <!-- <item>Google Fit</item> -->
-        <!--<item>Map accuracy circle</item>-->
-        <!--<item>Phone connectivity</item>-->
-        <!--<item>Location connectivity</item>-->
-        <!--<item>HRM connectivity</item>-->
-        <!--<item>Force watch GPS</item>-->
-        <!--<item>Update timeout (secs)</item>-->
-        <!--<item>Accuracy threshold (meters)</item>-->
-        <!--<item>Vibrate when signal lost</item>-->
+    <string-array name="units_names">
+        <item>Metric</item>
+        <item>US Customary</item>
+    </string-array>
+
+    <string-array name="units_values">
+        <item>metric</item>
+        <item>us</item>
     </string-array>
 </resources>

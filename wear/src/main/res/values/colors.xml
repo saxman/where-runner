@@ -30,8 +30,6 @@
     <item name="red_65b" type="color">#FFA62C23</item>
     <item name="red_40b" type="color">#FF661B15</item>
 
-    <item name="mediumorchid" type="color">#CC55D3</item>
-
     <!-- Colors for the map location accuracy indicator -->
     <item name="map_location_accuracy_fill" type="color">#220000FF</item>
     <item name="map_location_accuracy_stroke" type="color">#660000FF</item>

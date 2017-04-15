@@ -1,4 +1,9 @@
 <resources>
+    <style name="text_title" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textSize">@dimen/text_xlarge</item>
+    </style>
+
     <style name="text_header" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_large</item>
@@ -20,20 +25,34 @@
         <item name="android:background">@drawable/bg_text_clock</item>
     </style>
 
-    <style name="button_round" parent="@android:style/Widget.ActionButton">
-        <item name="android:background">@drawable/bg_button_round</item>
-        <item name="android:backgroundTint">@color/primary</item>
-        <item name="android:tint">@color/button_tint</item>
+    <!-- Widget styles -->
+
+    <style name="action_button" parent="@android:style/Widget.DeviceDefault.ActionButton">
+        <item name="android:layout_width">50dp</item>
+        <item name="android:layout_height">50dp</item>
+        <item name="android:tint">@color/white</item>
     </style>
+
+    <!-- Derived styles, for displaying workout data. -->
 
     <style name="text_data" parent="@style/text_header">
         <item name="android:includeFontPadding">false</item>
         <item name="android:fontFamily">sans-serif-regular</item>
     </style>
 
-    <style name="text_data_header" parent="@style/text_small">
+    <style name="text_data_primary" parent="@style/text_title">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fontFamily">sans-serif-regular</item>
+    </style>
+
+    <style name="text_data_secondary" parent="@style/text_small">
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fontFamily">sans-serif-regular</item>
+    </style>
+
+    <style name="text_data_title" parent="@style/text_small">
         <item name="android:includeFontPadding">false</item>
         <item name="android:textAllCaps">true</item>
-        <item name="android:fontFamily">sans-serif-smallcaps</item>
+        <item name="android:fontFamily">sans-serif-regular</item>
     </style>
 </resources>

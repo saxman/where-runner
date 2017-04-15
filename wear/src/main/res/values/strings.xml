@@ -1,8 +1,12 @@
 <resources>
     <string name="app_name">Where Runner</string>
 
+    <!-- Nav drawer items -->
+
     <string name="recording">Workout</string>
     <string name="history">Workout History</string>
+    <string name="map">Map</string>
+    <string name="settings">Settings</string>
 
     <string name="record_workout">Record</string>
     <string name="stop_recording">Stop</string>
@@ -14,33 +18,39 @@
     <string name="hrm_turn_on">Heart Rate Sensor: OFF</string>
     <string name="hrm_turn_off">Heart Rate Sensor: ON</string>
 
-    <string name="hrm_no_data">- -</string>
+    <string name="hrm_no_data"> - - </string>
 
-    <string name="distance_total">Distance</string>
-    <string name="speed_current_average">Speed (Curr/Avg KPH)</string>
-    <string name="speed_average_max">Speed (Avg/Max KPH)</string>
-    <string name="time_elapsed">Duration</string>
+    <string name="distance">distance</string>
+    <string name="duration">duration</string>
+    <string name="speed">speed</string>
+    <string name="pace">pace</string>
 
-    <string name="heart_rate">Heart Rate</string>
-    <string name="hr_min_max">Min/Max</string>
-    <string name="hr_current">Current</string>
-    <string name="hr_average">Average</string>
+    <string name="distance_us_customary">miles</string>
+    <string name="distance_metric">kms</string>
+    <string name="speed_us_customary">mph</string>
+    <string name="speed_metric">kph</string>
+    <string name="pace_us_customary">min / mi</string>
+    <string name="pace_metric">min / km</string>
+    <string name="heart_rate">bpm</string>
 
     <string name="loading">Loading…</string>
     <string name="history_no_data">No Data</string>
 
-    <string name="format_distance_kms">%.2f km</string>
-    <string name="format_distance_meters">%.1f m</string>
+    <string name="format_distance_kms">%.2f</string>
+    <string name="format_distance_meters">%.1f</string>
+    <string name="format_distance_miles">%.2f</string>
     <string name="format_speed">%.1f</string>
-
-    <string name="phone_disconnected">Phone Disconnected</string>
-    <string name="location_unavailable">GPS Unavailable</string>
-    <string name="reacquiring_location">Reacquiring GPS</string>
+    <string name="format_pace">%1$d:%2$02d</string>
 
     <string name="na">N/A</string>
 
-    <!-- String constants for tags applied to toggle-able buttons, for tracking state -->
-    <string name="tag_map">MAP</string>
-    <string name="tag_heart_rate">HEART_RATE</string>
-    <string name="tag_data">DATA</string>
+    <string name="units">Units</string>
+
+    <!-- Shared preference keys and values -->
+
+    <string name="pref_units">units</string>
+    <string name="pref_workout_type">workout_type</string>
+
+    <string name="pref_units_metric">metric</string>
+    <string name="pref_units_us">us</string>
 </resources>
