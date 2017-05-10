@@ -34,7 +34,7 @@
         style="@style/text_data_title" />
 
     <TextView
-        android:id="@+id/speed"
+        android:id="@+id/data_value"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         style="@style/text_data" />

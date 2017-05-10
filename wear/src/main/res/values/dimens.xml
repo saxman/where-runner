@@ -2,17 +2,13 @@
 <resources>
     <!-- Generic text dimensions for styles -->
     <dimen name="text_xlarge">50sp</dimen>
-    <dimen name="text_large">22sp</dimen>
-    <dimen name="text_medium">16sp</dimen>
-    <dimen name="text_small">12sp</dimen>
+    <dimen name="text_large">24sp</dimen>
+    <dimen name="text_medium">18sp</dimen>
+    <dimen name="text_small">16sp</dimen>
 
     <dimen name="clock_margin">5dp</dimen>
     <dimen name="clock_padding_vertical">0dp</dimen>
     <dimen name="clock_padding_horizontal">5dp</dimen>
-
-    <!-- Spacing between page indicator dots, implemented as a margin.
-         Visual spacing will be 2x this amount, as it's applied to each neighboring dot. -->
-    <dimen name="dot_page_indicator_spacing">1dp</dimen>
 
     <dimen name="map_marker_size">13dp</dimen>
 

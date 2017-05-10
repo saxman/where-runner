@@ -76,7 +76,7 @@ public class HistoryMainFragment extends Fragment {
                 mDateTimeTextView = (TextView) view.findViewById(R.id.date_time);
                 mDistanceTextView = (TextView) view.findViewById(R.id.distance);
                 mDurationTextView = (TextView) view.findViewById(R.id.duration);
-                mSpeedTextView = (TextView) view.findViewById(R.id.speed);
+                mSpeedTextView = (TextView) view.findViewById(R.id.data_value);
             }
         }
 

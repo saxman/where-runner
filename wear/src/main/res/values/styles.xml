@@ -1,4 +1,6 @@
 <resources>
+    <!-- Text styles -->
+
     <style name="text_title" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_xlarge</item>
@@ -19,13 +21,13 @@
         <item name="android:textSize">@dimen/text_small</item>
     </style>
 
+    <!-- Widget styles -->
+
     <style name="text_clock" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/text_primary</item>
         <item name="android:textSize">@dimen/text_small</item>
         <item name="android:background">@drawable/bg_text_clock</item>
     </style>
-
-    <!-- Widget styles -->
 
     <style name="action_button" parent="@android:style/Widget.DeviceDefault.ActionButton">
         <item name="android:layout_width">50dp</item>
@@ -33,7 +35,7 @@
         <item name="android:tint">@color/white</item>
     </style>
 
-    <!-- Derived styles, for displaying workout data. -->
+    <!-- Derived styles, for displaying workout data -->
 
     <style name="text_data" parent="@style/text_header">
         <item name="android:includeFontPadding">false</item>

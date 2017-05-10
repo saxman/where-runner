@@ -187,7 +187,8 @@ public class MainActivity extends WearableActivity implements
             permissions.add(Manifest.permission.BODY_SENSORS);
         }
 
-        // If there are permissions that haven't been granted yet, request them. Else, start the recording service
+        // If there are permissions that haven't been granted yet, request them. Else, start the
+        // recording service.
         if (permissions.size() > 0) {
             ActivityCompat.requestPermissions(this,
                     permissions.toArray(new String[permissions.size()]), REQUEST_PERMISSIONS);
@@ -228,8 +229,10 @@ public class MainActivity extends WearableActivity implements
 
         switch (requestCode) {
             case REQUEST_PERMISSIONS:
-                // Start the recording service as long as the location permission (first permission) has been granted
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Start the recording service as long as the location permission (first permission)
+                // has been granted.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     startWorkoutRecordingService();
                 } else {
                     // TODO notify the user that that the app can't function w/o location permission
@@ -358,7 +361,8 @@ public class MainActivity extends WearableActivity implements
         long delayMs = AMBIENT_UPDATE_INTERVAL_MS - (timeMs % AMBIENT_UPDATE_INTERVAL_MS);
         long triggerTimeMs = timeMs + delayMs;
 
-        mAmbientStateAlarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs, mAmbientStatePendingIntent);
+        mAmbientStateAlarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs,
+                mAmbientStatePendingIntent);
     }
 
     /**
@@ -382,7 +386,7 @@ public class MainActivity extends WearableActivity implements
     private void toggleWorkoutActivityType() {
         // Must call setWorkoutType() on the service first since setWorkoutActivityTypeUiState()
         // causes both drawers to refresh. The nav drawer UI refresh is handled automatically by
-        // its adapter, based on the actvity type of the service.
+        // its adapter, based on the activity type of the service.
         switch (mWorkoutRecordingService.getWorkoutType()) {
             case RUNNING:
                 mWorkoutRecordingService.setWorkoutType(WorkoutType.CYCLING);
@@ -400,7 +404,7 @@ public class MainActivity extends WearableActivity implements
         menuItem.setIcon(getDrawable(workoutType.drawableId));
         menuItem.setTitle(getString(R.string.activity_type) + ": " + getString(workoutType.titleId));
 
-        // Notify the nav drawer adapter that the data has changed, so that the record icon is refreshed
+        // Notify the adapter that the data has changed, so that the workout type icon is refreshed.
         mWearableNavigationDrawerAdapter.notifyDataSetChanged();
     }
 
@@ -429,7 +433,9 @@ public class MainActivity extends WearableActivity implements
     // Inner classes (private)
     //
 
-    private class MyWearableNavigationDrawerAdapter extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+    private class MyWearableNavigationDrawerAdapter
+            extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+
         private static final int NAV_DRAWER_ITEMS = 4;
 
         private static final int NAV_DRAWER_FRAGMENT_MAIN = 0;
@@ -491,10 +497,11 @@ public class MainActivity extends WearableActivity implements
                     break;
 
                 case NAV_DRAWER_FRAGMENT_MAP:
-                    mCurrentViewPagerFragment = new WorkoutMainFragment();
-
                     Bundle bundle = new Bundle();
-                    bundle.putInt(WorkoutMainFragment.ARGUMENT_WORKOUT_VIEW, WorkoutMainFragment.VALUE_WORKOUT_VIEW_MAP);
+                    bundle.putInt(WorkoutMainFragment.ARGUMENT_WORKOUT_VIEW,
+                            WorkoutMainFragment.VALUE_WORKOUT_VIEW_MAP);
+
+                    mCurrentViewPagerFragment = new WorkoutMainFragment();
                     mCurrentViewPagerFragment.setArguments(bundle);
 
                     mWearableActionDrawer.lockDrawerClosed();
@@ -529,7 +536,8 @@ public class MainActivity extends WearableActivity implements
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
                 case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                    boolean isRecording = intent.getBooleanExtra(WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+                    boolean isRecording = intent.getBooleanExtra(
+                            WorkoutRecordingService.EXTRA_IS_RECORDING, false);
                     setRecordingButtonState(isRecording);
                     break;
             }
@@ -538,7 +546,8 @@ public class MainActivity extends WearableActivity implements
 
     private class MyServiceConnection implements ServiceConnection {
         public void onServiceConnected(ComponentName className, IBinder binder) {
-            mWorkoutRecordingService = ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
+            mWorkoutRecordingService =
+                    ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
 
             if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
                 switch (getIntent().getType()) {

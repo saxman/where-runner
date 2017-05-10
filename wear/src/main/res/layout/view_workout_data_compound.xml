@@ -7,51 +7,63 @@
     tools:context=".WorkoutDataFragment">
 
     <TextView
-        android:id="@+id/value_label"
+        android:id="@+id/distance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:text="@string/na"
-        style="@style/text_data_title" />
-
-    <TextView
-        android:id="@+id/value_main"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/value_label"
         android:layout_centerHorizontal="true"
         android:paddingRight="5dp"
         android:paddingLeft="5dp"
         android:text="@string/na"
         style="@style/text_data_primary" />
 
-    <TextView
-        android:id="@+id/value_avg"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/value_main"
-        android:layout_alignBaseline="@id/value_main"
-        android:visibility="gone"
-        android:text="@string/na"
-        style="@style/text_data_secondary" />
+    <View
+        android:id="@+id/divider_1"
+        android:layout_width="fill_parent"
+        android:layout_height="2dip"
+        android:layout_below="@id/distance"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:background="@color/primary" />
 
     <ImageView
         android:id="@+id/icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toStartOf="@id/value_main"
-        android:layout_alignBaseline="@id/value_main"
-        android:baselineAlignBottom="true"
-        android:visibility="gone"
-        android:src="@drawable/ic_heart_outline" />
+        android:layout_below="@id/divider_1"
+        android:layout_centerHorizontal="true"
+        android:paddingLeft="5dp"
+        android:paddingRight="5dp"
+        android:tint="@color/text_primary"
+        android:tintMode="src_in"
+        android:src="@drawable/ic_running_white" />
+
+    <TextView
+        android:id="@+id/data_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@id/icon"
+        android:layout_below="@id/divider_1"
+        android:text="@string/na"
+        style="@style/text_data" />
+
+    <TextView
+        android:id="@+id/data_avg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/icon"
+        android:layout_below="@id/divider_1"
+        android:text="@string/na"
+        style="@style/text_data" />
 
     <View
-        android:id="@+id/divider"
+        android:id="@+id/divider_2"
         android:layout_width="fill_parent"
         android:layout_height="2dip"
-        android:layout_below="@id/value_main"
+        android:layout_below="@id/data_value"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="0dp"
+        android:layout_marginTop="5dp"
         android:layout_marginBottom="5dp"
         android:layout_marginLeft="15dp"
         android:layout_marginRight="15dp"
@@ -61,7 +73,7 @@
         android:id="@+id/duration"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/divider"
+        android:layout_below="@id/divider_2"
         android:layout_centerHorizontal="true"
         android:paddingBottom="10dp"
         android:text="@string/na"

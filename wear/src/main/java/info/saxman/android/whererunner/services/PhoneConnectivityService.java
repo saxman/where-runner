@@ -60,8 +60,6 @@ public class PhoneConnectivityService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(LOG_TAG, "Destroying service");
-
         mHandler.removeCallbacks(mStatusChecker);
 
         if (mGoogleApiClient.isConnected()) {
@@ -84,28 +82,30 @@ public class PhoneConnectivityService extends Service {
         public void run() {
             final boolean wasPhoneConnected = isPhoneConnected;
 
-            Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(new ResultCallback<NodeApi.GetConnectedNodesResult>() {
-                @Override
-                public void onResult(NodeApi.GetConnectedNodesResult result) {
-                    boolean isNodeNearby = false;
-                    for (Node node : result.getNodes()) {
-                        // only nearby nodes can give GPS results
-                        if (node.isNearby()) {
-                            isNodeNearby = true;
+            Wearable.NodeApi.getConnectedNodes(mGoogleApiClient).setResultCallback(
+                    new ResultCallback<NodeApi.GetConnectedNodesResult>() {
+                        @Override
+                        public void onResult(NodeApi.GetConnectedNodesResult result) {
+                            boolean isNodeNearby = false;
+                            for (Node node : result.getNodes()) {
+                                // only nearby nodes can give GPS results
+                                if (node.isNearby()) {
+                                    isNodeNearby = true;
+                                }
+                            }
+
+                            if (wasPhoneConnected != isNodeNearby) {
+                                isPhoneConnected = isNodeNearby;
+
+                                Intent intent = new Intent(ACTION_PHONE_CONNECTIVITY_CHANGED);
+                                intent.putExtra(EXTRA_IS_PHONE_CONNECTED, isPhoneConnected);
+                                LocalBroadcastManager.getInstance(
+                                        PhoneConnectivityService.this).sendBroadcast(intent);
+                            }
+
+                            mHandler.postDelayed(mStatusChecker, UPDATE_INTERVAL_MS);
                         }
-                    }
-
-                    if (wasPhoneConnected != isNodeNearby) {
-                        isPhoneConnected = isNodeNearby;
-
-                        Intent intent = new Intent(ACTION_PHONE_CONNECTIVITY_CHANGED);
-                        intent.putExtra(EXTRA_IS_PHONE_CONNECTED, isPhoneConnected);
-                        LocalBroadcastManager.getInstance(PhoneConnectivityService.this).sendBroadcast(intent);
-                    }
-
-                    mHandler.postDelayed(mStatusChecker, UPDATE_INTERVAL_MS);
-                }
-            }, 500, TimeUnit.MILLISECONDS);
+                    }, 500, TimeUnit.MILLISECONDS);
         }
     };
 }

@@ -266,6 +266,8 @@ public class WorkoutRecordingService extends Service {
         SharedPreferences.Editor editor = sharedPrefs.edit();
         editor.putInt(getString(R.string.pref_workout_type), WorkoutRecordingService.workoutType.preferencesId);
         editor.commit();
+
+        reportRecordingStatus();
     }
 
     public WorkoutType getWorkoutType() {

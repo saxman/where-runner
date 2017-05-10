@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    tools:context=".WorkoutDataFragment">
+
+    <TextView
+        android:id="@+id/value_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:text="@string/na"
+        style="@style/text_data_title" />
+
+    <TextView
+        android:id="@+id/data_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/value_label"
+        android:layout_centerHorizontal="true"
+        android:paddingRight="5dp"
+        android:paddingLeft="5dp"
+        android:text="@string/na"
+        style="@style/text_data_primary" />
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toStartOf="@id/data_value"
+        android:layout_alignBaseline="@id/data_value"
+        android:baselineAlignBottom="true"
+        android:visibility="gone"
+        android:src="@drawable/ic_heart_outline" />
+
+    <TextView
+        android:id="@+id/data_avg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/data_value"
+        android:layout_alignBaseline="@id/data_value"
+        android:baselineAlignBottom="true"
+        android:visibility="gone"
+        android:text="@string/na"
+        style="@style/text_data_secondary" />
+
+    <View
+        android:id="@+id/divider_2"
+        android:layout_width="fill_parent"
+        android:layout_height="2dip"
+        android:layout_below="@id/data_value"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="5dp"
+        android:layout_marginLeft="15dp"
+        android:layout_marginRight="15dp"
+        android:background="@color/primary" />
+
+    <TextView
+        android:id="@+id/duration"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/divider_2"
+        android:layout_centerHorizontal="true"
+        android:paddingBottom="10dp"
+        android:text="@string/na"
+        style="@style/text_data" />
+
+</RelativeLayout>

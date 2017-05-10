@@ -18,7 +18,7 @@
     <string name="hrm_turn_on">Heart Rate Sensor: OFF</string>
     <string name="hrm_turn_off">Heart Rate Sensor: ON</string>
 
-    <string name="hrm_no_data"> - - </string>
+    <string name="hrm_no_data">- -</string>
 
     <string name="distance">distance</string>
     <string name="duration">duration</string>

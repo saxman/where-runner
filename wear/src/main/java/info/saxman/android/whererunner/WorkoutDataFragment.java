@@ -1,41 +1,35 @@
 package info.saxman.android.whererunner;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.LinearSnapHelper;
+import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.DecelerateInterpolator;
-import android.widget.ImageView;
-import android.widget.TextView;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import info.saxman.android.whererunner.framework.WearableFragment;
-import info.saxman.android.whererunner.model.Workout;
-import info.saxman.android.whererunner.model.WorkoutType;
 import info.saxman.android.whererunner.services.HeartRateSensorService;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
+import info.saxman.android.whererunner.views.DistanceSpeedView;
+import info.saxman.android.whererunner.views.DistanceView;
+import info.saxman.android.whererunner.views.HeartRateView;
+import info.saxman.android.whererunner.views.SpeedView;
+import info.saxman.android.whererunner.views.WorkoutDataView;
 
 public class WorkoutDataFragment extends WearableFragment {
 
@@ -51,7 +45,7 @@ public class WorkoutDataFragment extends WearableFragment {
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mRecyclerViewLayoutManager;
 
-    private HashSet<MyRecyclerViewAdapter.DataViewHolder> myViewHolders = new HashSet<>();
+    private HashSet<WorkoutDataViewHolder> mWorkoutDataViewHolders = new HashSet<>();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -72,12 +66,12 @@ public class WorkoutDataFragment extends WearableFragment {
         mRecyclerView.setRecyclerListener(new RecyclerView.RecyclerListener() {
             @Override
             public void onViewRecycled(RecyclerView.ViewHolder holder) {
-                myViewHolders.remove(holder);
+                mWorkoutDataViewHolders.remove(holder);
             }
         });
 
         // Allows snapping to each view in the recycler view.
-        SnapHelper snapHelper = new LinearSnapHelper();
+        SnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(mRecyclerView);
 
         if (getArguments() != null) {
@@ -155,7 +149,7 @@ public class WorkoutDataFragment extends WearableFragment {
         // Disable the scrollbar so that it's not shown in ambient mode while the data updates.
         mRecyclerView.setVerticalScrollBarEnabled(false);
 
-        for (MyRecyclerViewAdapter.DataViewHolder viewHolder : myViewHolders) {
+        for (WorkoutDataViewHolder viewHolder : mWorkoutDataViewHolders) {
             viewHolder.onEnterAmbient();
         }
     }
@@ -166,7 +160,7 @@ public class WorkoutDataFragment extends WearableFragment {
 
         mRecyclerView.setVerticalScrollBarEnabled(true);
 
-        for (MyRecyclerViewAdapter.DataViewHolder viewHolder : myViewHolders) {
+        for (WorkoutDataViewHolder viewHolder : mWorkoutDataViewHolders) {
             viewHolder.onExitAmbient();
         }
     }
@@ -207,19 +201,8 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     private void updateUI() {
-        // The data (e.g. duration) on the various pages can get out of sync...
-//        int pos = mRecyclerViewLayoutManager.findFirstCompletelyVisibleItemPosition();
-//        if (pos != RecyclerView.NO_POSITION) {
-//            MyRecyclerViewAdapter.DataViewHolder viewHolder = (MyRecyclerViewAdapter.DataViewHolder) mRecyclerView.findViewHolderForAdapterPosition(pos);
-//            viewHolder.updateView();
-//        }
-
-        // Causes flickering and jank.
-//        int pos = mRecyclerViewLayoutManager.findFirstCompletelyVisibleItemPosition();
-//        myRecyclerViewAdapter.notifyItemChanged(pos);
-
         // Refresh the data in each of the viewholders in the RecyclerView.
-        for (MyRecyclerViewAdapter.DataViewHolder viewHolder : myViewHolders) {
+        for (WorkoutDataViewHolder viewHolder : mWorkoutDataViewHolders) {
             viewHolder.updateView();
         }
     }
@@ -249,254 +232,66 @@ public class WorkoutDataFragment extends WearableFragment {
         }
     }
 
-    private class MyRecyclerViewAdapter extends RecyclerView.Adapter<MyRecyclerViewAdapter.DataViewHolder> {
-        final int DISTANCE_VIEW = 0;
-        final int SPEED_VIEW = 1;
-        final int HEART_RATE_VIEW = 2;
+    private class WorkoutDataViewHolder extends RecyclerView.ViewHolder {
+        private WorkoutDataView mView;
 
-        abstract class DataViewHolder extends RecyclerView.ViewHolder {
-            View mView;
-
-            TextView mDurationTextView;
-            TextView mValueTextView;
-            TextView mValueAvgTextView;
-            TextView mValueLabelTextView;
-            View mDivider;
-            ImageView mIcon;
-
-            DataViewHolder(View view) {
-                super(view);
-
-                mView = view;
-
-                mIcon = (ImageView) view.findViewById(R.id.icon);
-                mValueTextView = (TextView) view.findViewById(R.id.value_main);
-                mValueAvgTextView = (TextView) view.findViewById(R.id.value_avg);
-                mValueLabelTextView = (TextView) view.findViewById(R.id.value_label);
-                mDurationTextView = (TextView) view.findViewById(R.id.duration);
-                mDivider = view.findViewById(R.id.divider);
-            }
-
-            public void updateView() {
-                Workout workout = WorkoutRecordingService.workout;
-
-                long millis = 0;
-                if (WorkoutRecordingService.isRecording) {
-                    millis = System.currentTimeMillis() - workout.getStartTime();
-                } else if (workout.getEndTime() != 0) {
-                    millis = workout.getEndTime() - workout.getStartTime();
-                }
-
-                mDurationTextView.setText(WhereRunnerApp.formatDuration(millis));
-            }
-
-            void onEnterAmbient() {
-                mDurationTextView.getPaint().setAntiAlias(false);
-                mValueTextView.getPaint().setAntiAlias(false);
-                mValueAvgTextView.getPaint().setAntiAlias(false);
-                mValueLabelTextView.getPaint().setAntiAlias(false);
-
-                mDurationTextView.setTextColor(Color.WHITE);
-                mValueTextView.setTextColor(Color.WHITE);
-                mValueAvgTextView.setTextColor(Color.WHITE);
-                mValueLabelTextView.setTextColor(Color.WHITE);
-
-                mDivider.setBackgroundColor(Color.WHITE);
-            }
-
-            void onExitAmbient() {
-                mDurationTextView.getPaint().setAntiAlias(true);
-                mValueTextView.getPaint().setAntiAlias(true);
-                mValueAvgTextView.getPaint().setAntiAlias(true);
-                mValueLabelTextView.getPaint().setAntiAlias(true);
-
-                int textColor = getResources().getColor(R.color.text_primary, null);
-                int primaryColor = getResources().getColor(R.color.primary, null);
-
-                mDurationTextView.setTextColor(textColor);
-                mValueTextView.setTextColor(textColor);
-                mValueAvgTextView.setTextColor(textColor);
-                mValueLabelTextView.setTextColor(textColor);
-
-                mDivider.setBackgroundColor(primaryColor);
-            }
+        WorkoutDataViewHolder(WorkoutDataView view) {
+            super(view);
+            mView = view;
         }
 
-        class DistanceViewHolder extends DataViewHolder {
-            DistanceViewHolder(View view) {
-                super(view);
-                mValueLabelTextView.setText(WhereRunnerApp.getLocalizedDistanceLabel());
-                updateView();
-            }
-
-            @Override
-            public void updateView() {
-                super.updateView();
-                mValueTextView.setText(WhereRunnerApp.formatDistance(
-                        WorkoutRecordingService.workout.getDistance()));
-            }
+        void updateView() {
+            mView.updateWorkoutData(WorkoutRecordingService.workout);
         }
 
-        class SpeedViewHolder extends DataViewHolder {
-            SpeedViewHolder(View view) {
-                super(view);
-                mValueAvgTextView.setVisibility(View.VISIBLE);
-                updateView();
-            }
-
-            @Override
-            public void updateView() {
-                super.updateView();
-
-                Workout workout = WorkoutRecordingService.workout;
-
-                String currSpeed;
-                String avgSpeed;
-
-                if (WorkoutRecordingService.workoutType == WorkoutType.CYCLING) {
-                    mValueLabelTextView.setText(WhereRunnerApp.getLocalizedSpeedLabel());
-                    currSpeed = WhereRunnerApp.formatSpeed(workout.getSpeedCurrent());
-                    avgSpeed = WhereRunnerApp.formatSpeed(workout.getSpeedAverage());
-                } else {
-                    mValueLabelTextView.setText(WhereRunnerApp.getLocalizedPaceLabel());
-                    currSpeed = WhereRunnerApp.formatPace(workout.getSpeedCurrent());
-                    avgSpeed = WhereRunnerApp.formatPace(workout.getSpeedAverage());
-                }
-
-                mValueTextView.setText(currSpeed);
-                mValueAvgTextView.setText(avgSpeed);
-            }
+        void onEnterAmbient() {
+            mView.onEnterAmbient();
         }
 
-        class HeartRateViewHolder extends DataViewHolder {
-            ObjectAnimator mHeartAnimator;
-            double mAnimationDurationMs;
-
-            public HeartRateViewHolder(View view) {
-                super(view);
-
-                mIcon.setVisibility(View.VISIBLE);
-
-                mValueAvgTextView.setVisibility(View.VISIBLE);
-                mValueAvgTextView.setText("");
-                mValueLabelTextView.setText(R.string.heart_rate);
-
-                mHeartAnimator = ObjectAnimator.ofPropertyValuesHolder(mIcon,
-                        PropertyValuesHolder.ofFloat("scaleX", 1.2f),
-                        PropertyValuesHolder.ofFloat("scaleY", 1.2f));
-
-                mHeartAnimator.setRepeatCount(ObjectAnimator.INFINITE);
-                mHeartAnimator.setRepeatMode(ObjectAnimator.REVERSE);
-
-                mHeartAnimator.addListener(new AnimatorListenerAdapter() {
-                    // If the animation is forward (0) or reverse (1).
-                    int mAnimationDirection;
-
-                    @Override
-                    public void onAnimationStart(Animator animation) {
-                        mAnimationDirection = 0;
-                    }
-
-                    @Override
-                    public void onAnimationRepeat(Animator animation) {
-                        mAnimationDirection = ++mAnimationDirection % 2;
-
-                        if (mAnimationDirection == 0) {
-                            animation.setInterpolator(new AccelerateInterpolator());
-
-                            // Update the animation duration when it restarts.
-                            animation.setDuration((long) mAnimationDurationMs / 2);
-                        } else {
-                            animation.setInterpolator(new DecelerateInterpolator());
-                        }
-                    }
-                });
-
-                updateView();
-            }
-
-            @Override
-            void onEnterAmbient() {
-                super.onEnterAmbient();
-
-                if (mHeartAnimator.isStarted()) {
-                    mHeartAnimator.pause();
-                }
-
-                mIcon.setVisibility(View.INVISIBLE);
-            }
-
-            @Override
-            void onExitAmbient() {
-                super.onExitAmbient();
-
-                if (mHeartAnimator.isPaused()) {
-                    mHeartAnimator.resume();
-                }
-
-                mIcon.setVisibility(View.VISIBLE);
-            }
-
-            @Override
-            public void updateView() {
-                super.updateView();
-
-                Workout workout = WorkoutRecordingService.workout;
-
-                // If we're actively receiving heart rate samples, display the most recent and
-                // update the heart beat animation.
-                if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
-                    int bpm = HeartRateSensorService.lastHeartRateSample.getHeartRate();
-
-                    mValueTextView.setText(String.valueOf(bpm));
-
-                    mAnimationDurationMs = 1 / (bpm / 60000.0);
-
-                    if (!mHeartAnimator.isStarted()) {
-                        mIcon.setImageResource(R.drawable.ic_heart);
-                        mHeartAnimator.setDuration((long) mAnimationDurationMs / 2);
-                        mHeartAnimator.start();
-                    }
-                } else {
-                    mValueTextView.setText(R.string.hrm_no_data);
-
-                    if (mHeartAnimator.isStarted()) {
-                        mHeartAnimator.cancel();
-                        mIcon.setImageResource(R.drawable.ic_heart_outline);
-                    }
-                }
-
-                // If we have average bpm, show it.
-                if (workout.getHeartRateAverage() != 0) {
-                    mValueAvgTextView.setText(String.format(Locale.getDefault(), "%.1f", workout.getHeartRateAverage()));
-                }
-            }
+        void onExitAmbient() {
+            mView.onExitAmbient();
         }
+    }
+
+    private class MyRecyclerViewAdapter extends RecyclerView.Adapter<WorkoutDataViewHolder> {
+        private final int DISTANCE_SPEED_VIEW = 0;
+        private final int DISTANCE_VIEW = 1;
+        private final int SPEED_VIEW = 2;
+        private final int HEART_RATE_VIEW = 3;
+
+        private final int VIEW_COUNT = 4;
 
         @Override
-        public MyRecyclerViewAdapter.DataViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            DataViewHolder viewHolder = null;
-            View view = getActivity().getLayoutInflater().inflate(R.layout.item_workout_data, parent, false);
+        public WorkoutDataViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            WorkoutDataView view = null;
 
             switch (viewType) {
+                case DISTANCE_SPEED_VIEW:
+                    view = new DistanceSpeedView(getContext());
+                    break;
                 case DISTANCE_VIEW:
-                    viewHolder = new DistanceViewHolder(view);
+                    view = new DistanceView(getContext());
                     break;
                 case SPEED_VIEW:
-                    viewHolder = new SpeedViewHolder(view);
+                    view = new SpeedView(getContext());
                     break;
                 case HEART_RATE_VIEW:
-                    viewHolder = new HeartRateViewHolder(view);
+                    view = new HeartRateView(getContext());
                     break;
             }
 
-            myViewHolders.add(viewHolder);
+            view.setLayoutParams(new FrameLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.MATCH_PARENT));
+
+            WorkoutDataViewHolder viewHolder = new WorkoutDataViewHolder(view);
+            mWorkoutDataViewHolders.add(viewHolder);
 
             return viewHolder;
         }
 
         @Override
-        public void onBindViewHolder(MyRecyclerViewAdapter.DataViewHolder viewHolder, int position) {
+        public void onBindViewHolder(WorkoutDataViewHolder viewHolder, int position) {
             viewHolder.updateView();
         }
 
@@ -507,7 +302,8 @@ public class WorkoutDataFragment extends WearableFragment {
 
         @Override
         public int getItemCount() {
-            return 3;
+            return VIEW_COUNT;
         }
     }
+
 }
