@@ -2,7 +2,6 @@ package info.saxman.android.whererunner;
 
 import android.Manifest;
 import android.app.AlarmManager;
-import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
@@ -10,24 +9,21 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.wear.widget.drawer.WearableActionDrawerView;
+import android.support.wear.widget.drawer.WearableNavigationDrawerView;
 import android.support.wearable.activity.WearableActivity;
-import android.support.wearable.view.ConfirmationOverlay;
-import android.support.wearable.view.drawer.WearableActionDrawer;
-import android.support.wearable.view.drawer.WearableDrawerLayout;
-import android.support.wearable.view.drawer.WearableNavigationDrawer;
-
-import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -35,43 +31,52 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
-import android.widget.ImageView;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.maps.MapView;
 
-import info.saxman.android.whererunner.model.WorkoutType;
+import java.util.ArrayList;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
 import info.saxman.android.whererunner.framework.WearableFragment;
+import info.saxman.android.whererunner.model.WorkoutType;
 import info.saxman.android.whererunner.services.HeartRateSensorService;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
 
-import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-
-public class MainActivity extends WearableActivity implements
-        ActivityCompat.OnRequestPermissionsResultCallback,
-        WearableActionDrawer.OnMenuItemClickListener {
+public class MainActivity extends WearableActivity
+        implements ActivityCompat.OnRequestPermissionsResultCallback, SharedPreferences.OnSharedPreferenceChangeListener {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
 
-    public static final String ACTION_SHOW_WORKOUT = MainActivity.class.getPackage() + ".SHOW_WORKOUT";
-    public static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
-    public static final String ACTION_STOP_WORKOUT = MainActivity.class.getPackage() + ".STOP_WORKOUT";
-    public static final String ACTION_SHOW_HEART_RATE = "vnd.google.fitness.VIEW";
+    public static final String ACTION_SHOW_WORKOUT = "SHOW_WORKOUT";
+    public static final String ACTION_STOP_WORKOUT = "STOP_WORKOUT";
+    public static final String ACTION_STOP_WORKOUT_CONFIRM = "STOP_WORKOUT_CONFIRM";
+
+    private static final String ACTION_START_WORKOUT = "vnd.google.fitness.TRACK";
+    private static final String EXTRA_START_WORKOUT_STATUS = "actionStatus";
+    private static final String EXTRA_START_WORKOUT_STATUS_START = "ActiveActionStatus";
+    private static final String EXTRA_START_WORKOUT_STATUS_STOP = "CompletedActionStatus";
+
+    private static final String ACTION_SHOW_HEART_RATE = "vnd.google.fitness.VIEW";
 
     private static final String MIME_TYPE_WORKOUT_BIKING = "vnd.google.fitness.activity/biking";
     private static final String MIME_TYPE_WORKOUT_RUNNING =  "vnd.google.fitness.activity/running";
     private static final String MIME_TYPE_WORKOUT_OTHER = "vnd.google.fitness.activity/other";
 
     private static final int REQUEST_PERMISSIONS = 1;
+    private final static int REQUEST_GOOGLE_PLAY_SERVICES_RESOLUTION = 10;
 
     private Menu mMenu;
 
-    private WearableDrawerLayout mWearableDrawerLayout;
-    private WearableActionDrawer mWearableActionDrawer;
-    private WearableNavigationDrawer mWearableNavigationDrawer;
-    private WearableNavigationDrawer.WearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
-    private Fragment mCurrentViewPagerFragment;
+    private WearableActionDrawerView mWearableActionDrawer;
+    private WearableNavigationDrawerView mWearableNavigationDrawer;
+    private MyWearableNavigationDrawerAdapter mWearableNavigationDrawerAdapter;
+
+    private Fragment mContentFragment;
+    private TimeStatusFragment mStatusFragment;
 
     private WorkoutRecordingService mWorkoutRecordingService;
     private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
@@ -82,36 +87,89 @@ public class MainActivity extends WearableActivity implements
     private AlarmManager mAmbientStateAlarmManager;
     private PendingIntent mAmbientStatePendingIntent;
 
+    /** If there is an Google Play services issue, this flag will halt setup of various components
+     * of the app (e.g. services, broadcast receivers, etc.). */
+    private boolean mIsGooglePlayServicesIssue = false;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        // Set the theme to the app's standard theme, which replaces the theme which includes a
+        // background image, for start-up (i.e. creating a splash screen).
         setTheme(R.style.AppTheme);
         setContentView(R.layout.activity_main);
 
+        // If Google Play services is not installed or needs updating, forgo any other app
+        // initialization in onStart and onResume.
+        if (!checkGooglePlayServices()) {
+            mIsGooglePlayServicesIssue = true;
+            return;
+        }
+
         setAmbientEnabled();
+
+        if (Locale.getDefault().equals(Locale.US)) {
+            PreferenceManager.setDefaultValues(this, R.xml.prefs_settings_us, false);
+        } else {
+            PreferenceManager.setDefaultValues(this, R.xml.prefs_settings, false);
+        }
 
         mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
         Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
 
         mAmbientStatePendingIntent = PendingIntent.getActivity(
                 getApplicationContext(),
-                0 /* requestCode */,
+                0,
                 ambientStateIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
-        mWearableNavigationDrawer = (WearableNavigationDrawer) findViewById(R.id.nav_drawer);
-        mWearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
 
-        mWearableActionDrawer = (WearableActionDrawer) findViewById(R.id.action_drawer);
-        mWearableActionDrawer.setOnMenuItemClickListener(this);
+        mWearableNavigationDrawer = findViewById(R.id.nav_drawer);
+        mWearableNavigationDrawer.setAdapter(mWearableNavigationDrawerAdapter);
+        mWearableNavigationDrawer.addOnItemSelectedListener(mWearableNavigationDrawerAdapter);
+        // Ensures the drawer doesn't peek on child view scrolling.
+        mWearableNavigationDrawer.setIsAutoPeekEnabled(false);
+
+        // Temporarily peek the nav drawer to help ensure the user is aware of it
+        ViewTreeObserver observer = mWearableNavigationDrawer.getViewTreeObserver();
+        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                mWearableNavigationDrawer.getViewTreeObserver().removeOnGlobalLayoutListener(this);
+                mWearableNavigationDrawer.getController().peekDrawer();
+            }
+        });
+
+        mWearableActionDrawer = findViewById(R.id.action_drawer);
         // Ensures the drawer remains in peek mode.
-        mWearableActionDrawer.setCanAutoPeek(false);
+        mWearableActionDrawer.setIsAutoPeekEnabled(false);
+        mWearableActionDrawer.getController().peekDrawer();
+        mWearableActionDrawer.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                switch (menuItem.getItemId()) {
+                    case R.id.record_menu_item:
+                        toggleWorkoutRecording();
+                        break;
+
+                    case R.id.activity_type_menu_item:
+                        toggleWorkoutActivityType();
+                        break;
+
+                    case R.id.heart_rate_menu_item:
+                        toggleHearRateSensor();
+                        break;
+                }
+
+                return true;
+            }
+        });
 
         mMenu = mWearableActionDrawer.getMenu();
 
-        // If the device has a heart rate monitor, un-hide the menu item for controlling it
+        // If the device has a heart rate monitor, un-hide the menu item for controlling it.
         if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
             MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
             menuItem.setVisible(true);
@@ -121,35 +179,6 @@ public class MainActivity extends WearableActivity implements
             // TODO bug?
             mMenu.removeItem(R.id.heart_rate_menu_item);
         }
-
-        mWearableDrawerLayout = (WearableDrawerLayout) findViewById(R.id.drawer_layout);
-        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
-
-        mCurrentViewPagerFragment = new WorkoutMainFragment();
-
-        // Set up the UI based on intent action. Starting and stopping the recording is handled once
-        // the recording service has been connected to.
-        String action = getIntent().getAction();
-        if (ACTION_SHOW_HEART_RATE.equals(action)) {
-            // Pass an attribute to the main workout fragment to tell it to display the heart rate.
-            Bundle bundle = new Bundle();
-            bundle.putInt(WorkoutMainFragment.ARGUMENT_WORKOUT_VIEW, WorkoutMainFragment.VALUE_WORKOUT_VIEW_HEART_RATE);
-            mCurrentViewPagerFragment.setArguments(bundle);
-        }
-
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.replace(R.id.main_content_view, mCurrentViewPagerFragment);
-        ft.commit();
-
-        // Temporarily peek the nav drawer to help ensure the user is aware of it
-        ViewTreeObserver observer = mWearableDrawerLayout.getViewTreeObserver();
-        observer.addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                mWearableDrawerLayout.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-                mWearableDrawerLayout.peekDrawer(Gravity.TOP);
-            }
-        });
 
         // Initialize the MapView in a background thread so that it loads faster when needed
         // Reduces MapView.onCreate() time from 900 to 100 mAnimationDurationMs on an LG Urban 2nd Edition
@@ -165,11 +194,26 @@ public class MainActivity extends WearableActivity implements
                 } catch (Exception e) {}
             }
         }).start();
+
+        // Ensure the nav drawer shows the workout data screen as selected.
+        handleIntent();
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        // If we've requested to resolve a Google Play Services issue, close the app.
+        if (requestCode == REQUEST_GOOGLE_PLAY_SERVICES_RESOLUTION) {
+            finish();
+        }
     }
 
     @Override
     public void onStart() {
         super.onStart();
+
+        if (mIsGooglePlayServicesIssue) {
+            return;
+        }
 
         // Check for the requisite permissions and, if met, start the recording service
         ArrayList<String> permissions = new ArrayList<>(2);
@@ -201,14 +245,26 @@ public class MainActivity extends WearableActivity implements
     public void onResume() {
         super.onResume();
 
+        if (mIsGooglePlayServicesIssue) {
+            return;
+        }
+
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED);
+
         LocalBroadcastManager.getInstance(this).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onStop() {
+        if (mIsGooglePlayServicesIssue) {
+            super.onStop();
+            return;
+        }
+
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+
+        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
 
         if (mWorkoutRecordingService != null) {
             unbindService(mWorkoutRecordingServiceConnection);
@@ -218,18 +274,12 @@ public class MainActivity extends WearableActivity implements
     }
 
     @Override
-    public void onDestroy() {
-        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
-        super.onDestroy();
-    }
-
-    @Override
     public void onRequestPermissionsResult(
             int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
 
         switch (requestCode) {
             case REQUEST_PERMISSIONS:
-                // Start the recording service as long as the location permission (first permission)
+                // Start the recording service as long as the location permission (firstChange permission)
                 // has been granted.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -243,43 +293,30 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
-    /**
-     * Called by the AlarmManager that is active while the app is in ambient mode, to update the UI
-     * at a more frequent rate than is standard for ambient mode.
-     *
-     * @param intent
-     */
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
 
-        // If the current fragment supports ambient mode (it should, per onEnterAmbient()), have
-        // it update its UI
-        if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
+        // If onNewIntent() was called by the ambient mode alarm manager, then schedule the next
+        // ambient mode UI update.
+        if (isAmbient()) {
+            // If the current fragment supports ambient mode (it should, per onEnterAmbient()), have
+            // it update its UI
+            if (mContentFragment instanceof WearableFragment) {
+                ((WearableFragment) mContentFragment).onUpdateAmbient();
+            }
+
+            scheduleAmbientUpdate();
+
+            return;
         }
 
-        scheduleAmbientUpdate();
-    }
-
-    @Override
-    public boolean onMenuItemClick(MenuItem menuItem) {
-        switch (menuItem.getItemId()) {
-            case R.id.record_menu_item:
-                toggleWorkoutRecording();
-                break;
-
-            case R.id.activity_type_menu_item:
-                toggleWorkoutActivityType();
-                break;
-
-            case R.id.heart_rate_menu_item:
-                toggleHearRateSensor();
-                break;
+        // If not an ambient update, app could have been re-launched with an intent to display
+        // specific data (e.g. heart rate).
+        if (!Intent.ACTION_MAIN.equals(intent.getAction())) {
+            handleIntent();
         }
-
-        return true;
     }
 
     @Override
@@ -289,7 +326,6 @@ public class MainActivity extends WearableActivity implements
                 toggleWorkoutRecording();
                 return true;
             } else if (keyCode == KeyEvent.KEYCODE_STEM_2) {
-                // do something
                 return true;
             } else if (keyCode == KeyEvent.KEYCODE_STEM_3) {
                 return true;
@@ -308,20 +344,18 @@ public class MainActivity extends WearableActivity implements
     public void onEnterAmbient(Bundle ambientDetails) {
         super.onEnterAmbient(ambientDetails);
 
-        mWearableDrawerLayout.closeDrawer(Gravity.TOP);
-        mWearableDrawerLayout.closeDrawer(Gravity.BOTTOM);
+        mWearableActionDrawer.getController().closeDrawer();
+        mWearableNavigationDrawer.getController().closeDrawer();
+
+        mStatusFragment.onEnterAmbient(ambientDetails);
 
         // If the current fragment supports ambient mode, then enter ambient mode.
-        if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            ((WearableFragment) mCurrentViewPagerFragment).onEnterAmbient(ambientDetails);
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onEnterAmbient(ambientDetails);
             scheduleAmbientUpdate();
         } else {
+            // mWearableNavigationDrawer.setCurrentItem(0, false);
             finish();
-
-            // TODO find some way to switch to the main workout fragment in ambient mode
-            // The following call will switch to the main workout fragment; however, the fragment
-            // doesn't know that it's in ambient mode
-            // mWearableNavigationDrawer.setCurrentItem(0, false)
         }
     }
 
@@ -329,10 +363,12 @@ public class MainActivity extends WearableActivity implements
     public void onExitAmbient() {
         super.onExitAmbient();
 
-        mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        mWearableActionDrawer.getController().peekDrawer();
 
-        if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            ((WearableFragment) mCurrentViewPagerFragment).onExitAmbient();
+        mStatusFragment.onExitAmbient();
+
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onExitAmbient();
         }
 
         mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
@@ -342,14 +378,79 @@ public class MainActivity extends WearableActivity implements
     public void onUpdateAmbient() {
         super.onUpdateAmbient();
 
-        if (mCurrentViewPagerFragment instanceof WearableFragment) {
-            ((WearableFragment) mCurrentViewPagerFragment).onUpdateAmbient();
+        if (mContentFragment instanceof WearableFragment) {
+            ((WearableFragment) mContentFragment).onUpdateAmbient();
         }
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        if (key.equals(getString(R.string.pref_use_watch_gps))) {
+            mWorkoutRecordingService.startLocationService();
+        }
+    }
+
+    //
+    // Class methods (public)
+    //
+
+    public void navigateBack() {
+        mWearableNavigationDrawerAdapter.navigateBack();
     }
 
     //
     // Class methods (private)
     //
+
+    private boolean checkGooglePlayServices() {
+        GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
+        int result = googleAPI.isGooglePlayServicesAvailable(this);
+        if (result != ConnectionResult.SUCCESS) {
+            if (googleAPI.isUserResolvableError(result)) {
+                googleAPI.getErrorDialog(this, result, REQUEST_GOOGLE_PLAY_SERVICES_RESOLUTION).show();
+            }
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private void handleIntent() {
+        // TODO if we're already on the data screen, then should just re-position
+        // TODO should likely have a navigateToScreen method to avoid duplicate content in the nav drawer adapter
+
+        // Any intent besides Intent.ACTION_MAIN brings us (back) to the main screen.
+
+        mContentFragment = new WorkoutDataFragment();
+
+        if (ACTION_SHOW_HEART_RATE.equals(getIntent().getAction())) {
+            // Pass an attribute to the main workout fragment to tell it to display the heart rate.
+            Bundle bundle = new Bundle();
+            bundle.putInt(WorkoutDataFragment.ARGUMENT_WORKOUT_DATA_VIEW,
+                    WorkoutDataFragment.VALUE_WORKOUT_VIEW_HEART_RATE);
+            mContentFragment.setArguments(bundle);
+        }
+
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.replace(R.id.main_content_view, mContentFragment);
+        ft.commit();
+
+        addTimeStatusFragment(TimeStatusFragment.DISPLAY_MODE_DARK);
+
+        // Ensure the nav drawer shows the workout data screen as selected.
+        mWearableNavigationDrawer.setCurrentItem(
+                MyWearableNavigationDrawerAdapter.NAV_DRAWER_FRAGMENT_MAIN, false);
+    }
+
+    private void addTimeStatusFragment(int displayMode) {
+        // TODO move display mode to an XML attribute and add fragment in xml
+        Bundle args = new Bundle();
+        args.putInt(TimeStatusFragment.EXTRA_DISPLAY_MODE, displayMode);
+        mStatusFragment = new TimeStatusFragment();
+        mStatusFragment.setArguments(args);
+        getFragmentManager().beginTransaction().add(R.id.main_content_view, mStatusFragment).commit();
+    }
 
     private void startWorkoutRecordingService() {
         bindService(new Intent(this, WorkoutRecordingService.class),
@@ -365,52 +466,23 @@ public class MainActivity extends WearableActivity implements
                 mAmbientStatePendingIntent);
     }
 
-    /**
-     * Sets the state (record, stop) of the recording action button. This method is used when the
-     * activity is created, and when the recording state changes.
-     *
-     * @param isRecording
-     */
-    private void setRecordingButtonState(boolean isRecording) {
-        MenuItem menuItem = mMenu.findItem(R.id.record_menu_item);
-
-        if (isRecording) {
-            menuItem.setIcon(getDrawable(R.drawable.ic_stop));
-            menuItem.setTitle(getString(R.string.stop_recording));
-        } else {
-            menuItem.setIcon(getDrawable(R.drawable.ic_record));
-            menuItem.setTitle(getString(R.string.record_workout));
-        }
-    }
-
     private void toggleWorkoutActivityType() {
-        // Must call setWorkoutType() on the service first since setWorkoutActivityTypeUiState()
+        // Must call setWorkoutType() on the service firstChange since setWorkoutActivityTypeUiState()
         // causes both drawers to refresh. The nav drawer UI refresh is handled automatically by
         // its adapter, based on the activity type of the service.
         switch (mWorkoutRecordingService.getWorkoutType()) {
             case RUNNING:
                 mWorkoutRecordingService.setWorkoutType(WorkoutType.CYCLING);
-                setWorkoutActivityTypeUiState(WorkoutType.CYCLING);
                 break;
             case CYCLING:
                 mWorkoutRecordingService.setWorkoutType(WorkoutType.RUNNING);
-                setWorkoutActivityTypeUiState(WorkoutType.RUNNING);
                 break;
         }
     }
 
-    private void setWorkoutActivityTypeUiState(WorkoutType workoutType) {
-        MenuItem menuItem = mMenu.findItem(R.id.activity_type_menu_item);
-        menuItem.setIcon(getDrawable(workoutType.drawableId));
-        menuItem.setTitle(getString(R.string.activity_type) + ": " + getString(workoutType.titleId));
-
-        // Notify the adapter that the data has changed, so that the workout type icon is refreshed.
-        mWearableNavigationDrawerAdapter.notifyDataSetChanged();
-    }
-
     private void toggleWorkoutRecording() {
         if (WorkoutRecordingService.isRecording) {
-            DialogFragment dialogFragment = new MyDialogFragment();
+            DialogFragment dialogFragment = new EndWorkoutDialogFragment();
             dialogFragment.show(getFragmentManager(), "");
         } else {
             mWorkoutRecordingService.startRecordingWorkout();
@@ -418,14 +490,10 @@ public class MainActivity extends WearableActivity implements
     }
 
     private void toggleHearRateSensor() {
-        MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
-
         if (HeartRateSensorService.isActive) {
             mWorkoutRecordingService.stopHeartRateService();
-            menuItem.setTitle(getString(R.string.hrm_turn_on));
         } else {
             mWorkoutRecordingService.startHeartRateService();
-            menuItem.setTitle(getString(R.string.hrm_turn_off));
         }
     }
 
@@ -434,7 +502,8 @@ public class MainActivity extends WearableActivity implements
     //
 
     private class MyWearableNavigationDrawerAdapter
-            extends WearableNavigationDrawer.WearableNavigationDrawerAdapter {
+            extends WearableNavigationDrawerView.WearableNavigationDrawerAdapter
+            implements WearableNavigationDrawerView.OnItemSelectedListener {
 
         private static final int NAV_DRAWER_ITEMS = 4;
 
@@ -442,6 +511,10 @@ public class MainActivity extends WearableActivity implements
         private static final int NAV_DRAWER_FRAGMENT_MAP = 1;
         private static final int NAV_DRAWER_FRAGMENT_HISTORY = 2;
         private static final int NAV_DRAWER_FRAGMENT_SETTINGS = 3;
+
+        private int mNavigateBackToItemPosition = 0;
+        private int mLastNavigationItemPosition = 0;
+        private boolean mUserNavigatedBack = false;
 
         @Override
         public String getItemText(int pos) {
@@ -484,50 +557,116 @@ public class MainActivity extends WearableActivity implements
         }
 
         @Override
-        public void onItemSelected(int pos) {
-            switch (pos) {
-                case NAV_DRAWER_FRAGMENT_MAIN:
-                    mCurrentViewPagerFragment = new WorkoutMainFragment();
+        public int getCount() {
+            return NAV_DRAWER_ITEMS;
+        }
 
-                    // Unlock and re-peek the action drawer as it may have been locked closed for
-                    // other views.
-                    mWearableActionDrawer.unlockDrawer();
-                    mWearableDrawerLayout.peekDrawer(Gravity.BOTTOM);
+        @Override
+        public void onItemSelected(int selectedItemPos) {
+            // Don't re-create the fragment if the user re-selects the same one.
+            if (mLastNavigationItemPosition == selectedItemPos) {
+                return;
+            }
+
+            // TODO the following logic seems pretty complex for simply allowing back navigation. consider ways to simplify
+
+            // If the user navigated back using the nav drawer, pop the added fragment off the stack
+            // and forgo recreating the last fragment.
+            if (getFragmentManager().getBackStackEntryCount() > 0) {
+                getFragmentManager().popBackStackImmediate();
+                mLastNavigationItemPosition = selectedItemPos;
+
+                if (selectedItemPos == NAV_DRAWER_FRAGMENT_MAIN) {
+                    mWearableActionDrawer.getController().peekDrawer();
+                }
+
+                return;
+            }
+
+            // If the user navigated back with swipe, forgo recreating the last fragment.
+            if (mUserNavigatedBack) {
+                mLastNavigationItemPosition = selectedItemPos;
+                mUserNavigatedBack = false;
+
+                if (selectedItemPos == NAV_DRAWER_FRAGMENT_MAIN) {
+                    mWearableActionDrawer.getController().peekDrawer();
+                }
+
+                return;
+            }
+
+            switch (selectedItemPos) {
+                case NAV_DRAWER_FRAGMENT_MAIN:
+                    mContentFragment = new WorkoutDataFragment();
+
+                    getFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.main_content_view, mContentFragment)
+                            .commit();
+
+                    // We add the time/status fragment here instead of in workout data/map
+                    // fragments, since the root layout of workout data fragment needs to be a
+                    // RecyclerView in order to get the nav drawer behaviour to work properly.
+                    // Otherwise, the nav drawer cannot be opened from the closed state unless the
+                    // nested recycler view is at the top.
+                    addTimeStatusFragment(TimeStatusFragment.DISPLAY_MODE_DARK);
+
+                    mWearableActionDrawer.getController().peekDrawer();
 
                     break;
 
                 case NAV_DRAWER_FRAGMENT_MAP:
-                    Bundle bundle = new Bundle();
-                    bundle.putInt(WorkoutMainFragment.ARGUMENT_WORKOUT_VIEW,
-                            WorkoutMainFragment.VALUE_WORKOUT_VIEW_MAP);
+                    mContentFragment = new WorkoutMapFragment();
 
-                    mCurrentViewPagerFragment = new WorkoutMainFragment();
-                    mCurrentViewPagerFragment.setArguments(bundle);
+                    getFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.main_content_view, mContentFragment)
+                            .commit();
 
-                    mWearableActionDrawer.lockDrawerClosed();
+                    addTimeStatusFragment(TimeStatusFragment.DISPLAY_MODE_LIGHT);
+
+                    mWearableActionDrawer.getController().closeDrawer();
 
                     break;
 
                 case NAV_DRAWER_FRAGMENT_HISTORY:
-                    mCurrentViewPagerFragment = new HistoryMainFragment();
-                    mWearableActionDrawer.lockDrawerClosed();
+                    mContentFragment = new HistoryFragment();
+
+                    getFragmentManager()
+                            .beginTransaction()
+                            .replace(R.id.main_content_view, mContentFragment)
+                            .commit();
+
+                    mWearableActionDrawer.getController().closeDrawer();
+
                     break;
 
                 case NAV_DRAWER_FRAGMENT_SETTINGS:
-                    mCurrentViewPagerFragment = new SettingsFragment();
-                    mWearableActionDrawer.lockDrawerClosed();
+                    mContentFragment = new SettingsFragment();
+
+                    // Add settings fragment to activity and also add it to the back stack so that
+                    // it can be removed with swipe dismiss. The settings fragment overrides the
+                    // swipe dismiss behaviour to pop the back stack.
+                    getFragmentManager()
+                            .beginTransaction()
+                            .add(R.id.main_content_view, mContentFragment)
+                            .addToBackStack(null)
+                            .commit();
+
+                    mWearableActionDrawer.getController().closeDrawer();
+
+                    mNavigateBackToItemPosition = mLastNavigationItemPosition;
+
                     break;
             }
 
-            getFragmentManager()
-                    .beginTransaction()
-                    .replace(R.id.main_content_view, mCurrentViewPagerFragment)
-                    .commit();
+            mLastNavigationItemPosition = selectedItemPos;
         }
 
-        @Override
-        public int getCount() {
-            return NAV_DRAWER_ITEMS;
+        void navigateBack() {
+            getFragmentManager().popBackStackImmediate();
+            mUserNavigatedBack = true;
+            mWearableNavigationDrawer.setCurrentItem(mNavigateBackToItemPosition, false);
         }
     }
 
@@ -535,10 +674,53 @@ public class MainActivity extends WearableActivity implements
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
-                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
-                    boolean isRecording = intent.getBooleanExtra(
-                            WorkoutRecordingService.EXTRA_IS_RECORDING, false);
-                    setRecordingButtonState(isRecording);
+                case WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED:
+                    // Set the state of the record workout UI action.
+                    if (intent.hasExtra(WorkoutRecordingService.EXTRA_IS_RECORDING)) {
+                        boolean isRecording = intent.getBooleanExtra(
+                                WorkoutRecordingService.EXTRA_IS_RECORDING, false);
+
+                        MenuItem menuItem = mMenu.findItem(R.id.record_menu_item);
+                        if (isRecording) {
+                            menuItem.setIcon(getDrawable(R.drawable.ic_stop));
+                            menuItem.setTitle(getString(R.string.stop_recording));
+                        } else {
+                            menuItem.setIcon(getDrawable(R.drawable.ic_record));
+                            menuItem.setTitle(getString(R.string.record_workout));
+                        }
+                    }
+
+                    // Set the state of the workout type UI action.
+                    if (intent.hasExtra(WorkoutRecordingService.EXTRA_WORKOUT_TYPE)) {
+                        int i = intent.getIntExtra(WorkoutRecordingService.EXTRA_WORKOUT_TYPE,
+                                WorkoutType.RUNNING.preferencesId);
+                        WorkoutType workoutType = WorkoutType.getWorkoutType(i);
+
+                        MenuItem menuItem = mMenu.findItem(R.id.activity_type_menu_item);
+                        menuItem.setIcon(getDrawable(workoutType.drawableId));
+                        menuItem.setTitle(getString(R.string.activity_type) + ": "
+                                + getString(workoutType.titleId));
+
+                        // Notify the nav drawer adapter that the workout type has changed, so that
+                        // it can refresh the workout type icon.
+                        mWearableNavigationDrawerAdapter.notifyDataSetChanged();
+                    }
+
+                    // Set the state of the HRM on/off UI action.
+                    if (intent.hasExtra(WorkoutRecordingService.EXTRA_IS_HRM_ON)) {
+                        boolean isHrmOn = intent.getBooleanExtra(
+                                WorkoutRecordingService.EXTRA_IS_HRM_ON, false);
+
+                        MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
+                        if (menuItem != null) {
+                            if (isHrmOn) {
+                                menuItem.setTitle(getString(R.string.hrm_turn_off));
+                            } else {
+                                menuItem.setTitle(getString(R.string.hrm_turn_on));
+                            }
+                        }
+                    }
+
                     break;
             }
         }
@@ -549,38 +731,53 @@ public class MainActivity extends WearableActivity implements
             mWorkoutRecordingService =
                     ((WorkoutRecordingService.WorkoutRecordingServiceBinder) binder).getService();
 
-            if (ACTION_START_WORKOUT.equals(getIntent().getAction())) {
-                switch (getIntent().getType()) {
-                    case MIME_TYPE_WORKOUT_BIKING:
-                        mWorkoutRecordingService.setWorkoutType(WorkoutType.CYCLING);
+            // Once the activity has connected to the workout service, if the activity received a
+            // start intent and action (start/stop recording, hrm), tell the service what to do.
+            // TODO consider using separate actions rather than inspecting extras
+            if (getIntent() != null && getIntent().getAction() != null) {
+                switch (getIntent().getAction()) {
+                    case ACTION_START_WORKOUT:
+                        switch (getIntent().getType()) {
+                            case MIME_TYPE_WORKOUT_BIKING:
+                                mWorkoutRecordingService.setWorkoutType(WorkoutType.CYCLING);
+                                break;
+                            case MIME_TYPE_WORKOUT_RUNNING:
+                                mWorkoutRecordingService.setWorkoutType(WorkoutType.RUNNING);
+                                break;
+                            case MIME_TYPE_WORKOUT_OTHER:
+                                // Use default if starting new workout
+                                break;
+                        }
+
+                        String status = getIntent().getExtras().getString(EXTRA_START_WORKOUT_STATUS);
+
+                        if (EXTRA_START_WORKOUT_STATUS_START.equals(status)
+                                && !WorkoutRecordingService.isRecording) {
+                            mWorkoutRecordingService.startRecordingWorkout();
+                        } else if (EXTRA_START_WORKOUT_STATUS_STOP.equals(status)
+                                && WorkoutRecordingService.isRecording) {
+                            mWorkoutRecordingService.stopRecordingWorkout();
+                        }
+
                         break;
-                    case MIME_TYPE_WORKOUT_RUNNING:
-                        mWorkoutRecordingService.setWorkoutType(WorkoutType.RUNNING);
+
+                    case ACTION_STOP_WORKOUT:
+                        mWorkoutRecordingService.stopRecordingWorkout();
                         break;
-                    case MIME_TYPE_WORKOUT_OTHER:
-                        // Use default if starting new workout
+
+                    case ACTION_STOP_WORKOUT_CONFIRM:
+                        if (WorkoutRecordingService.isRecording) {
+                            DialogFragment dialogFragment = new EndWorkoutDialogFragment();
+                            dialogFragment.show(getFragmentManager(), "");
+                        }
+
+                        break;
+
+                    case ACTION_SHOW_HEART_RATE:
+                        mWorkoutRecordingService.startHeartRateService();
                         break;
                 }
-
-                // TODO move constants elsewhere
-                String status = getIntent().getExtras().getString("actionStatus");
-                if ("ActiveActionStatus".equals(status)) {
-                    mWorkoutRecordingService.startRecordingWorkout();
-                } else if ("CompletedActionStatus".equals(status)) {
-                    mWorkoutRecordingService.stopRecordingWorkout();
-                }
-            } else if (ACTION_STOP_WORKOUT.equals(getIntent().getAction())) {
-                mWorkoutRecordingService.stopRecordingWorkout();
             }
-
-            // Update the activity's actions to reflect the state from the workout service
-            MenuItem menuItem = mMenu.findItem(R.id.heart_rate_menu_item);
-            if (!HeartRateSensorService.isActive) {
-                menuItem.setTitle(getString(R.string.hrm_turn_on));
-            }
-
-            setWorkoutActivityTypeUiState(mWorkoutRecordingService.getWorkoutType());
-            setRecordingButtonState(WorkoutRecordingService.isRecording);
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -588,7 +785,7 @@ public class MainActivity extends WearableActivity implements
         }
     }
 
-    public static class MyDialogFragment extends DialogFragment {
+    public static class EndWorkoutDialogFragment extends DialogFragment {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {

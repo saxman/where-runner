@@ -88,7 +88,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_map, container, false);
 
-        mMapView = (MapView) view.findViewById(R.id.map);
+        mMapView = view.findViewById(R.id.map);
         mMapView.onCreate(savedInstanceState);
         mMapView.getMapAsync(this);
 
@@ -147,7 +147,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(LocationService.ACTION_LOCATION_CHANGED);
         intentFilter.addAction(LocationService.ACTION_CONNECTIVITY_CHANGED);
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED);
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
         LocalBroadcastManager.getInstance(getContext()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
@@ -155,19 +155,23 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
     @Override
     public void onDestroy() {
         mMapView.onDestroy();
+
         super.onDestroy();
     }
 
     @Override
     public void onPause() {
         mMapView.onPause();
+
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
+
         super.onPause();
     }
 
     @Override
     public void onLowMemory() {
         mMapView.onLowMemory();
+
         super.onLowMemory();
     }
 
@@ -207,10 +211,14 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
             }
         });
 
-        mRecordingMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_recording);
-        mDefaultMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker);
-        mDisconnectedMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_disconnected);
-        mAmbientMapMarkerIcon = WhereRunnerApp.loadDrawable(R.drawable.map_marker_ambient);
+        mRecordingMapMarkerIcon =
+                Utils.getInstance(getContext()).bitmapDescriptorForDrawable(R.drawable.map_marker_recording);
+        mDefaultMapMarkerIcon =
+                Utils.getInstance(getContext()).bitmapDescriptorForDrawable(R.drawable.map_marker);
+        mDisconnectedMapMarkerIcon =
+                Utils.getInstance(getContext()).bitmapDescriptorForDrawable(R.drawable.map_marker_disconnected);
+        mAmbientMapMarkerIcon =
+                Utils.getInstance(getContext()).bitmapDescriptorForDrawable(R.drawable.map_marker_ambient);
 
         mMapMarker = mGoogleMap.addMarker(
                 new MarkerOptions()
@@ -461,7 +469,7 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
                     break;
 
-                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                case WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED:
                     if (WorkoutRecordingService.isRecording) {
                         mPathLatLngs.clear();
                         mPolyline.setPoints(mPathLatLngs);

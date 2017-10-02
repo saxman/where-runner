@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -42,8 +43,6 @@ public abstract class LocationService extends Service {
 
     @Override
     public void onDestroy() {
-        Log.d(LOG_TAG, "Destroying service");
-
         stopLocationUpdates();
 
         if (mLocationSampleTimer != null) {
@@ -55,12 +54,13 @@ public abstract class LocationService extends Service {
         super.onDestroy();
     }
 
+    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
         startLocationUpdates();
 
         // No need to return an IBinder instance since binding is only used to controls service
-        // lifecycle, and isn't used for direct access
+        // lifecycle, and isn't used for direct access.
         return null;
     }
 
@@ -88,7 +88,10 @@ public abstract class LocationService extends Service {
 
         if (!isReceivingAccurateLocationSamples) {
             isReceivingAccurateLocationSamples = true;
-            intent = new Intent(ACTION_CONNECTIVITY_CHANGED).putExtra(EXTRA_IS_RECEIVING_SAMPLES, true);
+
+            intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
+            intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, true);
+
             LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         }
 
@@ -98,13 +101,18 @@ public abstract class LocationService extends Service {
         }
 
         // Start a timer to detect if we're not receiving location samples in regular intervals
-        mLocationSampleTimer = new CountDownTimer(LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS, LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS) {
+        mLocationSampleTimer = new CountDownTimer(
+                LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS,
+                LocationService.LOCATION_UPDATE_INTERVAL_TIMEOUT_MS) {
+
             public void onTick(long millisUntilFinished) {}
 
             public void onFinish() {
                 isReceivingAccurateLocationSamples = false;
+
                 Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
                 intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, false);
+
                 LocalBroadcastManager.getInstance(LocationService.this).sendBroadcast(intent);
             }
         }.start();
@@ -114,6 +122,7 @@ public abstract class LocationService extends Service {
     protected abstract void stopLocationUpdates();
 
     protected boolean checkPermission() {
-        return ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 }

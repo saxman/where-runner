@@ -10,6 +10,6 @@
 
     <item android:id="@+id/heart_rate_menu_item"
         android:icon="@drawable/ic_heart"
-        android:title="@string/hrm_turn_off"
+        android:title="@string/hrm_turn_on"
         android:visible="false" />
 </menu>

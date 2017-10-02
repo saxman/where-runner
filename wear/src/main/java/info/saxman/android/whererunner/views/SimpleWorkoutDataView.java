@@ -8,7 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import info.saxman.android.whererunner.R;
-import info.saxman.android.whererunner.WhereRunnerApp;
+import info.saxman.android.whererunner.Utils;
 import info.saxman.android.whererunner.model.Workout;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
 
@@ -32,11 +32,11 @@ public abstract class SimpleWorkoutDataView extends WorkoutDataView {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         inflater.inflate(R.layout.view_workout_data_simple, this);
 
-        mIcon = (ImageView) this.findViewById(R.id.icon);
-        mValueTextView = (TextView) this.findViewById(R.id.data_value);
-        mValueAvgTextView = (TextView) this.findViewById(R.id.data_avg);
-        mValueLabelTextView = (TextView) this.findViewById(R.id.value_label);
-        mDurationTextView = (TextView) this.findViewById(R.id.duration);
+        mIcon = this.findViewById(R.id.icon);
+        mValueTextView = this.findViewById(R.id.data_value);
+        mValueAvgTextView = this.findViewById(R.id.data_avg);
+        mValueLabelTextView = this.findViewById(R.id.value_label);
+        mDurationTextView = this.findViewById(R.id.duration);
         mDivider = this.findViewById(R.id.divider_2);
     }
 
@@ -54,7 +54,7 @@ public abstract class SimpleWorkoutDataView extends WorkoutDataView {
             millis = workout.getEndTime() - workout.getStartTime();
         }
 
-        mDurationTextView.setText(WhereRunnerApp.formatDuration(millis));
+        mDurationTextView.setText(Utils.getInstance(getContext()).formatDuration(millis));
     }
 
     @Override

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <Preference
-        android:layout="@layout/title_settings"/>
+        android:layout="@layout/pref_settings_header"/>
 
     <ListPreference
         android:key="@string/pref_units"
@@ -11,4 +11,14 @@
         android:defaultValue="@string/pref_units_metric"
         android:summary="%s"
         android:icon="@drawable/ic_language" />
+
+    <CheckBoxPreference
+        android:key="@string/pref_use_watch_gps"
+        android:title="@string/use_only_watch_gps"
+        android:defaultValue="false" />
+
+    <CheckBoxPreference
+        android:key="@string/pref_auto_start_hrm"
+        android:title="@string/auto_start_hrm"
+        android:defaultValue="true" />
 </PreferenceScreen>

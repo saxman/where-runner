@@ -26,7 +26,7 @@
     <string name="pace">pace</string>
 
     <string name="distance_us_customary">miles</string>
-    <string name="distance_metric">kms</string>
+    <string name="distance_metric">km</string>
     <string name="speed_us_customary">mph</string>
     <string name="speed_metric">kph</string>
     <string name="pace_us_customary">min / mi</string>
@@ -46,11 +46,21 @@
 
     <string name="units">Units</string>
 
+    <string name="end_workout">End\nWorkout?</string>
+    <string name="end_workout_confirm">Yes, please end\nthe pain…</string>
+    <string name="end_workout_cancel">No, I\'m not\ndone yet!</string>
+
     <!-- Shared preference keys and values -->
 
-    <string name="pref_units">units</string>
+    <string name="pref_use_watch_gps">watch_gps</string>
+    <string name="use_only_watch_gps">Use Watch GPS Only</string>
+
+    <string name="pref_auto_start_hrm">auto_start_hrm</string>
+    <string name="auto_start_hrm">Auto Start HRM on App Start</string>
+
     <string name="pref_workout_type">workout_type</string>
 
+    <string name="pref_units">units</string>
     <string name="pref_units_metric">metric</string>
     <string name="pref_units_us">us</string>
 </resources>

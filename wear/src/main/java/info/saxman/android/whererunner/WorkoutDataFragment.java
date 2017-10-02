@@ -5,11 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.PagerSnapHelper;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SimpleItemAnimator;
 import android.support.v7.widget.SnapHelper;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -19,8 +22,6 @@ import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 
 import java.util.HashSet;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import info.saxman.android.whererunner.framework.WearableFragment;
 import info.saxman.android.whererunner.services.HeartRateSensorService;
@@ -36,11 +37,25 @@ public class WorkoutDataFragment extends WearableFragment {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutDataFragment.class.getSimpleName();
 
+    public static final String ARGUMENT_WORKOUT_DATA_VIEW = "WORKOUT_VIEW";
+
+    public static final int VALUE_WORKOUT_VIEW_DATA = 1;
+    public static final int VALUE_WORKOUT_VIEW_HEART_RATE = 2;
+
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
-    private Timer mWorkoutDurationTimer;
-
     private static final int WORKOUT_DURATION_TIMER_INTERVAL_MS = 100;
+
+    private Handler mWorkoutDurationTimer = new Handler();
+
+    private Runnable mWorkoutDurationTimerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            updateUI();
+            mWorkoutDurationTimer.postDelayed(mWorkoutDurationTimerRunnable,
+                    WORKOUT_DURATION_TIMER_INTERVAL_MS);
+        }
+    };
 
     private RecyclerView mRecyclerView;
     private LinearLayoutManager mRecyclerViewLayoutManager;
@@ -51,13 +66,13 @@ public class WorkoutDataFragment extends WearableFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         final View view = inflater.inflate(R.layout.fragment_workout_data, container, false);
 
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+        mRecyclerView = view.findViewById(R.id.recycler_view);
         mRecyclerView.setHasFixedSize(true);
 
         MyRecyclerViewAdapter recyclerViewAdapter = new MyRecyclerViewAdapter();
         mRecyclerView.setAdapter(recyclerViewAdapter);
 
-        // Assign a linear layout manager so we can get the first fully visible view position.
+        // Assign a linear layout manager so we can get the firstChange fully visible view position.
         mRecyclerViewLayoutManager = new LinearLayoutManager(getActivity(), LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(mRecyclerViewLayoutManager);
 
@@ -70,26 +85,30 @@ public class WorkoutDataFragment extends WearableFragment {
             }
         });
 
+        // TODO doesn't seem to work...
+        // Stop the recycler view scrollbar from showing when the data is updated.
+        RecyclerView.ItemAnimator animator = mRecyclerView.getItemAnimator();
+        if (animator instanceof SimpleItemAnimator) {
+            ((SimpleItemAnimator) animator).setSupportsChangeAnimations(false);
+        }
+
         // Allows snapping to each view in the recycler view.
         SnapHelper snapHelper = new PagerSnapHelper();
         snapHelper.attachToRecyclerView(mRecyclerView);
 
         if (getArguments() != null) {
-            int initialWorkoutView = getArguments().getInt(
-                    WorkoutMainFragment.ARGUMENT_WORKOUT_VIEW,
-                    WorkoutMainFragment.VALUE_WORKOUT_VIEW_DATA);
+            int initialWorkoutView = getArguments().getInt(ARGUMENT_WORKOUT_DATA_VIEW,
+                    VALUE_WORKOUT_VIEW_DATA);
 
-            if (initialWorkoutView == WorkoutMainFragment.VALUE_WORKOUT_VIEW_HEART_RATE) {
-                mRecyclerView.scrollToPosition(recyclerViewAdapter.HEART_RATE_VIEW);
+            if (initialWorkoutView == VALUE_WORKOUT_VIEW_HEART_RATE) {
+                mRecyclerView.scrollToPosition(MyRecyclerViewAdapter.HEART_RATE_VIEW);
             }
         }
 
-        if (WorkoutRecordingService.isRecording) {
-            startWorkoutDurationTimer();
-        }
-
         // Detect when the user taps on the screen to cycle to tne next workout data display.
-        final GestureDetector gestureDetector = new GestureDetector(getContext(), new GestureDetector.SimpleOnGestureListener() {
+        final GestureDetector gestureDetector = new GestureDetector(getContext(),
+                new GestureDetector.SimpleOnGestureListener() {
+
             @Override
             public boolean onDown(MotionEvent event) {
                 return true;
@@ -97,6 +116,8 @@ public class WorkoutDataFragment extends WearableFragment {
 
             @Override
             public boolean onSingleTapConfirmed(MotionEvent event) {
+                Log.d(LOG_TAG, "tapped!");
+
                 int pos = mRecyclerViewLayoutManager.findFirstCompletelyVisibleItemPosition() + 1;
                 pos %= mRecyclerView.getAdapter().getItemCount();
 
@@ -106,6 +127,10 @@ public class WorkoutDataFragment extends WearableFragment {
             }
         });
 
+        view.setFocusableInTouchMode(true);
+        view.setFocusable(true);
+        view.setClickable(true);
+
         view.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
@@ -113,32 +138,44 @@ public class WorkoutDataFragment extends WearableFragment {
             }
         });
 
-        updateUI();
-
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        if (WorkoutRecordingService.isRecording) {
+            startWorkoutDurationTimer();
+        }
     }
 
     @Override
     public void onResume() {
         super.onResume();
 
+        updateUI();
+
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(WorkoutRecordingService.ACTION_WORKOUT_DATA_UPDATED);
-        intentFilter.addAction(WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED);
+        intentFilter.addAction(WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED);
         intentFilter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
         intentFilter.addAction(HeartRateSensorService.ACTION_CONNECTIVITY_CHANGED);
+
         LocalBroadcastManager.getInstance(getActivity()).registerReceiver(mBroadcastReceiver, intentFilter);
     }
 
     @Override
     public void onPause() {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mBroadcastReceiver);
+
         super.onPause();
     }
 
     @Override
     public void onStop() {
         stopWorkoutDurationTimer();
+
         super.onStop();
     }
 
@@ -152,6 +189,8 @@ public class WorkoutDataFragment extends WearableFragment {
         for (WorkoutDataViewHolder viewHolder : mWorkoutDataViewHolders) {
             viewHolder.onEnterAmbient();
         }
+
+        stopWorkoutDurationTimer();
     }
 
     @Override
@@ -163,6 +202,10 @@ public class WorkoutDataFragment extends WearableFragment {
         for (WorkoutDataViewHolder viewHolder : mWorkoutDataViewHolders) {
             viewHolder.onExitAmbient();
         }
+
+        if (WorkoutRecordingService.isRecording) {
+            startWorkoutDurationTimer();
+        }
     }
 
     @Override
@@ -170,34 +213,16 @@ public class WorkoutDataFragment extends WearableFragment {
         updateUI();
     }
 
-    private void startWorkoutDurationTimer() {
-        mWorkoutDurationTimer = new Timer();
-        mWorkoutDurationTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                // Do nothing if the user pressed the record button before this fragment
-                // has been attached to an activity
-                if (getActivity() == null) {
-                    return;
-                }
+    //
+    // Class methods (private)
+    //
 
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (!isAmbient()) {
-                            updateUI();
-                        }
-                    }
-                });
-            }
-        }, WORKOUT_DURATION_TIMER_INTERVAL_MS, WORKOUT_DURATION_TIMER_INTERVAL_MS);
+    private void startWorkoutDurationTimer() {
+        mWorkoutDurationTimer.post(mWorkoutDurationTimerRunnable);
     }
 
     private void stopWorkoutDurationTimer() {
-        if (mWorkoutDurationTimer != null) {
-            mWorkoutDurationTimer.cancel();
-            mWorkoutDurationTimer = null;
-        }
+        mWorkoutDurationTimer.removeCallbacks(mWorkoutDurationTimerRunnable);
     }
 
     private void updateUI() {
@@ -211,7 +236,7 @@ public class WorkoutDataFragment extends WearableFragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             switch (intent.getAction()) {
-                case WorkoutRecordingService.ACTION_RECORDING_STATUS_CHANGED:
+                case WorkoutRecordingService.ACTION_SERVICE_STATE_CHANGED:
                     if (WorkoutRecordingService.isRecording) {
                         startWorkoutDurationTimer();
                     } else {
@@ -254,10 +279,10 @@ public class WorkoutDataFragment extends WearableFragment {
     }
 
     private class MyRecyclerViewAdapter extends RecyclerView.Adapter<WorkoutDataViewHolder> {
-        private final int DISTANCE_SPEED_VIEW = 0;
-        private final int DISTANCE_VIEW = 1;
-        private final int SPEED_VIEW = 2;
-        private final int HEART_RATE_VIEW = 3;
+        static final int DISTANCE_SPEED_VIEW = 0;
+        static final int DISTANCE_VIEW = 1;
+        static final int SPEED_VIEW = 2;
+        static final int HEART_RATE_VIEW = 3;
 
         private final int VIEW_COUNT = 4;
 

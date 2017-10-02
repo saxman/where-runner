@@ -2,15 +2,20 @@ package info.saxman.android.whererunner.services;
 
 import android.app.Service;
 import android.content.Intent;
-
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Binder;
 import android.os.CountDownTimer;
 import android.os.IBinder;
+import android.os.IInterface;
+import android.os.Parcel;
+import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
+
+import java.io.FileDescriptor;
 
 public class HeartRateSensorService extends Service {
 
@@ -40,16 +45,15 @@ public class HeartRateSensorService extends Service {
     public void onCreate () {
         super.onCreate();
 
-        isActive = true;
-
         mSensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
 
-        // Ensure that the device has a HRM.
-        // This will also return null if BODY_SENSOR permission has not been granted.
+        // Ensure that the device has an HRM.
+        // getDefaultSensor will also return null if BODY_SENSOR permission has not been granted.
         if (mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE) != null) {
             mSensorListener = new HeartRateSensorEventListener();
         } else {
-            Log.w(LOG_TAG, "No heart rate sensor detected, or permission not grated to access it");
+            Log.w(LOG_TAG,
+                    "No heart rate sensor detected, or permission not grated to access it");
         }
     }
 
@@ -63,25 +67,27 @@ public class HeartRateSensorService extends Service {
             mSensorSampleTimer.cancel();
         }
 
-        isActive = false;
-
         super.onDestroy();
     }
 
     @Override
     public IBinder onBind(Intent intent) {
+        isActive = true;
+
         mSensorManager.registerListener(mSensorListener,
                 mSensorManager.getDefaultSensor(Sensor.TYPE_HEART_RATE),
                 SensorManager.SENSOR_DELAY_NORMAL);
 
-        // No need to return an IBinder instance since binding is only used to controls service
-        // lifecycle, and isn't used for direct access
-        return null;
+        // Return empty binder, since we use binding to control the sensor state, but if
+        // we return null, we onServiceConnected is never called on the service client.
+        return new Binder();
     }
 
     @Override
     public boolean onUnbind (Intent i) {
-        // Notify broadcast receivers that we're no longer receiving sensor samples
+        isActive = false;
+
+        // Notify broadcast receivers that we're no longer receiving sensor samples.
         isReceivingAccurateHeartRateSamples = false;
         Intent intent = new Intent(ACTION_CONNECTIVITY_CHANGED);
         intent.putExtra(EXTRA_IS_RECEIVING_SAMPLES, false);

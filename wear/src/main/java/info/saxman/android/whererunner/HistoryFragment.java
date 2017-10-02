@@ -1,12 +1,11 @@
 package info.saxman.android.whererunner;
 
-import android.os.Bundle;
 import android.app.Fragment;
+import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.LinearSnapHelper;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SnapHelper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,22 +14,22 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import info.saxman.android.whererunner.model.Workout;
-import info.saxman.android.whererunner.persistence.WorkoutDbHelper;
+import info.saxman.android.whererunner.persistence.WorkoutDatabaseHelper;
 
-public class HistoryMainFragment extends Fragment {
+public class HistoryFragment extends Fragment {
     @SuppressWarnings("unused")
-    private static final String LOG_TAG = HistoryMainFragment.class.getSimpleName();
+    private static final String LOG_TAG = HistoryFragment.class.getSimpleName();
 
     private RecyclerView mRecyclerView;
     private MyRecyclerViewAdapter mRecyclerViewAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        final View view = inflater.inflate(R.layout.fragment_history_main, container, false);
+        final View view = inflater.inflate(R.layout.fragment_history, container, false);
 
         mRecyclerViewAdapter = new MyRecyclerViewAdapter();
 
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
+        mRecyclerView = view.findViewById(R.id.recycler_view);
         mRecyclerView.setAdapter(mRecyclerViewAdapter);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
@@ -41,17 +40,15 @@ public class HistoryMainFragment extends Fragment {
         final View loadingView = view.findViewById(R.id.loading);
         final View noDataView = view.findViewById(R.id.no_data);
 
-        WorkoutDbHelper dbHelper = new WorkoutDbHelper(getActivity());
-        dbHelper.readLastFiveWorkoutsAsync(new WorkoutDbHelper.ReadWorkoutsCallback() {
+        WorkoutDatabaseHelper dbHelper = new WorkoutDatabaseHelper(getActivity());
+        dbHelper.readLastFiveWorkoutsAsync(new WorkoutDatabaseHelper.ReadWorkoutsCallback() {
             @Override
             public void onRead(ArrayList<Workout> workouts) {
-                Log.d(LOG_TAG, "DATA RETRIEVED: " + workouts.size());
                 loadingView.setVisibility(View.GONE);
 
                 if (workouts.size() == 0) {
                     noDataView.setVisibility(View.VISIBLE);
                 } else {
-                    Log.d(LOG_TAG, "setting workouts");
                     mRecyclerViewAdapter.setWorkouts(workouts);
                     mRecyclerViewAdapter.notifyDataSetChanged();
                 }
@@ -73,10 +70,10 @@ public class HistoryMainFragment extends Fragment {
             MyViewHolder(View view) {
                 super(view);
 
-                mDateTimeTextView = (TextView) view.findViewById(R.id.date_time);
-                mDistanceTextView = (TextView) view.findViewById(R.id.distance);
-                mDurationTextView = (TextView) view.findViewById(R.id.duration);
-                mSpeedTextView = (TextView) view.findViewById(R.id.data_value);
+                mDateTimeTextView = view.findViewById(R.id.date_time);
+                mDistanceTextView = view.findViewById(R.id.distance);
+                mDurationTextView = view.findViewById(R.id.duration);
+                mSpeedTextView = view.findViewById(R.id.data_value);
             }
         }
 
@@ -86,20 +83,26 @@ public class HistoryMainFragment extends Fragment {
 
         @Override
         public MyRecyclerViewAdapter.MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            Log.d(LOG_TAG, "creating vh");
             View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_history_data, parent, false);
             return new MyViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(MyRecyclerViewAdapter.MyViewHolder viewHolder, int position) {
-            Log.d(LOG_TAG, "binding vh");
             Workout workout = mWorkouts.get(position);
 
-            viewHolder.mDateTimeTextView.setText(WhereRunnerApp.formatDateTime(workout.getStartTime()));
-            viewHolder.mDistanceTextView.setText(WhereRunnerApp.formatDistance(workout.getDistance()));
-            viewHolder.mDurationTextView.setText(WhereRunnerApp.formatDuration(workout.getEndTime() - workout.getStartTime()));
-            viewHolder.mSpeedTextView.setText(WhereRunnerApp.formatSpeed(workout.getSpeedAverage()) + " / " + WhereRunnerApp.formatSpeed(workout.getSpeedMax()));
+            viewHolder.mDateTimeTextView.setText(
+                    Utils.getInstance(getContext()).formatDateTime(workout.getStartTime()));
+            viewHolder.mDistanceTextView.setText(
+                    Utils.getInstance(getContext()).formatDistance(workout.getDistance()));
+            viewHolder.mDurationTextView.setText(
+                    Utils.getInstance(getContext()).formatDuration(
+                            workout.getEndTime() - workout.getStartTime()));
+            viewHolder.mSpeedTextView.setText(
+                    Utils.getInstance(getContext()).formatSpeed(
+                            workout.getSpeedAverage()) + " / "
+                            + Utils.getInstance(getContext()).formatSpeed(
+                                    workout.getSpeedMax()));
         }
 
         @Override

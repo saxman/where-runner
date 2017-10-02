@@ -3,7 +3,7 @@ package info.saxman.android.whererunner.views;
 import android.content.Context;
 import android.view.View;
 
-import info.saxman.android.whererunner.WhereRunnerApp;
+import info.saxman.android.whererunner.Utils;
 import info.saxman.android.whererunner.model.Workout;
 import info.saxman.android.whererunner.model.WorkoutType;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
@@ -22,14 +22,16 @@ public class SpeedView extends SimpleWorkoutDataView {
         String currSpeed;
         String avgSpeed;
 
-        if (WorkoutRecordingService.workoutType == WorkoutType.CYCLING) {
-            mValueLabelTextView.setText(WhereRunnerApp.getLocalizedSpeedLabel());
-            currSpeed = WhereRunnerApp.formatSpeed(workout.getSpeedCurrent());
-            avgSpeed = WhereRunnerApp.formatSpeed(workout.getSpeedAverage());
+        WorkoutType workoutType = WorkoutType.getWorkoutType(workout.getType());
+
+        if (workoutType == WorkoutType.CYCLING) {
+            mValueLabelTextView.setText(Utils.getInstance(getContext()).getLocalizedSpeedLabel());
+            currSpeed = Utils.getInstance(getContext()).formatSpeed(workout.getSpeedCurrent());
+            avgSpeed = Utils.getInstance(getContext()).formatSpeed(workout.getSpeedAverage());
         } else {
-            mValueLabelTextView.setText(WhereRunnerApp.getLocalizedPaceLabel());
-            currSpeed = WhereRunnerApp.formatPace(workout.getSpeedCurrent());
-            avgSpeed = WhereRunnerApp.formatPace(workout.getSpeedAverage());
+            mValueLabelTextView.setText(Utils.getInstance(getContext()).getLocalizedPaceLabel());
+            currSpeed = Utils.getInstance(getContext()).formatPace(workout.getSpeedCurrent());
+            avgSpeed = Utils.getInstance(getContext()).formatPace(workout.getSpeedAverage());
         }
 
         mValueTextView.setText(currSpeed);

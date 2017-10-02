@@ -14,7 +14,6 @@ import java.util.Locale;
 import info.saxman.android.whererunner.R;
 import info.saxman.android.whererunner.model.Workout;
 import info.saxman.android.whererunner.services.HeartRateSensorService;
-import info.saxman.android.whererunner.services.WorkoutRecordingService;
 
 public class HeartRateView extends SimpleWorkoutDataView {
     private ObjectAnimator mHeartAnimator;

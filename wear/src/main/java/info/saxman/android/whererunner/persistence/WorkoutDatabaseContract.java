@@ -5,25 +5,10 @@ import android.provider.BaseColumns;
 /**
  * Schema definitions for storing workouts in sql
  */
-public final class WorkoutContract {
+public final class WorkoutDatabaseContract {
     // To prevent someone from accidentally instantiating the contract class,
     // give it an empty constructor.
-    public WorkoutContract() {}
-
-    // Workout type mappings
-    public enum WorkoutType {
-        RUNNING(0), RIDING(1);
-
-        private final int value;
-
-        WorkoutType(int value) {
-            this.value = value;
-        }
-
-        public int getValue() {
-            return value;
-        }
-    }
+    public WorkoutDatabaseContract() {}
 
     /**
      * Defines the workout table
@@ -118,5 +103,4 @@ public final class WorkoutContract {
      */
      static final String SQL_DELETE_LOCATIONS =
             "DROP TABLE IF EXISTS " + Location.TABLE_NAME;
-
 }

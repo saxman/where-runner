@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.wearable.view.drawer.WearableDrawerLayout
+<android.support.wear.widget.drawer.WearableDrawerLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/drawer_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="info.saxman.android.whererunner.MainActivity">
+    tools:context=".MainActivity">
 
     <FrameLayout
         android:id="@+id/main_content_view"
@@ -17,12 +17,12 @@
         android:id="@+id/nav_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:navigation_style="single_page" />
+        app:navigationStyle="singlePage" />
 
-    <android.support.wearable.view.drawer.WearableActionDrawer
+    <android.support.wear.widget.drawer.WearableActionDrawerView
         android:id="@+id/action_drawer"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:action_menu="@menu/action_drawer_menu" />
+        app:actionMenu="@menu/action_drawer_menu" />
 
-</android.support.wearable.view.drawer.WearableDrawerLayout>
+</android.support.wear.widget.drawer.WearableDrawerLayout>

@@ -17,29 +17,29 @@ import info.saxman.android.whererunner.services.HeartRateSensorEvent;
 /**
  * SQL DB helper for workouts
  */
-public class WorkoutDbHelper extends SQLiteOpenHelper {
+public class WorkoutDatabaseHelper extends SQLiteOpenHelper {
 
-    private static final String TAG = WorkoutDbHelper.class.getSimpleName();
+    private static final String TAG = WorkoutDatabaseHelper.class.getSimpleName();
 
     // If the database schema changes, increment the database version
     public static final int DATABASE_VERSION = 1;
     public static final String DATABASE_NAME = "workout.db";
 
-    public WorkoutDbHelper(Context context) {
+    public WorkoutDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL(WorkoutContract.SQL_CREATE_WORKOUTS);
-        db.execSQL(WorkoutContract.SQL_CREATE_HEARTRATES);
-        db.execSQL(WorkoutContract.SQL_CREATE_LOCATIONS);
+        db.execSQL(WorkoutDatabaseContract.SQL_CREATE_WORKOUTS);
+        db.execSQL(WorkoutDatabaseContract.SQL_CREATE_HEARTRATES);
+        db.execSQL(WorkoutDatabaseContract.SQL_CREATE_LOCATIONS);
     }
 
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // Database upgrades wipes all data!
-        db.execSQL(WorkoutContract.SQL_DELETE_WORKOUTS);
-        db.execSQL(WorkoutContract.SQL_DELETE_HEARTRATES);
-        db.execSQL(WorkoutContract.SQL_DELETE_LOCATIONS);
+        db.execSQL(WorkoutDatabaseContract.SQL_DELETE_WORKOUTS);
+        db.execSQL(WorkoutDatabaseContract.SQL_DELETE_HEARTRATES);
+        db.execSQL(WorkoutDatabaseContract.SQL_DELETE_LOCATIONS);
         onCreate(db);
     }
 
@@ -56,14 +56,14 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
 
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
-        values.put(WorkoutContract.Workout.COLUMN_NAME_TYPE, workout.getType());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_START_TIME, workout.getStartTime());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_END_TIME, workout.getEndTime());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_DISTANCE, workout.getDistance());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
-        values.put(WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG, workout.getSpeedAverage());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_TYPE, workout.getType());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_START_TIME, workout.getStartTime());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_END_TIME, workout.getEndTime());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_DISTANCE, workout.getDistance());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_MAX, workout.getSpeedMax());
+        values.put(WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_AVG, workout.getSpeedAverage());
 
-        long id = db.insert(WorkoutContract.Workout.TABLE_NAME, null, values);
+        long id = db.insert(WorkoutDatabaseContract.Workout.TABLE_NAME, null, values);
 
         db.close();
 
@@ -81,9 +81,9 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         for (HeartRateSensorEvent hrEvent : hrEvents) {
             ContentValues values = new ContentValues();
             // TODO: Save min/max heart rate?
-            values.put(WorkoutContract.HeartRate.COLUMN_NAME_TIMESTAMP, hrEvent.getTimestamp());
-            values.put(WorkoutContract.HeartRate.COLUMN_NAME_HEART_RATE, hrEvent.getHeartRate());
-            db.insert(WorkoutContract.HeartRate.TABLE_NAME, null, values);
+            values.put(WorkoutDatabaseContract.HeartRate.COLUMN_NAME_TIMESTAMP, hrEvent.getTimestamp());
+            values.put(WorkoutDatabaseContract.HeartRate.COLUMN_NAME_HEART_RATE, hrEvent.getHeartRate());
+            db.insert(WorkoutDatabaseContract.HeartRate.TABLE_NAME, null, values);
         }
 
         db.endTransaction();
@@ -101,10 +101,10 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         for (Location location : locations) {
             ContentValues values = new ContentValues();
             location.getTime();
-            values.put(WorkoutContract.Location.COLUMN_NAME_TIMESTAMP, location.getTime());
-            values.put(WorkoutContract.Location.COLUMN_NAME_LAT, location.getLatitude());
-            values.put(WorkoutContract.Location.COLUMN_NAME_LNG, location.getLongitude());
-            db.insert(WorkoutContract.Location.TABLE_NAME, null, values);
+            values.put(WorkoutDatabaseContract.Location.COLUMN_NAME_TIMESTAMP, location.getTime());
+            values.put(WorkoutDatabaseContract.Location.COLUMN_NAME_LAT, location.getLatitude());
+            values.put(WorkoutDatabaseContract.Location.COLUMN_NAME_LNG, location.getLongitude());
+            db.insert(WorkoutDatabaseContract.Location.TABLE_NAME, null, values);
         }
 
         db.endTransaction();
@@ -118,22 +118,22 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = getReadableDatabase();
 
         String[] projection = {
-            WorkoutContract.Workout._ID,
-            WorkoutContract.Workout.COLUMN_NAME_TYPE,
-            WorkoutContract.Workout.COLUMN_NAME_START_TIME,
-            WorkoutContract.Workout.COLUMN_NAME_END_TIME,
-            WorkoutContract.Workout.COLUMN_NAME_DISTANCE,
-            WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX,
-            WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG
+            WorkoutDatabaseContract.Workout._ID,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_TYPE,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_START_TIME,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_END_TIME,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_DISTANCE,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_MAX,
+            WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_AVG
         };
 
-        String sortOrder = WorkoutContract.Workout.COLUMN_NAME_START_TIME + " DESC";
+        String sortOrder = WorkoutDatabaseContract.Workout.COLUMN_NAME_START_TIME + " DESC";
         String limit = "5";
 
         ArrayList<Workout> workouts = new ArrayList<>();
 
         try (Cursor c = db.query(
-            WorkoutContract.Workout.TABLE_NAME,  // The table to query
+            WorkoutDatabaseContract.Workout.TABLE_NAME,  // The table to query
             projection,                          // The columns to return
             null,                                // The columns for the WHERE clause
             null,                                // The values for the WHERE clause
@@ -143,13 +143,13 @@ public class WorkoutDbHelper extends SQLiteOpenHelper {
             limit                                // Limit the nr of results to 5
         )) {
             while (c.moveToNext()) {
-                long id = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout._ID));
-                int type = c.getInt(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_TYPE));
-                long startTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_START_TIME));
-                long endTime = c.getLong(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_END_TIME));
-                float distance = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_DISTANCE));
-                float speedMax = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_MAX));
-                float speedAvg = c.getFloat(c.getColumnIndexOrThrow(WorkoutContract.Workout.COLUMN_NAME_SPEED_AVG));
+                long id = c.getLong(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout._ID));
+                int type = c.getInt(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_TYPE));
+                long startTime = c.getLong(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_START_TIME));
+                long endTime = c.getLong(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_END_TIME));
+                float distance = c.getFloat(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_DISTANCE));
+                float speedMax = c.getFloat(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_MAX));
+                float speedAvg = c.getFloat(c.getColumnIndexOrThrow(WorkoutDatabaseContract.Workout.COLUMN_NAME_SPEED_AVG));
 
                 Workout workout = new Workout(id, type);
                 workout.setStartTime(startTime);

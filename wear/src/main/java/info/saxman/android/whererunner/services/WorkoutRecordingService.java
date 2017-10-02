@@ -1,6 +1,8 @@
 package info.saxman.android.whererunner.services;
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
@@ -12,12 +14,12 @@ import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.location.Location;
 import android.os.Binder;
+import android.os.Build;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.support.v4.content.LocalBroadcastManager;
-import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -25,7 +27,7 @@ import info.saxman.android.whererunner.MainActivity;
 import info.saxman.android.whererunner.R;
 import info.saxman.android.whererunner.model.Workout;
 import info.saxman.android.whererunner.model.WorkoutType;
-import info.saxman.android.whererunner.persistence.WorkoutDbHelper;
+import info.saxman.android.whererunner.persistence.WorkoutDatabaseHelper;
 
 /**
  * Listens for incoming local broadcast intents for starting and stopping a session
@@ -39,20 +41,20 @@ public class WorkoutRecordingService extends Service {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = WorkoutRecordingService.class.getSimpleName();
 
-    /** Outgoing action reporting workout recording status */
-    public final static String ACTION_RECORDING_STATUS_CHANGED = "RECORDING_STATUS_CHANGED";
-
-    /** Extra for recording status updates */
+    /** Outgoing broadcast action reporting workout recording status */
+    public final static String ACTION_SERVICE_STATE_CHANGED = "WorkoutRecordingService.RECORDING_STATE_CHANGED";
     public final static String EXTRA_IS_RECORDING = "IS_RECORDING";
+    public final static String EXTRA_IS_HRM_ON = "IS_HRM_ON";
+    public final static String EXTRA_WORKOUT_TYPE = "WORKOUT_TYPE";
 
-    /** Outgoing action reporting that the is updated workout data available */
+    /** Outgoing broadcast action reporting that the is updated workout data available */
     public final static String ACTION_WORKOUT_DATA_UPDATED = "WORKOUT_DATA_UPDATED";
 
     private final BroadcastReceiver mHeartRateBroadcastReceiver = new HeartRateBroadcastReceiver();
-    private final ServiceConnection mLocationServiceConnection = new MyServiceConnection();
+    private final ServiceConnection mHeartRateServiceConnection = new HeartRateServiceConnection();
 
+    private final ServiceConnection mLocationServiceConnection = new MyServiceConnection();
     private final BroadcastReceiver mLocationBroadcastReceiver = new LocationBroadcastReceiver();
-    private final ServiceConnection mHeartRateServiceConnection = new MyServiceConnection();
 
     private final ServiceConnection mPhoneConnectivityServiceConnection = new MyServiceConnection();
 
@@ -62,13 +64,13 @@ public class WorkoutRecordingService extends Service {
     private NotificationManagerCompat mNotificationManager;
     private NotificationCompat.Builder mNotificationBuilder;
 
-    // TODO definitely should NOT be public, since it should only be midified through the setter
-    public static WorkoutType workoutType = WorkoutType.RUNNING;
-
+    // TODO make private and non-static, and rely on broadcasts to setup UI
     public static boolean isRecording = false;
     public static Workout workout = new Workout();
     public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
     public static ArrayList<Location> locationSamples = new ArrayList<>();
+
+    private boolean mIsHrmActive = false;
 
     //
     // Service class methods
@@ -79,7 +81,7 @@ public class WorkoutRecordingService extends Service {
         super.onCreate();
 
         Intent stopIntent =
-                new Intent(MainActivity.ACTION_STOP_WORKOUT, null, this, MainActivity.class);
+                new Intent(MainActivity.ACTION_STOP_WORKOUT_CONFIRM, null, this, MainActivity.class);
 
         PendingIntent pi = PendingIntent.getActivity(this, 0, stopIntent, 0);
 
@@ -97,10 +99,11 @@ public class WorkoutRecordingService extends Service {
                         .addAction(actionBuilder.extend(actionExtender).build());
 
         Intent contentIntent = new Intent(this, MainActivity.class);
-        contentIntent.setAction(MainActivity.ACTION_SHOW_WORKOUT);
+
+        String channelId = createNotificationChannel();
 
         mNotificationManager = NotificationManagerCompat.from(this);
-        mNotificationBuilder = new NotificationCompat.Builder(this)
+        mNotificationBuilder = new NotificationCompat.Builder(this, channelId)
                 .setPriority(Notification.PRIORITY_MAX)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
@@ -112,9 +115,12 @@ public class WorkoutRecordingService extends Service {
                 .extend(wearableExtender);
 
         // Set the workout type to the last used workout type
-        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        int workoutTypeId = sharedPrefs.getInt(getString(R.string.pref_workout_type), 0);
-        workoutType = WorkoutType.getWorkoutType(workoutTypeId);
+        SharedPreferences sharedPrefs =
+                PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+        int workoutTypeId = sharedPrefs.getInt(getString(R.string.pref_workout_type),
+                WorkoutType.RUNNING.preferencesId);
+        // TODO somewhat inefficient since setWorkoutType writes to shared prefs
+        setWorkoutType(WorkoutType.getWorkoutType(workoutTypeId));
     }
 
     @Override
@@ -124,17 +130,17 @@ public class WorkoutRecordingService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        startHeartRateService();
+        startLocationService();
 
-        bindService(
-                new Intent(this, FusedLocationService.class),
-                mLocationServiceConnection,
-                Context.BIND_AUTO_CREATE);
+        boolean autoStartHrm = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(getString(R.string.pref_auto_start_hrm), true);
 
-        bindService(
-                new Intent(this, PhoneConnectivityService.class),
-                mPhoneConnectivityServiceConnection,
-                Context.BIND_AUTO_CREATE);
+        if (autoStartHrm) {
+            startHeartRateService();
+        }
+
+        bindService(new Intent(this, PhoneConnectivityService.class),
+                mPhoneConnectivityServiceConnection, Context.BIND_AUTO_CREATE);
 
         return mServiceBinder;
     }
@@ -142,24 +148,24 @@ public class WorkoutRecordingService extends Service {
     @Override
     public boolean onUnbind(Intent intent) {
         super.onUnbind(intent);
-
-        // Allow re-binding. Otherwise, the service will remain running if the following sequence of
-        // events occurs:
-        //
-        // 1. the service is bound (the activity binds for controlling the service)
-        // 2. started (the user starts the workout)
-        // 3. unbound (the user exits the activity)
-        // 4. re-bound (attempted; will fail) (the user re-launches the activity)
-        // 5. stopped (the user stops their workout)
-        // 6. unbound (attempted; will fail since not re-bound) (the user exits the activity)
-
         return true;
     }
 
     @Override
-    public void onDestroy() {
-        Log.d(LOG_TAG, "Destroying service");
+    public void onRebind(Intent intent) {
+        super.onRebind(intent);
 
+        // The activity has re-connected; re-broadcast the service state to set up the UI.
+        intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
+        intent.putExtra(EXTRA_IS_HRM_ON, mIsHrmActive);
+        intent.putExtra(EXTRA_WORKOUT_TYPE, getWorkoutType().preferencesId);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        // TODO re-evaluate where we should be removing the notification
         mNotificationManager.cancel(NOTIFICATION_ID);
 
         unbindService(mPhoneConnectivityServiceConnection);
@@ -178,17 +184,14 @@ public class WorkoutRecordingService extends Service {
     // Private class methods
     //
 
-    private void reportRecordingStatus() {
-        Intent intent = new Intent(ACTION_RECORDING_STATUS_CHANGED);
-        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
-    }
-
     /**
      * Starts recording a workout session
      */
     private void startRecordingData() {
+        int type = workout.getType();
         workout = new Workout(System.currentTimeMillis());
+        workout.setType(type);
+
         heartRateSamples.clear();
         locationSamples.clear();
 
@@ -210,10 +213,35 @@ public class WorkoutRecordingService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateBroadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationBroadcastReceiver);
 
-        WorkoutDbHelper mDbHelper = new WorkoutDbHelper(this);
+        WorkoutDatabaseHelper mDbHelper = new WorkoutDatabaseHelper(this);
         mDbHelper.writeWorkout(workout);
         mDbHelper.writeHeartRates(heartRateSamples);
         mDbHelper.writeLocations(locationSamples);
+    }
+
+    private String createNotificationChannel() {
+        // NotificationChannels are required for Notifications on O (API 26) and above.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            String channelId = "where_runner_workout_channel";
+
+            NotificationChannel notificationChannel =
+                    new NotificationChannel(channelId, "Where Runner", NotificationManager.IMPORTANCE_MAX);
+            notificationChannel.setDescription("Where Runner Workout Status Updates");
+            notificationChannel.enableVibration(false);
+            notificationChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+
+            // Adds NotificationChannel to system. Attempting to create an existing notification
+            // channel with its original values performs no operation, so it's safe to perform the
+            // below sequence.
+            NotificationManager notificationManager =
+                    (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(notificationChannel);
+
+            return channelId;
+        } else {
+            // Returns empty string for pre-O (26) devices.
+            return null;
+        }
     }
 
     //
@@ -227,7 +255,9 @@ public class WorkoutRecordingService extends Service {
         startRecordingData();
         isRecording = true;
 
-        reportRecordingStatus();
+        Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
         mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
@@ -237,15 +267,39 @@ public class WorkoutRecordingService extends Service {
         stopRecordingData();
         isRecording = false;
 
-        reportRecordingStatus();
+        Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
 
         stopForeground(true);
         stopSelf();
     }
 
+    public void startLocationService() {
+        // Only attempt to unbind if the service hasn't previously been unbound
+        if (LocationService.isActive) {
+            unbindService(mLocationServiceConnection);
+        }
+
+        boolean useWatchGps = PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean(getString(R.string.pref_use_watch_gps), false);
+
+        // Use the FusedLocationService for watch and/or phone GPS, or the GpsLocationService
+        // for watch only.
+        if (useWatchGps) {
+            bindService(new Intent(this, GpsLocationService.class),
+                    mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+        } else {
+            bindService(new Intent(this, FusedLocationService.class),
+                    mLocationServiceConnection, Context.BIND_AUTO_CREATE);
+        }
+    }
+
     public void startHeartRateService() {
-        Intent intent = new Intent(this, HeartRateSensorService.class);
-        bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+        if (!HeartRateSensorService.isActive) {
+            Intent intent = new Intent(this, HeartRateSensorService.class);
+            bindService(intent, mHeartRateServiceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
 
     /**
@@ -255,23 +309,31 @@ public class WorkoutRecordingService extends Service {
         // Only unbind if the service hasn't previously been unbound
         if (HeartRateSensorService.isActive) {
             unbindService(mHeartRateServiceConnection);
+            mIsHrmActive = false;
+
+            Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+            intent.putExtra(EXTRA_IS_HRM_ON, mIsHrmActive);
+            LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
         }
     }
 
     public void setWorkoutType(WorkoutType workoutType) {
-        WorkoutRecordingService.workoutType = workoutType;
+        workout.setType(workoutType.preferencesId);
 
-        // Store the workout type in shared prefs so it can be the default when the app is run next
+        // Store the workout type in shared prefs so it can be the default when the app is run next.
         SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = sharedPrefs.edit();
-        editor.putInt(getString(R.string.pref_workout_type), WorkoutRecordingService.workoutType.preferencesId);
-        editor.commit();
+        editor.putInt(getString(R.string.pref_workout_type), workout.getType());
+        editor.apply();
 
-        reportRecordingStatus();
+        Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+        intent.putExtra(EXTRA_WORKOUT_TYPE, workout.getType());
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 
+    // Static since UI components need this info w/o having to bind to the service.
     public WorkoutType getWorkoutType() {
-        return workoutType;
+        return WorkoutType.getWorkoutType(workout.getType());
     }
 
     //
@@ -287,6 +349,21 @@ public class WorkoutRecordingService extends Service {
     private class MyServiceConnection implements ServiceConnection {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {}
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {}
+    }
+
+    private class HeartRateServiceConnection implements ServiceConnection {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            // Once we know that the HRM service is active, let the UI components know.
+            mIsHrmActive = true;
+
+            Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+            intent.putExtra(EXTRA_IS_HRM_ON, mIsHrmActive);
+            LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(intent);
+        }
 
         @Override
         public void onServiceDisconnected(ComponentName componentName) {}
@@ -317,7 +394,9 @@ public class WorkoutRecordingService extends Service {
 
                     locationSamples.add(location);
 
-                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(new Intent(ACTION_WORKOUT_DATA_UPDATED));
+                    // Notify listeners the the workout data has changed.
+                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(
+                            new Intent(ACTION_WORKOUT_DATA_UPDATED));
 
                     break;
             }

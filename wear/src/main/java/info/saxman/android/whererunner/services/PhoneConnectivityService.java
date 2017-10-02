@@ -26,7 +26,7 @@ public class PhoneConnectivityService extends Service {
     public static final String ACTION_PHONE_CONNECTIVITY_CHANGED = "PHONE_CONNECTIVITY_CHANGED";
     public static final String EXTRA_IS_PHONE_CONNECTED = "IS_PHONE_CONNECTED";
 
-    private static final int UPDATE_INTERVAL_MS = 5000;
+    private static final int STATUS_UPDATE_INTERVAL_MS = 5000;
 
     public static boolean isPhoneConnected = false;
 
@@ -103,7 +103,7 @@ public class PhoneConnectivityService extends Service {
                                         PhoneConnectivityService.this).sendBroadcast(intent);
                             }
 
-                            mHandler.postDelayed(mStatusChecker, UPDATE_INTERVAL_MS);
+                            mHandler.postDelayed(mStatusChecker, STATUS_UPDATE_INTERVAL_MS);
                         }
                     }, 500, TimeUnit.MILLISECONDS);
         }
