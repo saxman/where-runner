@@ -1,11 +1,10 @@
 package info.saxman.android.whererunner;
 
 import android.Manifest;
-import android.app.AlarmManager;
+import android.app.Activity;
 import android.app.DialogFragment;
 import android.app.Fragment;
 import android.app.FragmentTransaction;
-import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -21,9 +20,10 @@ import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.wear.ambient.AmbientMode;
 import android.support.wear.widget.drawer.WearableActionDrawerView;
 import android.support.wear.widget.drawer.WearableNavigationDrawerView;
-import android.support.wearable.activity.WearableActivity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -38,15 +38,16 @@ import com.google.android.gms.maps.MapView;
 
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
 
 import info.saxman.android.whererunner.framework.WearableFragment;
 import info.saxman.android.whererunner.model.WorkoutType;
 import info.saxman.android.whererunner.services.HeartRateSensorService;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
 
-public class MainActivity extends WearableActivity
-        implements ActivityCompat.OnRequestPermissionsResultCallback, SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends Activity
+        implements ActivityCompat.OnRequestPermissionsResultCallback,
+        AmbientMode.AmbientCallbackProvider,
+        SharedPreferences.OnSharedPreferenceChangeListener {
 
     @SuppressWarnings("unused")
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
@@ -82,15 +83,6 @@ public class MainActivity extends WearableActivity
     private final ServiceConnection mWorkoutRecordingServiceConnection = new MyServiceConnection();
     private final BroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
-    private static final long AMBIENT_UPDATE_INTERVAL_MS = TimeUnit.SECONDS.toMillis(10);
-
-    private AlarmManager mAmbientStateAlarmManager;
-    private PendingIntent mAmbientStatePendingIntent;
-
-    /** If there is an Google Play services issue, this flag will halt setup of various components
-     * of the app (e.g. services, broadcast receivers, etc.). */
-    private boolean mIsGooglePlayServicesIssue = false;
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -101,28 +93,18 @@ public class MainActivity extends WearableActivity
         setContentView(R.layout.activity_main);
 
         // If Google Play services is not installed or needs updating, forgo any other app
-        // initialization in onStart and onResume.
-        if (!checkGooglePlayServices()) {
-            mIsGooglePlayServicesIssue = true;
+        // initialization.
+        if (!isGooglePlayServicesAvailable()) {
             return;
         }
 
-        setAmbientEnabled();
+        AmbientMode.attachAmbientSupport(this);
 
         if (Locale.getDefault().equals(Locale.US)) {
             PreferenceManager.setDefaultValues(this, R.xml.prefs_settings_us, false);
         } else {
             PreferenceManager.setDefaultValues(this, R.xml.prefs_settings, false);
         }
-
-        mAmbientStateAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        Intent ambientStateIntent = new Intent(getApplicationContext(), MainActivity.class);
-
-        mAmbientStatePendingIntent = PendingIntent.getActivity(
-                getApplicationContext(),
-                0,
-                ambientStateIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
 
         mWearableNavigationDrawerAdapter = new MyWearableNavigationDrawerAdapter();
 
@@ -211,7 +193,7 @@ public class MainActivity extends WearableActivity
     public void onStart() {
         super.onStart();
 
-        if (mIsGooglePlayServicesIssue) {
+        if (!isGooglePlayServicesAvailable()) {
             return;
         }
 
@@ -245,7 +227,7 @@ public class MainActivity extends WearableActivity
     public void onResume() {
         super.onResume();
 
-        if (mIsGooglePlayServicesIssue) {
+        if (!isGooglePlayServicesAvailable()) {
             return;
         }
 
@@ -256,21 +238,23 @@ public class MainActivity extends WearableActivity
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+    }
+
+    @Override
     public void onStop() {
-        if (mIsGooglePlayServicesIssue) {
-            super.onStop();
+        super.onStop();
+
+        if (!isGooglePlayServicesAvailable()) {
             return;
         }
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
 
-        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
-
         if (mWorkoutRecordingService != null) {
             unbindService(mWorkoutRecordingServiceConnection);
         }
-
-        super.onStop();
     }
 
     @Override
@@ -298,25 +282,8 @@ public class MainActivity extends WearableActivity
         super.onNewIntent(intent);
         setIntent(intent);
 
-        // If onNewIntent() was called by the ambient mode alarm manager, then schedule the next
-        // ambient mode UI update.
-        if (isAmbient()) {
-            // If the current fragment supports ambient mode (it should, per onEnterAmbient()), have
-            // it update its UI
-            if (mContentFragment instanceof WearableFragment) {
-                ((WearableFragment) mContentFragment).onUpdateAmbient();
-            }
-
-            scheduleAmbientUpdate();
-
-            return;
-        }
-
-        // If not an ambient update, app could have been re-launched with an intent to display
-        // specific data (e.g. heart rate).
-        if (!Intent.ACTION_MAIN.equals(intent.getAction())) {
-            handleIntent();
-        }
+        // App could have been re-launched with an intent to display specific data (e.g. heart rate).
+        handleIntent();
     }
 
     @Override
@@ -335,53 +302,9 @@ public class MainActivity extends WearableActivity
         return super.onKeyDown(keyCode, event);
     }
 
-
-    //
-    // WearableActivity methods
-    //
-
-    @Override
-    public void onEnterAmbient(Bundle ambientDetails) {
-        super.onEnterAmbient(ambientDetails);
-
-        mWearableActionDrawer.getController().closeDrawer();
-        mWearableNavigationDrawer.getController().closeDrawer();
-
-        mStatusFragment.onEnterAmbient(ambientDetails);
-
-        // If the current fragment supports ambient mode, then enter ambient mode.
-        if (mContentFragment instanceof WearableFragment) {
-            ((WearableFragment) mContentFragment).onEnterAmbient(ambientDetails);
-            scheduleAmbientUpdate();
-        } else {
-            // mWearableNavigationDrawer.setCurrentItem(0, false);
-            finish();
-        }
-    }
-
-    @Override
-    public void onExitAmbient() {
-        super.onExitAmbient();
-
-        mWearableActionDrawer.getController().peekDrawer();
-
-        mStatusFragment.onExitAmbient();
-
-        if (mContentFragment instanceof WearableFragment) {
-            ((WearableFragment) mContentFragment).onExitAmbient();
-        }
-
-        mAmbientStateAlarmManager.cancel(mAmbientStatePendingIntent);
-    }
-
-    @Override
-    public void onUpdateAmbient() {
-        super.onUpdateAmbient();
-
-        if (mContentFragment instanceof WearableFragment) {
-            ((WearableFragment) mContentFragment).onUpdateAmbient();
-        }
-    }
+    /*
+     * SharedPreferences.OnSharedPreferenceChangeListener interface method
+     */
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
@@ -390,19 +313,69 @@ public class MainActivity extends WearableActivity
         }
     }
 
-    //
-    // Class methods (public)
-    //
+    /*
+     * AmbientMode.AmbientCallbackProvider interface method (and ambient mode support)
+     */
+
+    @Override
+    public AmbientMode.AmbientCallback getAmbientCallback() {
+        return new AmbientMode.AmbientCallback() {
+            @Override
+            public void onEnterAmbient(Bundle ambientDetails) {
+                super.onEnterAmbient(ambientDetails);
+
+                mWearableActionDrawer.getController().closeDrawer();
+                mWearableNavigationDrawer.getController().closeDrawer();
+
+                mStatusFragment.onEnterAmbient(ambientDetails);
+
+                // If the current fragment does not support ambient mode, exit the app.
+                if (mContentFragment instanceof WearableFragment) {
+                    ((WearableFragment) mContentFragment).onEnterAmbient(ambientDetails);
+                } else {
+                    // mWearableNavigationDrawer.setCurrentItem(0, false);
+                    finish();
+                }
+            }
+
+            @Override
+            public void onExitAmbient() {
+                super.onExitAmbient();
+
+                mWearableActionDrawer.getController().peekDrawer();
+
+                mStatusFragment.onExitAmbient();
+
+                if (mContentFragment instanceof WearableFragment) {
+                    ((WearableFragment) mContentFragment).onExitAmbient();
+                }
+            }
+
+            @Override
+            public void onUpdateAmbient() {
+                super.onUpdateAmbient();
+
+                if (mContentFragment instanceof WearableFragment) {
+                    ((WearableFragment) mContentFragment).onUpdateAmbient();
+                }
+            }
+        };
+    }
+
+    /*
+     * Class methods (public)
+     */
 
     public void navigateBack() {
+        getFragmentManager().popBackStackImmediate();
         mWearableNavigationDrawerAdapter.navigateBack();
     }
 
-    //
-    // Class methods (private)
-    //
+    /*
+     * Class methods (private)
+     */
 
-    private boolean checkGooglePlayServices() {
+    private boolean isGooglePlayServicesAvailable() {
         GoogleApiAvailability googleAPI = GoogleApiAvailability.getInstance();
         int result = googleAPI.isGooglePlayServicesAvailable(this);
         if (result != ConnectionResult.SUCCESS) {
@@ -444,7 +417,6 @@ public class MainActivity extends WearableActivity
     }
 
     private void addTimeStatusFragment(int displayMode) {
-        // TODO move display mode to an XML attribute and add fragment in xml
         Bundle args = new Bundle();
         args.putInt(TimeStatusFragment.EXTRA_DISPLAY_MODE, displayMode);
         mStatusFragment = new TimeStatusFragment();
@@ -455,15 +427,6 @@ public class MainActivity extends WearableActivity
     private void startWorkoutRecordingService() {
         bindService(new Intent(this, WorkoutRecordingService.class),
                 mWorkoutRecordingServiceConnection, Context.BIND_AUTO_CREATE);
-    }
-
-    private void scheduleAmbientUpdate() {
-        long timeMs = System.currentTimeMillis();
-        long delayMs = AMBIENT_UPDATE_INTERVAL_MS - (timeMs % AMBIENT_UPDATE_INTERVAL_MS);
-        long triggerTimeMs = timeMs + delayMs;
-
-        mAmbientStateAlarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTimeMs,
-                mAmbientStatePendingIntent);
     }
 
     private void toggleWorkoutActivityType() {
@@ -497,9 +460,9 @@ public class MainActivity extends WearableActivity
         }
     }
 
-    //
-    // Inner classes (private)
-    //
+    /*
+     * Inner classes (private)
+     */
 
     private class MyWearableNavigationDrawerAdapter
             extends WearableNavigationDrawerView.WearableNavigationDrawerAdapter
@@ -607,8 +570,8 @@ public class MainActivity extends WearableActivity
                     // We add the time/status fragment here instead of in workout data/map
                     // fragments, since the root layout of workout data fragment needs to be a
                     // RecyclerView in order to get the nav drawer behaviour to work properly.
-                    // Otherwise, the nav drawer cannot be opened from the closed state unless the
-                    // nested recycler view is at the top.
+                    // Otherwise, the nav drawer cannot be opened from the closed state (unless the
+                    // nested recycler view is at the top).
                     addTimeStatusFragment(TimeStatusFragment.DISPLAY_MODE_DARK);
 
                     mWearableActionDrawer.getController().peekDrawer();
@@ -664,7 +627,6 @@ public class MainActivity extends WearableActivity
         }
 
         void navigateBack() {
-            getFragmentManager().popBackStackImmediate();
             mUserNavigatedBack = true;
             mWearableNavigationDrawer.setCurrentItem(mNavigateBackToItemPosition, false);
         }

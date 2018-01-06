@@ -11,27 +11,24 @@ import android.view.ViewGroup;
 
 public class SettingsFragment extends PreferenceFragment {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = SettingsFragment.class.getSimpleName();
-
-    private String mPrefUseGps;
-    private String mPrefAutoStartHrm;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         addPreferencesFromResource(R.xml.prefs_settings);
 
-        mPrefUseGps = getString(R.string.pref_use_watch_gps);
-        mPrefAutoStartHrm = getString(R.string.pref_auto_start_hrm);
-
         // If the device lacks a GPS sensor, disable the setting to force the sensor's use.
         if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_LOCATION_GPS)) {
-            getPreferenceManager().findPreference(mPrefUseGps).setEnabled(false);
+            String prefUseGps = getString(R.string.pref_use_watch_gps);
+            getPreferenceManager().findPreference(prefUseGps).setEnabled(false);
         }
 
         // If the device lacks a GPS sensor, disable the setting to force the sensor's use.
         if (!getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_SENSOR_HEART_RATE)) {
-            getPreferenceManager().findPreference(mPrefAutoStartHrm).setEnabled(false);
+            String prefAutoStartHrm = getString(R.string.pref_auto_start_hrm);
+            getPreferenceManager().findPreference(prefAutoStartHrm).setEnabled(false);
         }
     }
 

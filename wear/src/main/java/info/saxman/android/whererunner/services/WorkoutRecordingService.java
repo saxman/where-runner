@@ -219,13 +219,16 @@ public class WorkoutRecordingService extends Service {
         mDbHelper.writeLocations(locationSamples);
     }
 
+    /**
+     * @return The channel id, if the device is running Android O or later. null otherwise.
+     */
     private String createNotificationChannel() {
         // NotificationChannels are required for Notifications on O (API 26) and above.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             String channelId = "where_runner_workout_channel";
 
             NotificationChannel notificationChannel =
-                    new NotificationChannel(channelId, "Where Runner", NotificationManager.IMPORTANCE_MAX);
+                    new NotificationChannel(channelId, "Where Runner", NotificationManager.IMPORTANCE_HIGH);
             notificationChannel.setDescription("Where Runner Workout Status Updates");
             notificationChannel.enableVibration(false);
             notificationChannel.setLockscreenVisibility(NotificationCompat.VISIBILITY_PUBLIC);
@@ -249,15 +252,22 @@ public class WorkoutRecordingService extends Service {
     //
 
     public void startRecordingWorkout() {
-        startService(new Intent(this, WorkoutRecordingService.class));
+        Intent intent = new Intent(this, WorkoutRecordingService.class);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
+
         startForeground(NOTIFICATION_ID, mNotificationBuilder.build());
 
         startRecordingData();
         isRecording = true;
 
-        Intent intent = new Intent(ACTION_SERVICE_STATE_CHANGED);
+        Intent intent2 = new Intent(ACTION_SERVICE_STATE_CHANGED);
         intent.putExtra(EXTRA_IS_RECORDING, isRecording);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent2);
 
         mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
         mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());

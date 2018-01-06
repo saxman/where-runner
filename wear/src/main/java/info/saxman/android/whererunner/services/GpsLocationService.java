@@ -51,7 +51,9 @@ public class GpsLocationService extends LocationService {
     private GpsStatus.Listener mGpsStatusListener = new GpsStatus.Listener() {
         @Override
         public void onGpsStatusChanged(int status) {
-            mGpsStatus = mLocationManager.getGpsStatus(mGpsStatus);
+            if (checkPermission()) {
+                mGpsStatus = mLocationManager.getGpsStatus(mGpsStatus);
+            }
 
             Intent intent = new Intent(ACTION_GPS_STATUS_CHANGED);
             intent.putExtra(EXTRA_GPS_STATUS, status);
