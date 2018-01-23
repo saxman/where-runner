@@ -430,7 +430,7 @@ public class MainActivity extends Activity
     }
 
     private void toggleWorkoutActivityType() {
-        // Must call setWorkoutType() on the service firstChange since setWorkoutActivityTypeUiState()
+        // Must callback setWorkoutType() on the service firstChange since setWorkoutActivityTypeUiState()
         // causes both drawers to refresh. The nav drawer UI refresh is handled automatically by
         // its adapter, based on the activity type of the service.
         switch (mWorkoutRecordingService.getWorkoutType()) {
@@ -755,21 +755,13 @@ public class MainActivity extends Activity
             View view = inflater.inflate(R.layout.alert_workout_end, container, false);
 
             View confirmButton = view.findViewById(R.id.confirm_button);
-            confirmButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    ((MainActivity) getActivity()).mWorkoutRecordingService.stopRecordingWorkout();
-                    dismiss();
-                }
+            confirmButton.setOnClickListener(v -> {
+                ((MainActivity) getActivity()).mWorkoutRecordingService.stopRecordingWorkout();
+                dismiss();
             });
 
             View cancelButton = view.findViewById(R.id.cancel_button);
-            cancelButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dismiss();
-                }
-            });
+            cancelButton.setOnClickListener(v -> dismiss());
 
             return view;
         }

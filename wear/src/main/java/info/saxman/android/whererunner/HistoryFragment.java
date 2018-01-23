@@ -14,13 +14,12 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 import info.saxman.android.whererunner.model.Workout;
-import info.saxman.android.whererunner.persistence.WorkoutDatabaseHelper;
+import info.saxman.android.whererunner.persistence.WorkoutRepository;
 
 public class HistoryFragment extends Fragment {
     @SuppressWarnings("unused")
     private static final String LOG_TAG = HistoryFragment.class.getSimpleName();
 
-    private RecyclerView mRecyclerView;
     private MyRecyclerViewAdapter mRecyclerViewAdapter;
 
     @Override
@@ -29,31 +28,30 @@ public class HistoryFragment extends Fragment {
 
         mRecyclerViewAdapter = new MyRecyclerViewAdapter();
 
-        mRecyclerView = view.findViewById(R.id.recycler_view);
-        mRecyclerView.setAdapter(mRecyclerViewAdapter);
-        mRecyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        RecyclerView recyclerView = view.findViewById(R.id.recycler_view);
+        recyclerView.setAdapter(mRecyclerViewAdapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         // Allows snapping to each view in the recycler view.
         SnapHelper snapHelper = new LinearSnapHelper();
-        snapHelper.attachToRecyclerView(mRecyclerView);
+        snapHelper.attachToRecyclerView(recyclerView);
 
         final View loadingView = view.findViewById(R.id.loading);
         final View noDataView = view.findViewById(R.id.no_data);
 
-        WorkoutDatabaseHelper dbHelper = new WorkoutDatabaseHelper(getActivity());
-        dbHelper.readLastFiveWorkoutsAsync(new WorkoutDatabaseHelper.ReadWorkoutsCallback() {
-            @Override
-            public void onRead(ArrayList<Workout> workouts) {
-                loadingView.setVisibility(View.GONE);
+        WorkoutRepository repo = new WorkoutRepository(getActivity());
 
-                if (workouts.size() == 0) {
-                    noDataView.setVisibility(View.VISIBLE);
-                } else {
-                    mRecyclerViewAdapter.setWorkouts(workouts);
-                    mRecyclerViewAdapter.notifyDataSetChanged();
-                }
-            }
-        });
+        repo.retrieveLastFiveWorkoutsAsync(
+                workouts -> {
+                    loadingView.setVisibility(View.GONE);
+
+                    if (workouts.size() == 0) {
+                        noDataView.setVisibility(View.VISIBLE);
+                    } else {
+                        mRecyclerViewAdapter.setWorkouts(workouts);
+                        mRecyclerViewAdapter.notifyDataSetChanged();
+                    }
+                });
 
         return view;
     }

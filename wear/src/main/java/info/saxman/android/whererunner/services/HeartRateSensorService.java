@@ -9,13 +9,10 @@ import android.hardware.SensorManager;
 import android.os.Binder;
 import android.os.CountDownTimer;
 import android.os.IBinder;
-import android.os.IInterface;
-import android.os.Parcel;
-import android.os.RemoteException;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import java.io.FileDescriptor;
+import info.saxman.android.whererunner.model.HeartRateSample;
 
 public class HeartRateSensorService extends Service {
 
@@ -36,7 +33,7 @@ public class HeartRateSensorService extends Service {
     private SensorManager mSensorManager;
     private SensorEventListener mSensorListener;
 
-    public static HeartRateSensorEvent lastHeartRateSample;
+    public static HeartRateSample lastHeartRateSample;
     public static boolean isReceivingAccurateHeartRateSamples = false;
 
     public static boolean isActive = false;
@@ -117,7 +114,7 @@ public class HeartRateSensorService extends Service {
             }
 
             // HR sensor values appear to only ever be integers, so store as such
-            HeartRateSensorEvent hrEvent = new HeartRateSensorEvent((int) value, event.timestamp, event.accuracy);
+            HeartRateSample hrEvent = new HeartRateSample((int) value, event.timestamp);
             lastHeartRateSample = hrEvent;
 
             Intent intent = new Intent(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);

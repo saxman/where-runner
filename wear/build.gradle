@@ -25,6 +25,10 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    compileOptions {
+        targetCompatibility 1.8
+        sourceCompatibility 1.8
+    }
 }
 
 dependencies {
@@ -34,14 +38,18 @@ dependencies {
     provided 'com.google.android.wearable:wearable:2.1.0'
 
     // Wear drawer layouts/views and ambient mode support.
-    compile 'com.android.support:wear:27.0.0'
+    compile 'com.android.support:wear:27.0.2'
 
     // Used for NotificationCompat and LocalBroadcastManager.
-    compile 'com.android.support:support-v4:27.0.0'
+    compile 'com.android.support:support-v4:27.0.2'
 
     // Used for DataLayer API calls in PhoneConnectivityService.
-    compile 'com.google.android.gms:play-services-wearable:11.4.2'
+    compile 'com.google.android.gms:play-services-wearable:11.8.0'
 
-    compile 'com.google.android.gms:play-services-maps:11.4.2'
-    compile 'com.google.android.gms:play-services-location:11.4.2'
+    compile 'com.google.android.gms:play-services-maps:11.8.0'
+    compile 'com.google.android.gms:play-services-location:11.8.0'
+
+    // Room
+    implementation "android.arch.persistence.room:runtime:1.0.0"
+    annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
 }

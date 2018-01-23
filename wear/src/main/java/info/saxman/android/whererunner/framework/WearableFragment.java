@@ -8,7 +8,7 @@ import android.os.Bundle;
  * update messages can be passed from a WearableActivity to it child WearableFragments.
  *
  * Note:
- * These messages are not sent automatically; the parent WearableActivity class must call the
+ * These messages are not sent automatically; the parent WearableActivity class must callback the
  * appropriate WearableFragment methods when a WearableFragment is in view.
  *
  * @see android.support.wearable.activity.WearableActivity

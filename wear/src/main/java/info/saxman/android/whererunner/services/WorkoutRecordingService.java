@@ -25,9 +25,11 @@ import java.util.ArrayList;
 
 import info.saxman.android.whererunner.MainActivity;
 import info.saxman.android.whererunner.R;
+import info.saxman.android.whererunner.model.HeartRateSample;
+import info.saxman.android.whererunner.model.LocationSample;
 import info.saxman.android.whererunner.model.Workout;
 import info.saxman.android.whererunner.model.WorkoutType;
-import info.saxman.android.whererunner.persistence.WorkoutDatabaseHelper;
+import info.saxman.android.whererunner.persistence.WorkoutRepository;
 
 /**
  * Listens for incoming local broadcast intents for starting and stopping a session
@@ -67,8 +69,11 @@ public class WorkoutRecordingService extends Service {
     // TODO make private and non-static, and rely on broadcasts to setup UI
     public static boolean isRecording = false;
     public static Workout workout = new Workout();
-    public static ArrayList<HeartRateSensorEvent> heartRateSamples = new ArrayList<>();
-    public static ArrayList<Location> locationSamples = new ArrayList<>();
+    public static ArrayList<HeartRateSample> heartRateSamples = new ArrayList<>();
+    public static ArrayList<LocationSample> locationSamples = new ArrayList<>();
+
+    /** The last known location of the user during an active workout session. */
+    private Location mLastKnownWorkoutLocation;
 
     private boolean mIsHrmActive = false;
 
@@ -117,8 +122,8 @@ public class WorkoutRecordingService extends Service {
         // Set the workout type to the last used workout type
         SharedPreferences sharedPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        int workoutTypeId = sharedPrefs.getInt(getString(R.string.pref_workout_type),
-                WorkoutType.RUNNING.preferencesId);
+        int workoutTypeId = sharedPrefs.getInt(getString(R.string.pref_workout_type), WorkoutType.RUNNING.preferencesId);
+
         // TODO somewhat inefficient since setWorkoutType writes to shared prefs
         setWorkoutType(WorkoutType.getWorkoutType(workoutTypeId));
     }
@@ -172,7 +177,7 @@ public class WorkoutRecordingService extends Service {
         unbindService(mLocationServiceConnection);
         stopHeartRateService();
 
-        // Reset static vars since these survive outside of the service lifecycle
+        // Reset static vars since these survive outside of the service lifecycle.
         workout = new Workout();
         heartRateSamples.clear();
         locationSamples.clear();
@@ -189,11 +194,15 @@ public class WorkoutRecordingService extends Service {
      */
     private void startRecordingData() {
         int type = workout.getType();
-        workout = new Workout(System.currentTimeMillis());
+
+        workout = new Workout();
+        workout.setStartTime(System.currentTimeMillis());
         workout.setType(type);
 
         heartRateSamples.clear();
         locationSamples.clear();
+
+        mLastKnownWorkoutLocation = null;
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(HeartRateSensorService.ACTION_HEART_RATE_CHANGED);
@@ -213,10 +222,10 @@ public class WorkoutRecordingService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mHeartRateBroadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mLocationBroadcastReceiver);
 
-        WorkoutDatabaseHelper mDbHelper = new WorkoutDatabaseHelper(this);
-        mDbHelper.writeWorkout(workout);
-        mDbHelper.writeHeartRates(heartRateSamples);
-        mDbHelper.writeLocations(locationSamples);
+        WorkoutRepository repo = new WorkoutRepository(this);
+        repo.storeWorkout(workout);
+        repo.storeHeartRateSamples(heartRateSamples);
+        repo.storeLocationSamples(locationSamples);
     }
 
     /**
@@ -260,17 +269,15 @@ public class WorkoutRecordingService extends Service {
             startService(intent);
         }
 
+        mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
         startForeground(NOTIFICATION_ID, mNotificationBuilder.build());
 
         startRecordingData();
         isRecording = true;
 
         Intent intent2 = new Intent(ACTION_SERVICE_STATE_CHANGED);
-        intent.putExtra(EXTRA_IS_RECORDING, isRecording);
+        intent2.putExtra(EXTRA_IS_RECORDING, isRecording);
         LocalBroadcastManager.getInstance(this).sendBroadcast(intent2);
-
-        mNotificationBuilder.setWhen(System.currentTimeMillis()).setUsesChronometer(true).setShowWhen(true);
-        mNotificationManager.notify(NOTIFICATION_ID, mNotificationBuilder.build());
     }
 
     public void stopRecordingWorkout() {
@@ -382,33 +389,34 @@ public class WorkoutRecordingService extends Service {
     private class LocationBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, final Intent intent) {
-            switch (intent.getAction()) {
-                case LocationService.ACTION_LOCATION_CHANGED:
-                    Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
+            if (intent != null && LocationService.ACTION_LOCATION_CHANGED.equals(intent.getAction())) {
+                Location location = intent.getParcelableExtra(LocationService.EXTRA_LOCATION);
 
-                    // If we have at least 2 samples, calculate distance and speed
-                    if (locationSamples.size() > 0) {
-                        Location priorLocation = locationSamples.get(locationSamples.size() - 1);
+                // If we have at least 2 samples, calculate distance and speed
+                if (mLastKnownWorkoutLocation != null) {
+                    float[] results = new float[1];
+                    Location.distanceBetween(
+                            mLastKnownWorkoutLocation.getLatitude(), mLastKnownWorkoutLocation.getLongitude(),
+                            location.getLatitude(), location.getLongitude(),
+                            results);
+                    float dist = results[0];
 
-                        float[] results = new float[1];
-                        Location.distanceBetween(
-                                priorLocation.getLatitude(), priorLocation.getLongitude(),
-                                location.getLatitude(), location.getLongitude(),
-                                results);
-                        float dist = results[0];
+                    workout.setDistance(workout.getDistance() + dist);
+                    workout.setSpeedCurrent(dist / (location.getTime() - mLastKnownWorkoutLocation.getTime()));
+                    workout.setSpeedAverage(workout.getDistance() / (location.getTime() - workout.getStartTime()));
+                }
 
-                        workout.setDistance(workout.getDistance() + dist);
-                        workout.setCurrentSpeed(dist / (location.getTime() - priorLocation.getTime()));
-                        workout.setAverageSpeed(workout.getDistance() / (location.getTime() - workout.getStartTime()));
-                    }
+                mLastKnownWorkoutLocation = location;
 
-                    locationSamples.add(location);
+                LocationSample s = new LocationSample();
+                s.lat = location.getLatitude();
+                s.lng = location.getLongitude();
+                s.timestamp = location.getTime();
+                locationSamples.add(s);
 
-                    // Notify listeners the the workout data has changed.
-                    LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(
-                            new Intent(ACTION_WORKOUT_DATA_UPDATED));
-
-                    break;
+                // Notify listeners the the workout data has changed.
+                LocalBroadcastManager.getInstance(WorkoutRecordingService.this).sendBroadcast(
+                        new Intent(ACTION_WORKOUT_DATA_UPDATED));
             }
         }
     }
@@ -416,20 +424,17 @@ public class WorkoutRecordingService extends Service {
     private class HeartRateBroadcastReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, final Intent intent) {
-            switch (intent.getAction()) {
-                case HeartRateSensorService.ACTION_HEART_RATE_CHANGED:
-                    HeartRateSensorEvent hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
+            if (intent != null && HeartRateSensorService.ACTION_HEART_RATE_CHANGED.equals(intent.getAction())) {
+                HeartRateSample hrEvent = intent.getParcelableExtra(HeartRateSensorService.EXTRA_HEART_RATE);
 
-                    // Calculate new heart rate average
-                    float avg = workout.getHeartRateAverage();
-                    avg = (avg * heartRateSamples.size() + hrEvent.getHeartRate()) / (heartRateSamples.size() + 1);
+                // Calculate new heart rate average
+                float avg = workout.getHeartRateAverage();
+                avg = (avg * heartRateSamples.size() + hrEvent.heartRate) / (heartRateSamples.size() + 1);
 
-                    workout.setCurrentHeartRate(hrEvent.getHeartRate());
-                    workout.setHeartRateAverage(avg);
+                workout.setCurrentHeartRate(hrEvent.heartRate);
+                workout.setHeartRateAverage(avg);
 
-                    heartRateSamples.add(hrEvent);
-
-                    break;
+                heartRateSamples.add(hrEvent);
             }
         }
     }

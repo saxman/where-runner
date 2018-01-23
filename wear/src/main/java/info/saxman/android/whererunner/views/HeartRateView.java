@@ -89,7 +89,7 @@ public class HeartRateView extends SimpleWorkoutDataView {
         // If we're actively receiving heart rate samples, display the most recent and
         // update the heart beat animation.
         if (HeartRateSensorService.isReceivingAccurateHeartRateSamples) {
-            int bpm = HeartRateSensorService.lastHeartRateSample.getHeartRate();
+            int bpm = HeartRateSensorService.lastHeartRateSample.heartRate;
 
             mValueTextView.setText(String.valueOf(bpm));
 

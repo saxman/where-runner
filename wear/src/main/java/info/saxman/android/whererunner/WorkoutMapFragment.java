@@ -38,6 +38,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 import java.util.LinkedList;
 
 import info.saxman.android.whererunner.framework.WearableFragment;
+import info.saxman.android.whererunner.model.LocationSample;
 import info.saxman.android.whererunner.services.LocationService;
 import info.saxman.android.whererunner.services.WorkoutRecordingService;
 
@@ -379,8 +380,8 @@ public class WorkoutMapFragment extends WearableFragment implements OnMapReadyCa
 
         // Add any new location samples to the polyline
         for (int i = mPathLatLngs.size(); i < WorkoutRecordingService.locationSamples.size(); i++) {
-            Location location = WorkoutRecordingService.locationSamples.get(i);
-            LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+            LocationSample location = WorkoutRecordingService.locationSamples.get(i);
+            LatLng latLng = new LatLng(location.lat, location.lng);
             mPathLatLngs.add(latLng);
         }
 

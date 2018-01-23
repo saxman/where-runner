@@ -1,74 +1,80 @@
 package info.saxman.android.whererunner.model;
 
+import android.arch.persistence.room.ColumnInfo;
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Ignore;
+import android.arch.persistence.room.PrimaryKey;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+@Entity
 public class Workout implements Parcelable {
-    private long mId;
+    @PrimaryKey(autoGenerate = true)
+    public long id;
 
-    private long mStartTime;
-    private long mEndTime;
+    private int type;
 
-    private int mType;
-    private float mDistance;
+    private long startTime;
+    private long endTime;
 
-    private float mSpeedMax;
+    private float distance;
+
+    private float speedMax;
+
+    @ColumnInfo(name = "speedAvg")
+    private float speedAverage;
+
+    @Ignore
     private float mSpeedCurrent;
-    private float mSpeedAverage;
 
+    @Ignore
     private float mHeartRateAverage;
+    @Ignore
     private int mHeartRateMin = Integer.MAX_VALUE;
+    @Ignore
     private int mHeartRateMax = Integer.MIN_VALUE;
+    @Ignore
     private int mHeartRateCurrent = -1;
 
     public Workout() {}
 
-    public Workout(long id, int type) {
-        this.mId = id;
-        this.mType = type;
-    }
-
-    public Workout(long startTime) {
-        this.mStartTime = startTime;
-    }
-
     // Private since only used by Parcelable.Creator
     private Workout(Parcel parcel) {
-        mType = parcel.readInt();
-        mId = parcel.readLong();
-        mStartTime = parcel.readLong();
-        mEndTime = parcel.readLong();
-        mDistance = parcel.readFloat();
-        mSpeedMax = parcel.readFloat();
+        type = parcel.readInt();
+        id = parcel.readLong();
+        startTime = parcel.readLong();
+        endTime = parcel.readLong();
+        distance = parcel.readFloat();
+        speedMax = parcel.readFloat();
         mSpeedCurrent = parcel.readFloat();
-        mSpeedAverage = parcel.readFloat();
+        speedAverage = parcel.readFloat();
         mHeartRateAverage = parcel.readFloat();
         mHeartRateMin = parcel.readInt();
         mHeartRateMax = parcel.readInt();
     }
 
     public void setType(int type) {
-        mType = type;
+        this.type = type;
     }
 
     public int getType() {
-        return mType;
+        return type;
     }
 
     public long getId() {
-        return mId;
+        return id;
     }
 
     public long getStartTime() {
-        return mStartTime;
+        return startTime;
     }
 
     public long getEndTime() {
-        return mEndTime;
+        return endTime;
     }
 
     public float getDistance() {
-        return mDistance;
+        return distance;
     }
 
     /**
@@ -76,14 +82,14 @@ public class Workout implements Parcelable {
      */
     public float getSpeedAverage() {
         // TODO calculate average speed if dist/time loaded from db.
-        return mSpeedAverage;
+        return speedAverage;
     }
 
     /**
      * @return Max observed speed in meters / millisecond
      */
     public float getSpeedMax() {
-        return mSpeedMax;
+        return speedMax;
     }
 
     /**
@@ -110,27 +116,27 @@ public class Workout implements Parcelable {
     }
 
     public void setStartTime(long startTime) {
-        this.mStartTime = startTime;
+        this.startTime = startTime;
     }
 
     public void setDistance(float distance) {
-        this.mDistance = distance;
+        this.distance = distance;
     }
 
     public void setSpeedMax(float speed) {
-        mSpeedMax = speed;
+        speedMax = speed;
     }
 
-    public void setCurrentSpeed(float speed) {
+    public void setSpeedCurrent(float speed) {
         mSpeedCurrent = speed;
 
-        if (mSpeedCurrent > mSpeedMax) {
-            mSpeedMax = mSpeedCurrent;
+        if (mSpeedCurrent > speedMax) {
+            speedMax = mSpeedCurrent;
         }
     }
 
-    public void setAverageSpeed(float speed) {
-        mSpeedAverage = speed;
+    public void setSpeedAverage(float speed) {
+        speedAverage = speed;
     }
 
     public void setCurrentHeartRate(int heartRate) {
@@ -146,7 +152,7 @@ public class Workout implements Parcelable {
     }
 
     public void setEndTime(long endTime) {
-        this.mEndTime = endTime;
+        this.endTime = endTime;
     }
 
     public void setHeartRateAverage(float heartRateAverage) {
@@ -160,15 +166,15 @@ public class Workout implements Parcelable {
 
     @Override
     public void writeToParcel(Parcel parcel, int i) {
-        parcel.writeInt(mType);
-        parcel.writeLong(mId);
-        parcel.writeLong(mStartTime);
-        parcel.writeLong(mEndTime);
-        parcel.writeDouble(mDistance);
+        parcel.writeInt(type);
+        parcel.writeLong(id);
+        parcel.writeLong(startTime);
+        parcel.writeLong(endTime);
+        parcel.writeDouble(distance);
 
-        parcel.writeFloat(mSpeedMax);
+        parcel.writeFloat(speedMax);
         parcel.writeFloat(mSpeedCurrent);
-        parcel.writeFloat(mSpeedAverage);
+        parcel.writeFloat(speedAverage);
 
         parcel.writeFloat(mHeartRateAverage);
         parcel.writeInt(mHeartRateMin);
