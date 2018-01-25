@@ -531,21 +531,6 @@ public class MainActivity extends Activity
                 return;
             }
 
-            // TODO the following logic seems pretty complex for simply allowing back navigation. consider ways to simplify
-
-            // If the user navigated back using the nav drawer, pop the added fragment off the stack
-            // and forgo recreating the last fragment.
-            if (getFragmentManager().getBackStackEntryCount() > 0) {
-                getFragmentManager().popBackStackImmediate();
-                mLastNavigationItemPosition = selectedItemPos;
-
-                if (selectedItemPos == NAV_DRAWER_FRAGMENT_MAIN) {
-                    mWearableActionDrawer.getController().peekDrawer();
-                }
-
-                return;
-            }
-
             // If the user navigated back with swipe, forgo recreating the last fragment.
             if (mUserNavigatedBack) {
                 mLastNavigationItemPosition = selectedItemPos;
@@ -567,7 +552,7 @@ public class MainActivity extends Activity
                             .replace(R.id.main_content_view, mContentFragment)
                             .commit();
 
-                    // We add the time/status fragment here instead of in workout data/map
+                    // We add the time/status fragment here instead of in workout data and map
                     // fragments, since the root layout of workout data fragment needs to be a
                     // RecyclerView in order to get the nav drawer behaviour to work properly.
                     // Otherwise, the nav drawer cannot be opened from the closed state (unless the
